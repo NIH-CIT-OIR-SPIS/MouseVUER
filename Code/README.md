@@ -25,6 +25,7 @@ sudo apt install ffmpeg
 ```
 
 
+## Recording
 Then plug in your Intel RealSense Camera into the computer's USB port
 
 Then run:
