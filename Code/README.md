@@ -4,9 +4,6 @@
 ### Authors
 Noah Cubert, Ghadi Salem
 
-
-Uses intel realsense depth camera software, as well as ffmpeg to record data from cameras
-
 ## Install with linux
 
 This is a guide on how to run the program 
@@ -61,7 +58,3 @@ ffprobe -f lavfi movie=Testing_DIR/test_lsb.mp4,signalstats -show_entries frame_
 ```
 
 To see the ssim of the video please see the ssim options and psnr options for ffmeg x264 encoder.
-
-
-
-{Authors etc}
