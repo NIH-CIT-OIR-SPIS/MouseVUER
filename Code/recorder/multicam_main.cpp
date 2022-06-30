@@ -4,7 +4,7 @@
  * @brief A cross OS command line tool that uses FFmpeg and Intel(R) RealSense(TM) cross platform API. 
  * This program compresses in real time 16 bit grayscale depth images.
  * Average compression ratio seen is 33x with an average PSNR of 74 dB
- * Complete compressed files range from 100 MB - 400 MB
+ * Complete compressed files range from 50 MB - 200 MB per minute
  * 
  * Tested on FFmpeg 5.0 "Lorentz" Released 2022
  * Tested on Intel(R) Realsense(TM) software version 2.50.0.
