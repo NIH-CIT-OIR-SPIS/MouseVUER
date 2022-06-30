@@ -1,4 +1,4 @@
-# Depth Recorder For Intel RealSense Cameras
+# Depth Recorder For Intel(R) RealSense(TM) Cameras
 
 ### Authors
 Noah Cubert, Ghadi Salem
