@@ -1,6 +1,6 @@
 # Depth Recorder For Intel RealSense Cameras
 
-## Noah Cubert
+### Noah Cubert
 
 
 Uses intel realsense depth camera software, as well as ffmpeg to record data from cameras
