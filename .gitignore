@@ -1,3 +1,5 @@
-Testing_DIR/*
-bin/*
+Code/Testing_DIR/*
+Code/bin/*
+*.pyc
+*.obj
 !.gitignore
