@@ -4,6 +4,8 @@
 ### Authors
 Noah Cubert, Ghadi Salem
 
+Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
+
 ## Install with linux
 
 This is a guide on how to run the program 
@@ -21,26 +23,32 @@ https://www.reddit.com/r/ffmpeg/comments/7zjoi3/compiling_ffmpeg_on_ubuntu_with_
 sudo apt install ffmpeg
 ```
 
-
-## Recording
 Then plug in your Intel RealSense Camera into the computer's USB port
 
 Then run:
 ```
-make
+make -j4
 ```
 
+Or for a new run try
+```
+make clean && make -j4
+```
 
 Then in order to see a list of options do the following
 ```
-./bin/multicam -h
+/bin/multicam -h
 ```
 
 For example here is a simple recording for 30 seconds with files saved to Testing_DIR/
 ```
-./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 2 -jsonfile Default.json
+./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 4 -jsonfile Default.json
 ```
 
+For command help type:
+```
+./bin/multicam -h
+```
 
 
 To look at frame rates
@@ -48,8 +56,9 @@ To look at frame rates
 ffprobe Testing_DIR/test_lossy.h265 -count_frames -show_entries stream=nb_read_frames,avg_frame_rate,r_frame_rate
 ```
 
-To decompress and visualize:
+To decompress and visualize, please see subsequent Raw and Compressed Video Recordings, You can also record the PSNR or you recordings here when compared with RAW, should be only for developer use. Takes a long time to run.
 ```
+python3 decompress_vids.py --vidmsb Testing_DIR/test_msb.mp4 --vidlsb Testing_DIR/test_lsb.mp4 --path_img decomp_pngs/ --vidraw Testing_DIR/
 ```
 
 To look at stats of a video please see the following from (https://ffmpeg.org/ffprobe-all.html)
@@ -57,4 +66,4 @@ To look at stats of a video please see the following from (https://ffmpeg.org/ff
 ffprobe -f lavfi movie=Testing_DIR/test_lsb.mp4,signalstats -show_entries frame_tags=lavfi.signalstats.YMAX,lavfi.signalstats.YMIN,lavfi.signalstats.YAVG,lavfi.signalstats.YBITDEPTH,lavfi.signalstats.YDIF
 ```
 
-To see the ssim of the video please see the ssim options and psnr options for ffmeg x264 encoder.
+
