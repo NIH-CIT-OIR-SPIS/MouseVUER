@@ -17,6 +17,11 @@ https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/
 Install ffmpeg and build following the directions seen here:
 https://www.reddit.com/r/ffmpeg/comments/7zjoi3/compiling_ffmpeg_on_ubuntu_with_multilib_x265/
 
+Type the following into the command line
+sudo apt-get install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
+sudo apt-get install libglfw3 && \
+sudo apt-get install libglfw3-dev
+
 
 ## Install FFmpeg
 ```

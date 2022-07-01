@@ -1,25 +1,24 @@
 /**
  * @file multicam_main.cpp
  * @author Noah Cubert (asci_anything@protonmail.com)
- * @brief A cross OS command line tool that uses FFmpeg and Intel(R) RealSense(TM) cross platform API. 
+ * @brief A cross OS command line tool that uses FFmpeg and Intel(R) RealSense(TM) cross platform API.
  * This program compresses in real time 16 bit grayscale depth images.
  * Average compression ratio seen is 33x with an average PSNR of 74 dB
  * Complete compressed files range from 50 MB - 200 MB per minute
- * 
+ *
  * Tested on FFmpeg 5.0 "Lorentz" Released 2022
  * Tested on Intel(R) Realsense(TM) software version 2.50.0.
  * Tested on Surface Pro 4, 16 GB DDR4 RAM, with an Intel(R) Core(TM) i7-6650U CPU @ 2.20GHz
  * CPU Load around 50% when recording just depth video, higher if other settings are on like raw recording, previewing, etc.
- * 
+ *
  * @version 0.1
  * @date 2022-06-30
  * @copyright Copyright (c) 2022
  */
 
-
-//TODO: Add networking code for operating on a network drive or on storage
-//TODO: Download Intel(R) helper API for a GUI like system that the user can use with OpenGL. File is example.hpp
-//TODO: Add support for multiple cameras if you have time.
+// TODO: Add networking code for operating on a network drive or on storage
+// TODO: Download Intel(R) helper API for a GUI like system that the user can use with OpenGL. File is example.hpp
+// TODO: Add support for multiple cameras if you have time.
 
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
@@ -27,6 +26,14 @@
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <librealsense2/rs_advanced_mode.hpp>
+#if __has_include(<example.hpp>)
+#include <example.hpp>
+#endif
+// #include <boost/program_options/cmdline.hpp>
+// #include <boost/program_options/options_description.hpp>
+// #include <boost/program_options/detail/cmdline.hpp>
+// using namespace boost::program_options;
+// using boost::program_options::detail::cmdline;
 
 extern "C"
 {
@@ -55,7 +62,7 @@ extern "C"
 #include <fstream>
 #include <iostream>
 
-//Timer structure
+// Timer structure
 struct timer
 {
     void reset()
@@ -286,9 +293,9 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
                              bool ffmpeg_verbose, bool depth_lossless, int typ)
 {
 
-    //typ 0 is LSB frames
-    //typ 1 is MSB frames
-    //type 2 is Color frames
+    // typ 0 is LSB frames
+    // typ 1 is MSB frames
+    // type 2 is Color frames
     std::string thread_counter = (count_threads > 0 && count_threads < 8) ? " -threads " + std::to_string(count_threads) : "";
     std::string banner = (ffmpeg_verbose) ? " -loglevel repeat+level+debug " : " -loglevel error -nostats "; //" -loglevel trace";
     std::string ffmpeg_command;
@@ -368,11 +375,11 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::string path_lsb = dirname + "test_lsb.mp4";
     std::string color_lsb_path = dirname + "test_color.mp4";
     std::cout << ffmpeg_verbose << std::endl;
-    
+
     std::string str_lsb = build_ffmpeg_cmd("gray10le", "yuv420p10le", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
     // std::string str_msb = build_ffmpeg_cmd("gray", "yuvj420p", "libx264", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
     std::string str_msb = build_ffmpeg_cmd("rgb24", "rgb24", "libx264rgb", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
-    
+
     std::string color_lsb = build_ffmpeg_cmd("rgb24", "yuv420p", "libx264", color_lsb_path, time_run, count_threads, width_color, height_color, fps, crf_color, ffmpeg_verbose, depth_lossless, 2);
     // std::string raw_cmd = build_ffmpeg_cmd("gray16le", "gray16le", "rawvideo", path_raw, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 4);
     if (str_lsb == "" || str_msb == "")
@@ -437,6 +444,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
     }
 #endif
+
+#if __has_include(<example.hpp>)
+    window app(1280, 960, "Camera Depth Device");
+#endif
     rs2::context ctx;
     rs2::pipeline pipe(ctx);
     rs2::config cfg;
@@ -481,6 +492,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::string frame_file_nm = dirname + "frame_num_";
     int i = 0;
     int k = 0;
+    float min_dis = 0.0f;
+    float max_dis = 16.0f;
     std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
     std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
     rs2::frameset frameset;
@@ -489,8 +502,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     rs2::frame depth_frame_in;
     rs2::frame rgb_frame;
     rs2::threshold_filter thresh_filter;
-    thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, 0.0f);  // start at 0.0 meters away
-    thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, 16.0f); // Will not record anything beyond 16 meters away
+    thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
+    thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
+    std::map<int, rs2::frame> render_frames;
     timer tStart;
     while ((long)time_run * fps > counter)
     {
@@ -532,11 +546,15 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     }
                 }
             }
+            /*
 #if __has_include(<opencv2/opencv.hpp>)
             if (show_preview)
             {
+
                 if (counter % 15 == 0)
                 {
+
+
                     color_frame = coloriz.process(depth_frame_in);
                     cv::Mat img(cv::Size(width, height), CV_8UC3, (uint8_t *)color_frame.get_data(), cv::Mat::AUTO_STEP);
                     cv::imshow("Raw Preview", img);
@@ -552,9 +570,11 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     {
                         break;
                     }
+
                 }
             }
 #endif
+*/
             if (collect_raw)
             {
                 if (counter < (long)num_frm_collect)
@@ -574,6 +594,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     // }
                 }
             }
+
+#if __has_include(<example.hpp>)
+            if (!app)
+            {
+                break;
+            }
+            if (show_preview)
+            {
+                render_frames[0] = coloriz.process(depth_frame_in);
+                app.show(render_frames);
+            }
+#endif
             ++counter;
         }
     }
@@ -588,7 +620,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     try
     {
 #ifdef _WIN32
-        //if (!rosbag)
+        // if (!rosbag)
         //{
         fflush(pipe_lsb);
         fflush(pipe_msb);
