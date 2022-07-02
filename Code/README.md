@@ -6,28 +6,35 @@ Noah Cubert, Ghadi Salem
 
 Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
 
-## Install with linux
+### Install librealsense with Ubuntu 20.04 (as of 7/1/2022)
 
 This is a guide on how to run the program 
 To install with linux please follow directions here https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 
-Install opencv with the following directions
+#Install OpenCV with the following directions
 https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/
 
-Install ffmpeg and build following the directions seen here:
-https://www.reddit.com/r/ffmpeg/comments/7zjoi3/compiling_ffmpeg_on_ubuntu_with_multilib_x265/
 
-Type the following into the command line
+### Install Boost using the following command:
+```
+sudo apt-get install libboost-all-dev
+```
+
+
+
+Type the following into the command line:
+```
 sudo apt-get install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
 sudo apt-get install libglfw3 && \
 sudo apt-get install libglfw3-dev
+```
 
-
-## Install FFmpeg
+### Install FFmpeg
 ```
 sudo apt install ffmpeg
 ```
 
+### Directions for Use
 Then plug in your Intel RealSense Camera into the computer's USB port
 
 Then run:

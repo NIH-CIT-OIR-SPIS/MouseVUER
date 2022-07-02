@@ -29,11 +29,12 @@
 #if __has_include(<example.hpp>)
 #include <example.hpp>
 #endif
-// #include <boost/program_options/cmdline.hpp>
-// #include <boost/program_options/options_description.hpp>
-// #include <boost/program_options/detail/cmdline.hpp>
-// using namespace boost::program_options;
-// using boost::program_options::detail::cmdline;
+
+
+#include <boost/program_options/cmdline.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/detail/cmdline.hpp>
+
 
 extern "C"
 {
@@ -43,6 +44,16 @@ extern "C"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+// #include <libavcodec/avcodec.h>
+// #include <libavformat/avformat.h>
+// #include <libswscale/swscale.h>
+// #include <libavutil/opt.h>
+// #include <libavutil/pixdesc.h>
+// #include <libavutil/pixfmt.h>
+// #include <libavutil/imgutils.h>
+// #include <libavutil/error.h>
+// #include <libavutil/frame.h>
+
 }
 
 #include <map>
@@ -247,6 +258,7 @@ bool does_file_exist(std::string path)
     }
     return false;
 }
+
 /**
  * @brief Checks if a directory path exists
  *
@@ -304,7 +316,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
         std::cout << "depth_lossless is a depricated feature" << std::endl;
         return "";
     }
-
+    
     if (typ == 0 || typ == 2)
     {
 
@@ -318,6 +330,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     }
     return "";
 }
+
 /**
  * @brief Starts a recording for Intel realsense,
  *        piping it through ffmpeg for compression using libx264rgb,
@@ -506,6 +519,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
     timer tStart;
+    
     while ((long)time_run * fps > counter)
     {
         try
@@ -670,6 +684,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 int main(int argc, char *argv[])
 try
 {
+    //namespace po = boost::program_options;
+    //using boost::program_options::detail::cmdline;
     std::cout << "RUNNING multicam c++ command line......" << std::endl;
     // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     if (argc > 34 || argc < 2)
@@ -699,6 +715,18 @@ try
     int crf_color = 30;
     int depth_lossless = 0;
     // int rosbag = 0;
+    // int opt;
+    // po::options_description desc("Allowed options");
+    // desc.add_options()
+    //     ("help", "produce help message")
+    //     ("optimization", po::value<int>(&opt)->default_value(10), 
+    // "optimization level")
+    //     ("include-path,I", po::value< std::vector<std::string> >(), 
+    // "include path")
+    //     ("input-file", po::value< std::vector<std::string> >(), "input file")
+    // ;
+   
+
     std::string bagfile = "";
     std::string jsonfile = "";
     if (!input.cmdOptionExists("-dir"))

@@ -1,9 +1,7 @@
 CC := g++
-CC += -g -fopenmp -O3 -Wall -std=c++17 -Ithird-party/
-# -I$(HOME)/boost_1_62_0/ # -I$(HOME)/ffmpeg_build/include/ -Irecorder 
+CC += -g -fopenmp -O3 -Wall -std=c++17 -Ithird-party/ #-I$(HOME)/boost_1_62_0/ # -I$(HOME)/ffmpeg_build/include/ -Irecorder 
 #-I/usr/local/include/opencv4
-LDLIBS = -lrealsense2 -pthread -lglfw -lGL -lglut -lGLU
-#-lavcodec -lavformat -lavutil
+LDLIBS = -lrealsense2 -pthread -lglfw -lGL -lglut -lGLU #-lavcodec -lavformat -lavutil
 TARGET = recorder/multicam_main
 TARGET2 = decompress_8bit_h265/decompress
 #TARGET2 = recorder/encode_depth
