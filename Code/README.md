@@ -2,36 +2,33 @@
 # Depth Recording Tool
 
 ### Authors
-Noah Cubert, Ghadi Salem
+Noah Cubert
+
+Ghadi Salem
+
 
 Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
+
 
 ### Install librealsense with Ubuntu 20.04 (as of 7/1/2022)
 
 This is a guide on how to run the program 
 To install with linux please follow directions here https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 
-#Install OpenCV with the following directions
+### Install OpenCV with the following directions
 https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/
 
 
-### Install Boost using the following command:
-```
-sudo apt-get install libboost-all-dev
-```
-
-
+### Install Boost, FFmpeg, GLFW3 and others using the following commands:
 
 Type the following into the command line:
 ```
-sudo apt-get install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
-sudo apt-get install libglfw3 && \
-sudo apt-get install libglfw3-dev
-```
-
-### Install FFmpeg
-```
-sudo apt install ffmpeg
+sudo apt-get -y install libboost-all-dev && \
+sudo apt-get -y install libglfw3 && \
+sudo apt-get -y install libglfw3-dev && \
+sudo apt-get -y install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
+sudo apt-get -y install ffmpeg && \
+sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev
 ```
 
 ### Directions for Use
