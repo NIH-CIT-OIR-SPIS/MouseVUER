@@ -215,9 +215,12 @@ def decompress_imgs(vidmsb, vidlsb, path_img, vidraw):
             frm_nm += 1
             frame_msb = cont_frame_msb.to_ndarray(format='rgb24')
             frame_lossy = recombine_frames(frame_msb, frame_lsb)
-            with open(path_read.pop(0), mode='rb') as fp:
-                bter = fp.read()
-                raw_img = np.frombuffer(bter, np.uint16).reshape(720, 1280)
+            try:
+                with open(path_read.pop(0), mode='rb') as fp:
+                    bter = fp.read()
+                    raw_img = np.frombuffer(bter, np.uint16).reshape(720, 1280)
+            except(IndexError):
+                break
             psnr, _ = find_PSNR_btwn_imgs(raw_img, frame_lossy)
             psnr_lst.append(psnr)
             #print(psnr)
