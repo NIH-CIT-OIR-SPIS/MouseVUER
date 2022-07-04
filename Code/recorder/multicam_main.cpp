@@ -468,6 +468,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     rs2::pipeline pipe(ctx);
     rs2::config cfg;
     // std::vector<rs2::pipeline
+
     if (json_file != "" && does_file_exist(json_file))
     {
         // auto device = ctx.query_devices();
@@ -492,7 +493,27 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         // cfg.enable_record_to_file("abag_file.bag");
         cfg.enable_device_from_file(bag_file_dir, false);
     }
+    auto device = ctx.query_devices();
+    auto dev = device[0];
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configuration
+    if (!(json_file.size() > 0))
+    {
+        auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
+        STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
+        // depth_table.depthUnits = 0.001;
+        // std::cout << "Depth units"
+        depth_table.depthUnits = 1000;               // in micro meters
+        depth_table.depthClampMin = 0;               // 100 mm
+        depth_table.depthClampMax = (int)pow(2, 16); // pow(2, 16);// 1000 mm
+        advanced_mode_dev.set_depth_table(depth_table);
+        // if (!advanced_mode_dev.is_enabled())
+        // {
+        //     // If not, enable advanced-mode
+        //     advanced_mode_dev.toggle_advanced_mode(true);
+        //     std::cout << "Advanced mode enabled. " << std::endl;
+        // }
+        std::cout << "Depth max: " << advanced_mode_dev.get_depth_table().depthClampMax << "mm Depth unit: " << advanced_mode_dev.get_depth_table().depthUnits << std::endl;
+    }
     if (color)
     {
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);

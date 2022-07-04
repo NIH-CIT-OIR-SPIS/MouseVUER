@@ -124,9 +124,9 @@ def find_PSNR_btwn_imgs(raw: np.uint16, compressed: np.uint16):
     MSE = np.mean((raw - compressed)**2)
     if MSE == 0:
         return 100.0
-    max_pixel_value = ((2**16) - 1)**2
+    max_pixel_value = ((2**16) - 1)
     rmse = math.sqrt(MSE)
-    psnr = 10.0 * math.log10(max_pixel_value / rmse)
+    psnr = 20.0 * math.log10(max_pixel_value / rmse)
     return (psnr, rmse)
 
 
