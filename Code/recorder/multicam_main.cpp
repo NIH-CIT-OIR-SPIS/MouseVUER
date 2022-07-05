@@ -24,40 +24,30 @@
 #include <opencv2/opencv.hpp>
 #endif
 
-
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <librealsense2/rs_advanced_mode.hpp>
-
 
 #if __has_include(<example.hpp>)
 #include <example.hpp>
 #endif
-
 
 #include <boost/program_options/cmdline.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/detail/cmdline.hpp>
 
 
-extern "C"
-{
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-// #include <libavcodec/avcodec.h>
-// #include <libavformat/avformat.h>
-// #include <libswscale/swscale.h>
-// #include <libavutil/opt.h>
-// #include <libavutil/pixdesc.h>
-// #include <libavutil/pixfmt.h>
-// #include <libavutil/imgutils.h>
-// #include <libavutil/error.h>
-// #include <libavutil/frame.h>
+// #include "libswscale/swscale.h"
 
-}
+    // #include <libavcodec/avcodec.h>
+    // #include <libavformat/avformat.h>
+    // #include <libswscale/swscale.h>
+    // #include <libavutil/opt.h>
+    // #include <libavutil/pixdesc.h>
+    // #include <libavutil/pixfmt.h>
+    // #include <libavutil/imgutils.h>
+    // #include <libavutil/error.h>
+    // #include <libavutil/frame.h>
+
 
 #include <map>
 #include <vector>
@@ -75,6 +65,519 @@ extern "C"
 #include <iomanip>
 #include <fstream>
 #include <iostream>
+extern "C"
+{
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/opt.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/timestamp.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
+//#define STREAM_DURATION 10.0
+#define STREAM_FRAME_RATE 30            /* 25 images/s */
+#define STREAM_PIX_FMT AV_PIX_FMT_P10LE /* default pix_fmt */
+
+#define SCALE_FLAGS SWS_BICUBIC
+    typedef struct OutputStream
+    {
+        AVStream *st;
+        AVCodecContext *enc;
+
+        /* pts of the next frame that will be generated */
+        int64_t next_pts;
+        int samples_count;
+
+        AVFrame *frame;
+        AVFrame *tmp_frame;
+
+        AVPacket *tmp_pkt;
+
+        float t, tincr, tincr2;
+
+        struct SwsContext *sws_ctx;
+        struct SwrContext *swr_ctx;
+    } OutputStream;
+// static AVFrame* RGBtoYUV(AVFrame *frame, AVCodecContext *c){
+//     int ret;
+//     AVFrame *frameYUV=av_frame_alloc();
+//     assert(frameYUV);
+//     frameYUV->format = c->pix_fmt;
+//     frameYUV->width  = c->width;
+//     frameYUV->height = c->height;
+
+//     int numBytes=avpicture_get_size(AV_PIX_FMT_YUV420P, c->width, c->height);
+//     assert(numBytes);
+//     uint8_t *dataBuffer = (uint8_t*) av_malloc (numBytes*sizeof(uint8_t));
+    
+//     frameYUV->data[0]=dataBuffer;
+
+//     avpicture_fill((AVPicture *)frameYUV, dataBuffer, AV_PIX_FMT_YUV420P, c->width, c->height);  
+
+//     struct SwsContext * YUVScaleCtx = sws_getContext
+//     (
+//         c->width,
+//         c->height,
+//         AV_PIX_FMT_RGB24,
+//         c->width,
+//         c->height,
+//         AV_PIX_FMT_YUV420P,
+//         SWS_BILINEAR,
+//         0,
+//         0,
+//         0
+//     );
+//     ret = sws_scale(
+//         YUVScaleCtx,
+//         (const uint8_t *const *)frame->data,
+//         frame->linesize, //stride is the size of a line + potential padding for performance issue
+//         0,
+//         c->height,
+//         frameYUV->data,
+//         frameYUV->linesize
+//     );
+//     assert(ret);
+//     return frameYUV;
+// }
+    static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt)
+    {
+        AVRational *time_base = &fmt_ctx->streams[pkt->stream_index]->time_base;
+
+        // printf("pts:%s pts_time:%s dts:%s dts_time:%s duration:%s duration_time:%s stream_index:%d\n",
+        //        av_ts2str(pkt->pts), av_ts2timestr(pkt->pts, time_base),
+        //        av_ts2str(pkt->dts), av_ts2timestr(pkt->dts, time_base),
+        //        av_ts2str(pkt->duration), av_ts2timestr(pkt->duration, time_base),
+        //        pkt->stream_index);
+    }
+
+    static int write_frame(AVFormatContext *fmt_ctx, AVCodecContext *c,
+                           AVStream *st, AVFrame *frame, AVPacket *pkt)
+    {
+        int ret;
+
+        // send the frame to the encoder
+        ret = avcodec_send_frame(c, frame);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Error sending a frame to the encoder: \n");
+            exit(1);
+        }
+
+        while (ret >= 0)
+        {
+            ret = avcodec_receive_packet(c, pkt);
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                break;
+            else if (ret < 0)
+            {
+                fprintf(stderr, "Error encoding a frame: \n");
+                exit(1);
+            }
+
+            /* rescale output packet timestamp values from codec to stream timebase */
+            av_packet_rescale_ts(pkt, c->time_base, st->time_base);
+            pkt->stream_index = st->index;
+
+            /* Write the compressed frame to the media file. */
+            log_packet(fmt_ctx, pkt);
+            ret = av_interleaved_write_frame(fmt_ctx, pkt);
+            /* pkt is now blank (av_interleaved_write_frame() takes ownership of
+             * its contents and resets pkt), so that no unreferencing is necessary.
+             * This would be different if one used av_write_frame(). */
+            if (ret < 0)
+            {
+                fprintf(stderr, "Error while writing output packet:\n");
+                exit(1);
+            }
+        }
+
+        return ret == AVERROR_EOF ? 1 : 0;
+    }
+    /* Add an output stream. */
+    static void add_stream(OutputStream *ost, AVFormatContext *oc,
+                           const AVCodec **codec,
+                           enum AVCodecID codec_id)
+    {
+        AVCodecContext *c;
+        int i;
+
+        /* find the encoder */
+        *codec = avcodec_find_encoder(codec_id);
+        if (!(*codec))
+        {
+            fprintf(stderr, "Could not find encoder for '%s'\n",
+                    avcodec_get_name(codec_id));
+            exit(1);
+        }
+
+        ost->tmp_pkt = av_packet_alloc();
+        if (!ost->tmp_pkt)
+        {
+            fprintf(stderr, "Could not allocate AVPacket\n");
+            exit(1);
+        }
+
+        ost->st = avformat_new_stream(oc, NULL);
+        if (!ost->st)
+        {
+            fprintf(stderr, "Could not allocate stream\n");
+            exit(1);
+        }
+        ost->st->id = oc->nb_streams - 1;
+        c = avcodec_alloc_context3(*codec);
+        if (!c)
+        {
+            fprintf(stderr, "Could not alloc an encoding context\n");
+            exit(1);
+        }
+        ost->enc = c;
+        printf("hih\n");
+//printf("Bits per raw sample %d\n", c->bits_per_raw_sample);
+        switch ((*codec)->type)
+        {
+        case AVMEDIA_TYPE_AUDIO:
+            // c->sample_fmt = (*codec)->sample_fmts ? (*codec)->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+            // c->bit_rate = 64000;
+            // c->sample_rate = 44100;
+            // if ((*codec)->supported_samplerates)
+            // {
+            //     c->sample_rate = (*codec)->supported_samplerates[0];
+            //     for (i = 0; (*codec)->supported_samplerates[i]; i++)
+            //     {
+            //         if ((*codec)->supported_samplerates[i] == 44100)
+            //             c->sample_rate = 44100;
+            //     }
+            // }
+            // av_channel_layout_copy(&c->ch_layout, &(AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO);
+            // ost->st->time_base = (AVRational){1, c->sample_rate};
+            // break;
+
+        case AVMEDIA_TYPE_VIDEO:
+            c->codec_id = codec_id;
+
+            //c->bit_rate = 4000000;
+            /* Resolution must be a multiple of two. */
+            c->width = 1280;
+            c->height = 720;
+            c->thread_count = 4;
+            
+            av_opt_set(c->priv_data, "preset", "veryfast", 0);
+            av_opt_set(c->priv_data, "crf", "18", 0);
+            // av_opt_set(c->priv_data, "
+            // c->active_thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
+            /* timebase: This is the fundamental unit of time (in seconds) in terms
+             * of which frame timestamps are represented. For fixed-fps content,
+             * timebase should be 1/framerate and timestamp increments should be
+             * identical to 1. */
+
+            ost->st->time_base = (AVRational){1, STREAM_FRAME_RATE};
+            c->time_base = ost->st->time_base;
+
+            //c->gop_size = 5; /* emit one intra frame every twelve frames at most */
+            c->max_b_frames = 1;
+            c->pix_fmt = AV_PIX_FMT_YUV420P10LE;
+            
+            if (c->codec_id == AV_CODEC_ID_MPEG2VIDEO)
+            {
+                printf("Warning using AV_CODEC_ID_MPEG2VIDEO!\n");
+                /* just for testing, we also add B-frames */
+                c->max_b_frames = 2;
+            }
+            if (c->codec_id == AV_CODEC_ID_MPEG1VIDEO)
+            {
+                printf("Warning using AV_CODEC_ID_MPEG2VIDEO!\n");
+                /* Needed to avoid using macroblocks in which some coeffs overflow.
+                 * This does not happen with normal video, it just happens here as
+                 * the motion of the chroma plane does not match the luma plane. */
+                c->mb_decision = 2;
+            }
+            
+            
+            break;
+
+        default:
+            break;
+        }
+
+        /* Some formats want stream headers to be separate. */
+        if (oc->oformat->flags & AVFMT_GLOBALHEADER)
+            c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+    }
+    static AVFrame *alloc_picture(enum AVPixelFormat pix_fmt, int width, int height)
+    {
+        AVFrame *picture;
+        int ret;
+
+        picture = av_frame_alloc();
+        if (!picture)
+            return NULL;
+
+        picture->format = pix_fmt;
+        picture->width = width;
+        picture->height = height;
+
+        /* allocate the buffers for the frame data */
+        ret = av_frame_get_buffer(picture, 0);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Could not allocate frame data.\n");
+            exit(1);
+        }
+
+        return picture;
+    }
+
+    static void open_video(AVFormatContext *oc, const AVCodec *codec,
+                           OutputStream *ost, AVDictionary *opt_arg)
+    {
+        int ret;
+        AVCodecContext *c = ost->enc;
+        AVDictionary *opt = NULL;
+
+        av_dict_copy(&opt, opt_arg, 0);
+
+        /* open the codec */
+        ret = avcodec_open2(c, codec, &opt);
+        av_dict_free(&opt);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Could not open video codec:\n");
+            exit(1);
+        }
+
+        /* allocate and init a re-usable frame */
+        ost->frame = alloc_picture(AV_PIX_FMT_YUV420P10LE, c->width, c->height);
+        
+        if (!ost->frame)
+        {
+            fprintf(stderr, "Could not allocate video frame\n");
+            exit(1);
+        }
+
+        /* If the output format is not YUV420P, then a temporary YUV420P
+         * picture is needed too. It is then converted to the required
+         * output format. */
+        ost->tmp_frame = NULL;
+        // if (c->pix_fmt != AV_PIX_FMT_YUV420P)
+        // {
+        //     ost->tmp_frame = alloc_picture(AV_PIX_FMT_YUV420P, c->width, c->height);
+        //     if (!ost->tmp_frame)
+        //     {
+        //         fprintf(stderr, "Could not allocate temporary picture\n");
+        //         exit(1);
+        //     }
+        // }
+
+        /* copy the stream parameters to the muxer */
+        ret = avcodec_parameters_from_context(ost->st->codecpar, c);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Could not copy the stream parameters\n");
+            exit(1);
+        }
+    }
+
+    /* Prepare a dummy image. */
+    static void fill_yuv_image(AVFrame *pict, int frame_index,
+                               int width, int height, uint8_t *data)
+    {
+        int x = 0, y = 0, i= 0;
+        int cd = 0;
+        i = frame_index;
+        //pict->format
+        /* Y */
+        pict->data[0] = data;
+        /*
+        for (y = 0; y < height; y++)
+        {
+            for (x = 0; x < width; x++)
+            {
+                pict->data[0][y * pict->linesize[0] + x] = x + y + i * 3;
+                
+            }
+        }
+        */
+        /* Cb and Cr */
+        for (y = 0; y < height / 2; y++)
+        {
+            for (x = 0; x < width / 2; x++)
+            {
+                pict->data[1][y * pict->linesize[1] + x] = 0;
+                pict->data[2][y * pict->linesize[2] + x] = 0;
+            }
+        }
+    }
+
+    static AVFrame *get_video_frame(OutputStream *ost, long time_run, uint8_t *data)
+    {
+        AVCodecContext *c = ost->enc;// 64 + x + i * 5
+
+        /* check if we want to generate more frames */
+        if (av_compare_ts(ost->next_pts, c->time_base,(int64_t)time_run, (AVRational){1, 1}) > 0){
+            return NULL;
+        }
+        /* when we pass a frame to the encoder, it may keep a reference to it
+         * internally; make sure we do not overwrite it here */
+        if (av_frame_make_writable(ost->frame) < 0){
+            exit(1);
+        }
+        //printf("HIeeeee\n");
+        fill_yuv_image(ost->frame, ost->next_pts, c->width, c->height, data);
+
+        ost->frame->pts = ost->next_pts++;
+
+        return ost->frame;
+    }
+
+    /*
+     * encode one video frame and send it to the muxer
+     * return 1 when encoding is finished, 0 otherwise
+     */
+    static int write_video_frame(AVFormatContext *oc, OutputStream *ost, uint8_t *data, long time_run)
+    {
+        return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data), ost->tmp_pkt);
+    }
+
+    static void close_stream(AVFormatContext *oc, OutputStream *ost)
+    {
+        avcodec_free_context(&ost->enc);
+        av_frame_free(&ost->frame);
+        av_frame_free(&ost->tmp_frame);
+        av_packet_free(&ost->tmp_pkt);
+        //sws_freeContext(ost->sws_ctx);
+        swr_free(&ost->swr_ctx);
+    }
+    
+    // int record(const char *filename)
+    // {
+    //     OutputStream video_st = {0}, audio_st = {0};
+    //     const AVOutputFormat *fmt;
+    //     AVFormatContext *oc;
+    //     const AVCodec *video_codec;
+    //     int ret = 0;
+    //     int have_video = 0, have_audio = 0;
+    //     int encode_video = 0, encode_audio = 0;
+    //     AVDictionary *opt = NULL;
+    //     int i = 0;
+
+    //     // if (argc < 2)
+    //     // {
+    //     //     printf("usage: %s output_file\n"
+    //     //            "API example program to output a media file with libavformat.\n"
+    //     //            "This program generates a synthetic audio and video stream, encodes and\n"
+    //     //            "muxes them into a file named output_file.\n"
+    //     //            "The output format is automatically guessed according to the file extension.\n"
+    //     //            "Raw images can also be output by using '%%d' in the filename.\n"
+    //     //            "\n",
+    //     //            argv[0]);
+    //     //     return 1;
+    //     // }
+
+        //filename = argv[1];
+        // for (i = 2; i + 1 < argc; i += 2)
+        // {
+        //     if (!strcmp(argv[i], "-flags") || !strcmp(argv[i], "-fflags"))
+        //         av_dict_set(&opt, argv[i] + 1, argv[i + 1], 0);
+        // }
+
+    //     /* allocate the output media context */
+    //     avformat_alloc_output_context2(&oc, NULL, NULL, filename);
+    //     if (!oc)
+    //     {
+    //         printf("Could not deduce output format from file extension: using MPEG.\n");
+    //         avformat_alloc_output_context2(&oc, NULL, "mpeg", filename);
+    //     }
+    //     if (!oc)
+    //         return 1;
+
+    //     fmt = oc->oformat;
+    //     //AV_CODEC_ID_H264;
+        
+    //     /* Add the audio and video streams using the default format codecs
+    //      * and initialize the codecs. */
+    //     if (fmt->video_codec != AV_CODEC_ID_NONE)
+    //     {
+    //         add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264);
+    //         have_video = 1;
+    //         encode_video = 1;
+    //     }
+    //     // if (fmt->audio_codec != AV_CODEC_ID_NONE)
+    //     // {
+    //     //     add_stream(&audio_st, oc, &audio_codec, fmt->audio_codec);
+    //     //     have_audio = 1;
+    //     //     encode_audio = 1;
+    //     // }
+
+    //     /* Now that all the parameters are set, we can open the audio and
+    //      * video codecs and allocate the necessary encode buffers. */
+    //     if (have_video)
+    //         open_video(oc, video_codec, &video_st, opt);
+
+    //     // if (have_audio)
+    //     //     open_audio(oc, audio_codec, &audio_st, opt);
+
+    //     av_dump_format(oc, 0, filename, 1);
+
+    //     /* open the output file, if needed */
+    //     if (!(fmt->flags & AVFMT_NOFILE))
+    //     {
+    //         ret = avio_open(&oc->pb, filename, AVIO_FLAG_WRITE);
+    //         if (ret < 0)
+    //         {
+    //             fprintf(stderr, "Could not open '%s'", filename);
+    //             return 1;
+    //         }
+    //     }
+
+    //     /* Write the stream header, if any. */
+    //     ret = avformat_write_header(oc, &opt);
+    //     if (ret < 0)
+    //     {
+    //         fprintf(stderr, "Error occurred when opening output file:\n");
+    //         return 1;
+    //     }
+        
+    //     // while (encode_video || encode_audio)
+    //     // {
+    //     //     /* select the stream to encode */
+    //     //     if (encode_video &&
+    //     //         (!encode_audio || av_compare_ts(video_st.next_pts, video_st.enc->time_base,
+    //     //                                         audio_st.next_pts, audio_st.enc->time_base) <= 0))
+    //     //     {
+    //     //         encode_video = !write_video_frame(oc, &video_st);
+    //     //     }
+    //     //     // else
+    //     //     // {
+    //     //     //     encode_audio = !write_audio_frame(oc, &audio_st);
+    //     //     // }
+    //     // }
+
+    //     av_write_trailer(oc);
+
+    //     /* Close each codec. */
+    //     if (have_video)
+    //         close_stream(oc, &video_st);
+    //     // if (have_audio)
+    //     //     close_stream(oc, &audio_st);
+
+    //     if (!(fmt->flags & AVFMT_NOFILE))
+    //         /* Close the output file. */
+    //         avio_closep(&oc->pb);
+
+    //     /* free the stream */
+    //     avformat_free_context(oc);
+
+    //     return 0;
+    // }
+}
 
 // Timer structure
 struct timer
@@ -319,7 +822,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
         std::cout << "depth_lossless is a depricated feature" << std::endl;
         return "";
     }
-    
+
     if (typ == 0 || typ == 2)
     {
 
@@ -440,14 +943,21 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
     }
 #else
+    
     p_pipe_raw = fopen(path_raw.c_str(), "w");
     if (p_pipe_raw == NULL)
     {
         std::cerr << "fopen error" << std::endl;
         return 0;
     }
-    if (!(pipe_lsb = popen(str_lsb.c_str(), "w")) || !(pipe_msb = popen(str_msb.c_str(), "w")))
+    /*
+    if (!(pipe_lsb = popen(str_lsb.c_str(), "w")) )
     {
+        std::cerr << "popen error" << std::endl;
+        return 0;
+    }
+    */
+    if(!(pipe_msb = popen(str_msb.c_str(), "w"))){
         std::cerr << "popen error" << std::endl;
         return 0;
     }
@@ -460,10 +970,15 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
     }
 #endif
-
+int q = 0;
+    if(show_preview){
 #if __has_include(<example.hpp>)
-    window app(1280, 960, "Camera Depth Device");
+
+        window app(1280, 960, "Camera Depth Device");
+
 #endif
+    q = 1;
+    }
     rs2::context ctx;
     rs2::pipeline pipe(ctx);
     rs2::config cfg;
@@ -519,15 +1034,86 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);
     }
     pipe.start(cfg); // Start the pipe with the cfg
-    /*rs2::frameset frames2; // Warm up camera
-    for (int i = 0; i < 30; ++i)
+    /** Libav Help **/
+    OutputStream video_st = {0}, audio_st = {0};
+    const AVOutputFormat *fmt;
+    AVFormatContext *oc;
+    const AVCodec *video_codec;
+    int ret = 0;
+    int have_video = 0, have_audio = 0;
+    int encode_video = 0, encode_audio = 0;
+    AVDictionary *opt = NULL;
+    int i = 0;
+    const char *filename = path_lsb.c_str();
+    /* allocate the output media context */
+    avformat_alloc_output_context2(&oc, NULL, NULL, filename);
+    if (!oc)
     {
-        frames2 = pipe.wait_for_frames();
-    }*/
+        printf("Could not deduce output format from file extension: using MPEG.\n");
+        avformat_alloc_output_context2(&oc, NULL, "mpeg", filename);
+    }
+    if (!oc)
+        return 0;
+
+    fmt = oc->oformat;
+    //AV_CODEC_ID_H264;
+    
+    /* Add the audio and video streams using the default format codecs
+        * and initialize the codecs. */
+    if (fmt->video_codec != AV_CODEC_ID_NONE)
+    {
+        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264);
+        have_video = 1;
+        encode_video = 1;
+    }
+    // for (i = 2; i + 1 < argc; i += 2)
+    // {
+    //     if (!strcmp(argv[i], "-flags") || !strcmp(argv[i], "-fflags"))
+    //         av_dict_set(&opt, argv[i] + 1, argv[i + 1], 0);
+    // }
+    // if (fmt->audio_codec != AV_CODEC_ID_NONE)
+    // {
+    //     add_stream(&audio_st, oc, &audio_codec, fmt->audio_codec);
+    //     have_audio = 1;
+    //     encode_audio = 1;
+    // }
+
+    /* Now that all the parameters are set, we can open the audio and
+        * video codecs and allocate the necessary encode buffers. */
+    if (have_video){
+        open_video(oc, video_codec, &video_st, opt);
+    }
+    // if (have_audio)
+    //     open_audio(oc, audio_codec, &audio_st, opt);
+    av_dump_format(oc, 0, filename, 1);
+    /* open the output file, if needed */
+    if (!(fmt->flags & AVFMT_NOFILE))
+    {
+        //printf("Opening output file %s\n", filename);
+        ret = avio_open(&oc->pb, filename, AVIO_FLAG_WRITE);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Could not open '%s'\n", filename);
+            return 0;
+        }
+    }
+
+    /* Write the stream header, if any. */
+    ret = avformat_write_header(oc, &opt);
+    if (ret < 0)
+    {
+        fprintf(stderr, "Error occurred when opening output file:\n");
+        return 0;
+    }
+        //filename = argv[1];
+
+    /**End Libav help **/
+
+
     int num_bytes = width * height; //* bytes_per_pixel * sizeof(uint8_t);
     long counter = 0;
     std::string frame_file_nm = dirname + "frame_num_";
-    int i = 0;
+    //int i = 0;
     int k = 0;
     float min_dis = 0.0f;
     float max_dis = 16.0f;
@@ -543,7 +1129,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
     timer tStart;
-    
+
     while ((long)time_run * fps > counter)
     {
         try
@@ -559,14 +1145,21 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         {
             depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
             uint8_t *p_depth_frame_char = (uint8_t *)depth_frame_in.get_data();
-            std::copy(p_depth_frame_char, p_depth_frame_char + (num_bytes * 2), store_frame_lsb.begin());
+            uint8_t *df = (uint8_t *)depth_frame_in.get_data();
+            //std::copy(p_depth_frame_char, p_depth_frame_char + (num_bytes * 2), store_frame_lsb.begin());
             // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
             for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
             {
                 store_frame_msb[k] = p_depth_frame_char[i + 1] >> 2;
             }
+            if (encode_video && !encode_audio)
+            {
+                //printf("Encoding video only %ld\n", counter);
 
-            if (!fwrite(store_frame_lsb.data(), 1, num_bytes * 2, pipe_lsb) || !fwrite(store_frame_msb.data(), 1, height * width * 3U, pipe_msb))
+                encode_video = !write_video_frame(oc, &video_st, df, time_run);
+            }
+            
+            if (!fwrite(store_frame_msb.data(), 1, height * width * 3U, pipe_msb))
 
             {
                 std::cout << "Error with fwrite frames" << std::endl;
@@ -632,18 +1225,15 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     // }
                 }
             }
+//             if (show_preview)
+//             {
+// #if __has_include(<example.hpp>)
 
-#if __has_include(<example.hpp>)
-            if (!app)
-            {
-                break;
-            }
-            if (show_preview)
-            {
-                render_frames[0] = coloriz.process(depth_frame_in);
-                app.show(render_frames);
-            }
-#endif
+//                 render_frames[0] = coloriz.process(depth_frame_in);
+//                 app.show(render_frames);
+
+// #endif
+//             }
             ++counter;
         }
     }
@@ -654,7 +1244,23 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         cv::destroyAllWindows();
     }
 #endif
+
     pipe.stop();
+    av_write_trailer(oc);
+
+    /* Close each codec. */
+    if (have_video)
+        close_stream(oc, &video_st);
+    // if (have_audio)
+    //     close_stream(oc, &audio_st);
+
+    if (!(fmt->flags & AVFMT_NOFILE))
+        /* Close the output file. */
+        avio_closep(&oc->pb);
+
+    /* free the stream */
+    avformat_free_context(oc);
+
     try
     {
 #ifdef _WIN32
@@ -678,9 +1284,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         pipe_msb = NULL;
 #else
         // if(!rosbag){
-        fflush(pipe_lsb);
+        if(pipe_lsb){
+            fflush(pipe_lsb);
+            pclose(pipe_lsb);
+            pipe_lsb = NULL;
+        }
+        
         fflush(pipe_msb);
-        pclose(pipe_lsb);
         pclose(pipe_msb);
         // }
         fflush(p_pipe_raw);
@@ -708,8 +1318,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 int main(int argc, char *argv[])
 try
 {
-    //namespace po = boost::program_options;
-    //using boost::program_options::detail::cmdline;
+    // namespace po = boost::program_options;
+    // using boost::program_options::detail::cmdline;
     std::cout << "RUNNING multicam c++ command line......" << std::endl;
     // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     if (argc > 34 || argc < 2)
@@ -743,13 +1353,12 @@ try
     // po::options_description desc("Allowed options");
     // desc.add_options()
     //     ("help", "produce help message")
-    //     ("optimization", po::value<int>(&opt)->default_value(10), 
+    //     ("optimization", po::value<int>(&opt)->default_value(10),
     // "optimization level")
-    //     ("include-path,I", po::value< std::vector<std::string> >(), 
+    //     ("include-path,I", po::value< std::vector<std::string> >(),
     // "include path")
     //     ("input-file", po::value< std::vector<std::string> >(), "input file")
     // ;
-   
 
     std::string bagfile = "";
     std::string jsonfile = "";
