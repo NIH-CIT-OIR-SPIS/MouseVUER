@@ -77,7 +77,7 @@ static AVFrame *frame_msb = NULL;
 static AVPacket *pkt_msb = NULL;
 static int video_frame_count_msb = 0;
 static int audio_frame_count_msb = 0;
-
+static uint8_t store_buf[1280*720*2] = {0};
 static int output_video_frame(AVFrame *frame)
 {
     AVRational fel;
@@ -96,9 +96,10 @@ static int output_video_frame(AVFrame *frame)
     //             av_get_pix_fmt_name(frame->format));
     //     return -1;
     // }
+    
     if(video_frame_count % 100 == 0){
         printf("video_frame n:%d coded_n:%d, pts_n: " "%" PRId64 "\n",
-            video_frame_count, frame->coded_picture_number, frame->pts);;
+            video_frame_count, frame->coded_picture_number, frame->display_picture_number);
     }
     video_frame_count++;
     /* copy decoded frame to destination buffer:
@@ -125,11 +126,33 @@ static int output_audio_frame(AVFrame *frame)
     */
     return 0;
 }
+static void extract_yuv_plane(AVFrame *frame, int width, int height)
+{
+    int x = 0, y = 0, i = 0;
+    for(y = 0; y < height; ++y){
+        for (x = 0; x < width; ++x){
+            store_buf[i++] = frame->data[0][y * frame->linesize[0] + x];
+        }
+    }
+    // for(i = 0; i < width*height*2; ++i){
+    //     memcpy(store_buf + i, frame->data[0] + i, 1);
+    // }
+    // int linesize = frame->linesize[0];
+    // uint8_t *data = frame->data[0];
 
+    // for (i = 0; i < height; i++) {
+    //     memcpy(buf, data, width);
+    //     buf += width;
+    //     data += linesize;
+    // }
+    //return store_buf;
+    //return buf;
+}
 static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame_in)
 {
     int ret = 0;
-
+    extract_yuv_plane(frame_in, 1280, 720);
+    
     // submit the packet to the decoder
     ret = avcodec_send_packet(dec, pkt);
     if (ret < 0)
@@ -426,7 +449,7 @@ int main(int argc, char **argv)
     }
     if (video_dec_ctx)
         decode_packet(video_dec_ctx, NULL, frame_in);
-
+    /*
     if(video_stream_msb){
         printf("Demuxing msb video from file '%s' into '%s'\n", src_filename_msb, video_dst_filename);
 
@@ -443,10 +466,11 @@ int main(int argc, char **argv)
             break;
         // printf("%d\n", ++k);
     }
-    /* flush the decoders */
+
 
     if(video_dec_ctx_msb)
         decode_packet(video_dec_ctx_msb, NULL, frame_msb);
+        */
     // if (audio_dec_ctx)
     //     decode_packet(audio_dec_ctx, NULL, frame_in);
 
