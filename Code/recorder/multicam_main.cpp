@@ -84,13 +84,14 @@ extern "C"
 #include <libswresample/swresample.h>
 //#define STREAM_DURATION 10.0
 #define STREAM_FRAME_RATE 30            /* 25 images/s */
-#define STREAM_PIX_FMT AV_PIX_FMT_P10LE /* default pix_fmt */
+#define STREAM_PIX_FMT AV_PIX_FMT_YUV420P10LE /* default pix_fmt */
 
 #define SCALE_FLAGS SWS_BICUBIC
     typedef struct OutputStream
     {
         AVStream *st;
         AVCodecContext *enc;
+        
 
         /* pts of the next frame that will be generated */
         int64_t next_pts;
@@ -187,7 +188,7 @@ extern "C"
             pkt->stream_index = st->index;
 
             /* Write the compressed frame to the media file. */
-            log_packet(fmt_ctx, pkt);
+            //log_packet(fmt_ctx, pkt);
             ret = av_interleaved_write_frame(fmt_ctx, pkt);
             /* pkt is now blank (av_interleaved_write_frame() takes ownership of
              * its contents and resets pkt), so that no unreferencing is necessary.
@@ -206,7 +207,7 @@ extern "C"
                            const AVCodec **codec,
                            enum AVCodecID codec_id)
     {
-        AVCodecContext *c;
+        AVCodecContext *c = NULL;
         int i;
 
         /* find the encoder */
@@ -240,86 +241,94 @@ extern "C"
         }
         ost->enc = c;
         printf("hih\n");
+        c->codec_id = codec_id;
+
+        c->bit_rate = 8*2000000;
+        /* Resolution must be a multiple of two. */
+        c->width = 1280;
+        c->height = 720;
+        c->thread_count = 4;
+        
+
+        //av_opt_set(c->priv_data, "crf", "24", 0);
+        // av_opt_set(c->priv_data, "
+        // c->active_thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
+        /* timebase: This is the fundamental unit of time (in seconds) in terms
+            * of which frame timestamps are represented. For fixed-fps content,
+            * timebase should be 1/framerate and timestamp increments should be
+            * identical to 1. */
+        //ost->st->r_frame_rate = 
+        ost->st->time_base = (AVRational){1, STREAM_FRAME_RATE};
+        //ost->st->nb_frames = 450;
+        c->time_base = ost->st->time_base;
+        c->framerate = (AVRational){STREAM_FRAME_RATE, 1};
+        //c->rc_min_rate
+        //c->gop_size = 5; /* emit one intra frame every twelve frames at most */
+        //c->max_b_frames = 3;
+        c->pix_fmt = AV_PIX_FMT_YUV420P10LE;
+        av_opt_set(c->priv_data, "preset", "veryfast", 0);
+        av_opt_set(c->priv_data, "tune", "psnr", 0);
+        av_opt_set(c->priv_data, "crf", "20", 0);
 //printf("Bits per raw sample %d\n", c->bits_per_raw_sample);
-        switch ((*codec)->type)
-        {
-        case AVMEDIA_TYPE_AUDIO:
-            // c->sample_fmt = (*codec)->sample_fmts ? (*codec)->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
-            // c->bit_rate = 64000;
-            // c->sample_rate = 44100;
-            // if ((*codec)->supported_samplerates)
-            // {
-            //     c->sample_rate = (*codec)->supported_samplerates[0];
-            //     for (i = 0; (*codec)->supported_samplerates[i]; i++)
-            //     {
-            //         if ((*codec)->supported_samplerates[i] == 44100)
-            //             c->sample_rate = 44100;
-            //     }
-            // }
-            // av_channel_layout_copy(&c->ch_layout, &(AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO);
-            // ost->st->time_base = (AVRational){1, c->sample_rate};
-            // break;
+        // switch ((*codec)->type)
+        // {
+        // case AVMEDIA_TYPE_AUDIO:
+        //     // c->sample_fmt = (*codec)->sample_fmts ? (*codec)->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+        //     // c->bit_rate = 64000;
+        //     // c->sample_rate = 44100;
+        //     // if ((*codec)->supported_samplerates)
+        //     // {
+        //     //     c->sample_rate = (*codec)->supported_samplerates[0];
+        //     //     for (i = 0; (*codec)->supported_samplerates[i]; i++)
+        //     //     {
+        //     //         if ((*codec)->supported_samplerates[i] == 44100)
+        //     //             c->sample_rate = 44100;
+        //     //     }
+        //     // }
+        //     // av_channel_layout_copy(&c->ch_layout, &(AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO);
+        //     // ost->st->time_base = (AVRational){1, c->sample_rate};
+        //     // break;
 
-        case AVMEDIA_TYPE_VIDEO:
-            c->codec_id = codec_id;
+        // case AVMEDIA_TYPE_VIDEO:
 
-            //c->bit_rate = 4000000;
-            /* Resolution must be a multiple of two. */
-            c->width = 1280;
-            c->height = 720;
-            c->thread_count = 4;
             
-            av_opt_set(c->priv_data, "preset", "veryfast", 0);
-            av_opt_set(c->priv_data, "crf", "18", 0);
-            // av_opt_set(c->priv_data, "
-            // c->active_thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
-            /* timebase: This is the fundamental unit of time (in seconds) in terms
-             * of which frame timestamps are represented. For fixed-fps content,
-             * timebase should be 1/framerate and timestamp increments should be
-             * identical to 1. */
-
-            ost->st->time_base = (AVRational){1, STREAM_FRAME_RATE};
-            c->time_base = ost->st->time_base;
-
-            //c->gop_size = 5; /* emit one intra frame every twelve frames at most */
-            c->max_b_frames = 1;
-            c->pix_fmt = AV_PIX_FMT_YUV420P10LE;
-            
-            if (c->codec_id == AV_CODEC_ID_MPEG2VIDEO)
-            {
-                printf("Warning using AV_CODEC_ID_MPEG2VIDEO!\n");
-                /* just for testing, we also add B-frames */
-                c->max_b_frames = 2;
-            }
-            if (c->codec_id == AV_CODEC_ID_MPEG1VIDEO)
-            {
-                printf("Warning using AV_CODEC_ID_MPEG2VIDEO!\n");
-                /* Needed to avoid using macroblocks in which some coeffs overflow.
-                 * This does not happen with normal video, it just happens here as
-                 * the motion of the chroma plane does not match the luma plane. */
-                c->mb_decision = 2;
-            }
+        //     if (c->codec_id == AV_CODEC_ID_MPEG2VIDEO)
+        //     {
+        //         printf("Warning using AV_CODEC_ID_MPEG2VIDEO!\n");
+        //         /* just for testing, we also add B-frames */
+        //         c->max_b_frames = 2;
+        //     }
+        //     if (c->codec_id == AV_CODEC_ID_MPEG1VIDEO)
+        //     {
+        //         printf("Warning using AV_CODEC_ID_MPEG2VIDEO!\n");
+        //         /* Needed to avoid using macroblocks in which some coeffs overflow.
+        //          * This does not happen with normal video, it just happens here as
+        //          * the motion of the chroma plane does not match the luma plane. */
+        //         c->mb_decision = 2;
+        //     }
             
             
-            break;
+        //     break;
 
-        default:
-            break;
-        }
+        // default:
+        //     break;
+        // }
 
         /* Some formats want stream headers to be separate. */
         if (oc->oformat->flags & AVFMT_GLOBALHEADER)
             c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
+
     static AVFrame *alloc_picture(enum AVPixelFormat pix_fmt, int width, int height)
     {
         AVFrame *picture;
         int ret;
 
         picture = av_frame_alloc();
-        if (!picture)
+        if (!picture){
+            fprintf(stderr, "Could not allocate picture\n");
             return NULL;
-
+        }
         picture->format = pix_fmt;
         picture->width = width;
         picture->height = height;
@@ -384,39 +393,63 @@ extern "C"
             exit(1);
         }
     }
+        //avpicture_fill(pic_raw, (uint8_t*)pixelBuffer, PIX_FMT_RGB24, width, height);
+        //AVFrame * frame;
+        
+        //AVPicture destinyPictureYUV;
 
+        //avpicture_alloc(&destinyPictureYUV, codecContext->pix_fmt, newCodecContext->width, newCodecContext->height);
+
+        // THIS is what you want probably
+        //*reinterpret_cast<AVPicture *>(pict) = destinyPictureYUV;
+        //sws_cosws_getContext(width, height, AV_PIX_FMT_GRAY16LE, width, height, AV_PIX_FMT_YUV420P10LE, SWS_BICUBIC, NULL, NULL, NULL);
+        //sws_scale(sws_ctx, (const uint8_t * const *)data, width, 0, height, pict->data, width);
+        //sws_getCachedContext(sws_ctx, width, height, AV_PIX_FMT_YUV420P, width, height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
+        //pict->data[0] = data;
+        // pict->data[1] = data;
+        // pict->data[2] = data;
+        //pict->format
+        /* Y */
+        //sws_getContext(width, height, AV_PIX_FMT_YUV420P10LE, width, height, AV_PIX_FMT_YUV420P10LE, SWS_BICUBIC, NULL, NULL, NULL);
+ 
     /* Prepare a dummy image. */
     static void fill_yuv_image(AVFrame *pict, int frame_index,
-                               int width, int height, uint8_t *data)
+                               int width, int height, uint8_t *data,  uint8_t*color_data, int stride)
     {
         int x = 0, y = 0, i= 0;
         int cd = 0;
         i = frame_index;
-        //pict->format
-        /* Y */
+        //struct SwsContext* convertCtx = sws_getContext(width, height, AV_PIX_FMT_YUV420P10LE, width, height, AV_PIX_FMT_YUV420P10LE, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+        //avpicture_fill((AVPicture *)pict, (uint8_t*)data, AV_PIX_FMT_YUV420P10LE, width, height);
+        pict->linesize[0] = pict->linesize[1] = stride;
         pict->data[0] = data;
-        /*
-        for (y = 0; y < height; y++)
-        {
-            for (x = 0; x < width; x++)
-            {
-                pict->data[0][y * pict->linesize[0] + x] = x + y + i * 3;
+        pict->data[1] = color_data;
+        // pict->data[0] = data;
+        // pict->data[1] = data;
+        // pict->data[2] = data;
+        
+        // for (y = 0; y < height; y++)
+        // {
+        //     for (x = 0; x < width; x++)
+        //     {
+        //         pict->data[0][y * pict->linesize[0] + x] = x + y + i * 3;
                 
-            }
-        }
-        */
-        /* Cb and Cr */
-        for (y = 0; y < height / 2; y++)
-        {
-            for (x = 0; x < width / 2; x++)
-            {
-                pict->data[1][y * pict->linesize[1] + x] = 0;
-                pict->data[2][y * pict->linesize[2] + x] = 0;
-            }
-        }
+        //     }
+        // }
+        
+        // /* Cb and Cr */
+        // for (y = 0; y < height / 2; y++)
+        // {
+        //     for (x = 0; x < width / 2; x++)
+        //     {
+        //         ++cd;
+        //         pict->data[1][y * pict->linesize[1] + x] = 128 + y + i * 2;
+        //         pict->data[2][y * pict->linesize[2] + x] = 64 + x + i * 5;
+        //     }
+        // }
     }
 
-    static AVFrame *get_video_frame(OutputStream *ost, long time_run, uint8_t *data)
+    static AVFrame *get_video_frame(OutputStream *ost, long time_run, uint8_t *data, uint8_t*color_data, int stride)
     {
         AVCodecContext *c = ost->enc;// 64 + x + i * 5
 
@@ -430,7 +463,7 @@ extern "C"
             exit(1);
         }
         //printf("HIeeeee\n");
-        fill_yuv_image(ost->frame, ost->next_pts, c->width, c->height, data);
+        fill_yuv_image(ost->frame, ost->next_pts, c->width, c->height, data, color_data, stride);
 
         ost->frame->pts = ost->next_pts++;
 
@@ -441,9 +474,9 @@ extern "C"
      * encode one video frame and send it to the muxer
      * return 1 when encoding is finished, 0 otherwise
      */
-    static int write_video_frame(AVFormatContext *oc, OutputStream *ost, uint8_t *data, long time_run)
+    static int write_video_frame(AVFormatContext *oc, OutputStream *ost, uint8_t *data, long time_run, uint8_t *color_data, int stride)
     {
-        return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data), ost->tmp_pkt);
+        return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data, color_data, stride), ost->tmp_pkt);
     }
 
     static void close_stream(AVFormatContext *oc, OutputStream *ost)
@@ -1034,14 +1067,15 @@ int q = 0;
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);
     }
     pipe.start(cfg); // Start the pipe with the cfg
+    
     /** Libav Help **/
-    OutputStream video_st = {0}, audio_st = {0};
+    OutputStream video_st = {0};//, audio_st = {0};
     const AVOutputFormat *fmt;
     AVFormatContext *oc;
     const AVCodec *video_codec;
     int ret = 0;
-    int have_video = 0, have_audio = 0;
-    int encode_video = 0, encode_audio = 0;
+    int have_video = 0;
+    int encode_video = 0;
     AVDictionary *opt = NULL;
     int i = 0;
     const char *filename = path_lsb.c_str();
@@ -1128,6 +1162,7 @@ int q = 0;
     thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
+    uint16_t *color_data = NULL; 
     timer tStart;
 
     while ((long)time_run * fps > counter)
@@ -1145,18 +1180,31 @@ int q = 0;
         {
             depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
             uint8_t *p_depth_frame_char = (uint8_t *)depth_frame_in.get_data();
-            uint8_t *df = (uint8_t *)depth_frame_in.get_data();
+            //uint8_t *df = 
+            rs2::depth_frame rse =  (rs2::depth_frame)depth_frame_in;
+            const int stride= rse.get_stride_in_bytes();
             //std::copy(p_depth_frame_char, p_depth_frame_char + (num_bytes * 2), store_frame_lsb.begin());
             // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
+            if(!color_data)
+            {  //prepare dummy color plane for P010LE format, half the size of Y
+                //we can't alloc it in advance, this is the first time we know realsense stride
+                //the stride will be at least width * 2 (Realsense Z16, VAAPI P010LE)
+                color_data = new uint16_t[((stride/2)*720)/2];
+                for(i=0;i<(1280*720)/2;++i)
+                    color_data[i] = UINT16_MAX / 2; //dummy middle value for U/V, equals 128 << 8, equals 32768
+            }
             for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
             {
                 store_frame_msb[k] = p_depth_frame_char[i + 1] >> 2;
             }
-            if (encode_video && !encode_audio)
-            {
-                //printf("Encoding video only %ld\n", counter);
 
-                encode_video = !write_video_frame(oc, &video_st, df, time_run);
+            if (encode_video)
+            {
+                //
+
+                encode_video = !write_video_frame(oc, &video_st, (uint8_t *)depth_frame_in.get_data(), time_run, (uint8_t*)color_data, stride);
+            }else{
+                fprintf(stderr, "\n\nError encoding video only %ld\n\n", counter);
             }
             
             if (!fwrite(store_frame_msb.data(), 1, height * width * 3U, pipe_msb))
@@ -1246,8 +1294,10 @@ int q = 0;
 #endif
 
     pipe.stop();
+    //return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data, color_data, stride), ost->tmp_pkt);
+    write_frame(oc, (&video_st)->enc, (&video_st)->st, NULL, (&video_st)->tmp_pkt);
     av_write_trailer(oc);
-
+    delete [] color_data;
     /* Close each codec. */
     if (have_video)
         close_stream(oc, &video_st);
