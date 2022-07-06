@@ -80,6 +80,10 @@ extern "C"
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
+#include <libavutil/buffer.h>
+#include <libavutil/frame.h>
+#include <libavcodec/avfft.h>
+#include <libavformat/avio.h>
 //#define STREAM_DURATION 10.0
 #define STREAM_FRAME_RATE 30                  /* 25 images/s */
 #define STREAM_PIX_FMT AV_PIX_FMT_YUV420P10LE /* default pix_fmt */
@@ -202,7 +206,7 @@ extern "C"
     /* Add an output stream. */
     static void add_stream(OutputStream *ost, AVFormatContext *oc,
                            const AVCodec **codec,
-                           enum AVCodecID codec_id)
+                           enum AVCodecID codec_id, const char * crf)
     {
         AVCodecContext *c = NULL;
         int i;
@@ -240,7 +244,8 @@ extern "C"
         printf("hih\n");
         c->codec_id = codec_id;
         c->flags = AV_CODEC_FLAG_GRAY;
-        c->bit_rate = 2 * 1000000;
+        // c->bit_rate = 2 * 1000000;
+        
         /* Resolution must be a multiple of two. */
         c->width = 1280;
         c->height = 720;
@@ -260,16 +265,21 @@ extern "C"
         c->framerate = (AVRational){STREAM_FRAME_RATE, 1};
         // c->noise_reduction = 1;
         c->bits_per_raw_sample = 10;
-
-        // c->rc_min_rate
-        // c->gop_size = 5; /* emit one intra frame every twelve frames at most */
-        // c->max_b_frames = 3;
+        //c->bit_rate = (80 * 8 * 10000000) / 60;
+        // c->field_order = AV_FIELD_UNKNOWN;
+        // c->field_order = AV_F;
+        // c->frame_size =
+        //  c->rc_min_rate
+        //  c->gop_size = 5; /* emit one intra frame every twelve frames at most */
+        //  c->max_b_frames = 3;
         c->pix_fmt = AV_PIX_FMT_YUV420P10LE;
+        // c->chromaoffest = 5;
         av_opt_set(c->priv_data, "preset", "veryfast", 0);
-        // av_opt_set(c->priv_data, "noise_reduction", "1", 0);
+        //av_opt_set(c->priv_data, "noise_reduction", "1", 0);
+        av_opt_set(c->priv_data, "crf", crf, 0);
         // av_opt_set(c->priv_data, "tune", "psnr", 0);
         // av_opt_set(c->priv_data, "crf", "25", 0);
-        av_opt_set(c->priv_data, "x264-params", "crf=25:qpmin=0:qpmax=51:chroma_me=0", 0);
+        av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=61", 0);
         // printf("Bits per raw sample %d\n", c->bits_per_raw_sample);
         //  switch ((*codec)->type)
         //  {
@@ -332,6 +342,7 @@ extern "C"
         picture->format = pix_fmt;
         picture->width = width;
         picture->height = height;
+        // picture->chroma_location = AVCHROMA_LOC_NB;
 
         /* allocate the buffers for the frame data */
         ret = av_frame_get_buffer(picture, 0);
@@ -413,48 +424,79 @@ extern "C"
     // sws_getContext(width, height,  AV_PIX_FMT_YUV420P10LE, width, height,  AV_PIX_FMT_YUV420P10LE, SWS_BICUBIC, NULL, NULL, NULL);
 
     /* Prepare a dummy image. */
-        // memccpy(pict->data[0], data, sizeof(uint8_t), width * height);
-        // pict->data[0] = data;
-        //  pict->data[1] = color_data;
-        //  pict->data[0] = data;
-        //  pict->data[1] = data;
-        //  pict->data[2] = data;
+    // memccpy(pict->data[0], data, sizeof(uint8_t), width * height);
+    // pict->data[0] = data;
+    //  pict->data[1] = color_data;
+    //  pict->data[0] = data;
+    //  pict->data[1] = data;
+    //  pict->data[2] = data;
 
+    // for (y = 0; y < height; y++)
+    // {
+    //     for (x = 0; x < width; x++)
+    //     {
+    //         pict->data[0][y * pict->linesize[0] + x] = x + y + i * 3;
+
+    //     }
+    // }
+    /* Cb and Cr */
+
+    // for (y = 0; y < height / 2; y++)
+    // {
+    //     pict->data[1]+ y *pict->linesize[1] =;
+    //     memccpy(pict->data[1] + y * pict->linesize[1], , sizeof(uint16_t), width / 4);
+    //         /pict->data[1] + y * pict->linesize[1] = cd;
+    // }
+
+
+    static int ceiling(int a, int denom)
+    {
+        return (a + denom - 1) / denom;
+    }
+
+    static void fill_yuv_image(AVFrame *pict, int frame_index,
+                               int width, int height, uint8_t *data)
+    {
+        // data is a 1280x720x2 array, which each 2 bytes representing one 16 bit value
+        // Want each 16 bit value to be a 10 bit value with last 6 bits lopped off.
+        // I assumed that I didn't need to shift the bits in the data as this didn't seem to change anything
+        int x = 0, y = 0, i = 0;
+        int cd = 0;
+        //i = frame_index;
+        // av_get_output_timestamp
+        // AVBUfferRef *ref = av_buffer_create(data, width * height * 2, NULL, NULL, NULL);
+        //  int b = avpicture_get_size(AV_PIX_FMT_YUV420P10LE, width, height);
+        //  fprintf(stderr, "size_pict: %d\n", b);
+        //  pict->data[0] = data;
+        // int b = avpicture_get_size(AV_PIX_FMT_YUV420P10LE, width, height);
+        // fprintf(stderr, "size_pict: %d\n", b);
+        // fprintf(stderr, "linesize pict->data[0]: %d\n", pict->linesize[0]);
+        // fprintf(stderr, "Y plane dimensions is %d\n", pict->linesize[0] * height);
+        // fprintf(stderr, "linesize pict->data[1]: %d\n", pict->linesize[1]);
+        // fprintf(stderr, "linesize pict->data[2]: %d\n", pict->linesize[2]);
+        // fprintf(stderr, "size of pict->data[0][0]: %d\n", sizeof(pict->data[0][0]));
+        // fprintf(stderr, "size of pict->data[1][0]: %d\n", sizeof(pict->data[1][0]));
+        // fprintf(stderr, "size of pict->data[2][0]: %d\n", sizeof(pict->data[2][0]));
+        // fprintf(stderr, "chroma_locations: %d\n", pict->chroma_location);
         // for (y = 0; y < height; y++)
         // {
         //     for (x = 0; x < width; x++)
         //     {
-        //         pict->data[0][y * pict->linesize[0] + x] = x + y + i * 3;
 
+        //         pict->data[0][y * pict->linesize[0] + x] = data[cd++];
         //     }
         // }
-        /* Cb and Cr */
-        
-        // for (y = 0; y < height / 2; y++)
-        // {
-        //     pict->data[1]+ y *pict->linesize[1] =;
-        //     memccpy(pict->data[1] + y * pict->linesize[1], , sizeof(uint16_t), width / 4);
-        //         /pict->data[1] + y * pict->linesize[1] = cd;
-        // }
-    static void fill_yuv_image(AVFrame *pict, int frame_index,
-                               int width, int height, uint8_t *data)
-    {
-        //data is a 1280x720x2 array, which each 2 bytes representing one 16 bit value
-        //Want each 16 bit value to be a 10 bit value with last 6 bits lopped off.
-        //I assumed that I didn't need to shift the bits in the data as this didn't seem to change anything
-        int x = 0, y = 0, i = 0;
-        int cd = 0;
-        i = frame_index;
+        //We know pict->data[0] is same size as data, so we can just memcpy it
+        //memcpy(pict->data[0], data, width * height * 2);
         pict->data[0] = data;
-
-        for (y = 0; y < height / 2; y++)
-        {
-            for (x = 0; x < width / 2; x++)
-            {
-                pict->data[1][y * pict->linesize[1] + x] = 512;
-                pict->data[2][y * pict->linesize[2] + x] = 512;
-            }
-        }
+        // for (y = 0; y < ceiling(height, 2); y++)
+        // {
+        //     for (x = 0; x < ceiling(width, 2); x++)
+        //     {
+        //         pict->data[1][y * pict->linesize[1] + x] = x;
+        //         pict->data[2][y * pict->linesize[2] + x] = 0;
+        //     }
+        // }
     }
 
     static AVFrame *get_video_frame(OutputStream *ost, long time_run, uint8_t *data)
@@ -1080,6 +1122,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     pipe.start(cfg); // Start the pipe with the cfg
 
     /** Libav Help **/
+    const char * crf_to_c = std::to_string(crf_lsb).c_str();
     OutputStream video_st = {0}; //, audio_st = {0};
     const AVOutputFormat *fmt;
     AVFormatContext *oc;
@@ -1107,7 +1150,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
      * and initialize the codecs. */
     if (fmt->video_codec != AV_CODEC_ID_NONE)
     {
-        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264);
+        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264,  crf_to_c);
         have_video = 1;
         encode_video = 1;
     }
@@ -1161,7 +1204,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // int i = 0;
     int k = 0;
     float min_dis = 0.0f;
-    float max_dis = 4.0f;
+    float max_dis = 16.0f;
     std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
     std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
     rs2::frameset frameset;
@@ -1189,8 +1232,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
         if (depth_frame_in = frameset.get_depth_frame())
         {
-            depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
+            //depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
             uint8_t *p_depth_frame_char = (uint8_t *)depth_frame_in.get_data();
+            uint8_t *df = (uint8_t *)depth_frame_in.get_data();
+
             // uint8_t *df =
             //  rs2::depth_frame rse =  (rs2::depth_frame)depth_frame_in;
             //  const int stride= rse.get_stride_in_bytes();
@@ -1204,16 +1249,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //      for(i=0;i<(1280*720)/2;++i)
             //          color_data[i] = UINT16_MAX / 2; //dummy middle value for U/V, equals 128 << 8, equals 32768
             //  }
+            
             for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
             {
                 store_frame_msb[k] = p_depth_frame_char[i + 1] >> 2;
+                df[i + 1] &= 0x03; // clear the two LSBs; 
             }
 
             if (encode_video)
             {
                 //
 
-                encode_video = !write_video_frame(oc, &video_st, (uint8_t *)depth_frame_in.get_data(), time_run);
+                encode_video = !write_video_frame(oc, &video_st, (uint8_t *)df, time_run);
             }
             else
             {

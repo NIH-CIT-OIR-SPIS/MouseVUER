@@ -55,7 +55,7 @@ static int video_stream_idx = -1, audio_stream_idx = -1;
 static AVPacket *pkt = NULL;
 static int video_frame_count = 0;
 static int audio_frame_count = 0;
-//g++ -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -fopenmp -O3 -Wall decomp_dc.cpp  -pthread -lavcodec -lavformat -lavutil -o dmux_decode && ./dmux_decode Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 testout_r
+//g++ -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -fopenmp -O3 -Wall decomp_dc.cpp  -pthread -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale -o dmux_decode && ./dmux_decode Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 testout_r
 
 static AVFormatContext *fmt_ctx_msb = NULL;
 static AVCodecContext *video_dec_ctx_msb = NULL;
