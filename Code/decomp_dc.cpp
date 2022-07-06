@@ -97,9 +97,9 @@ static int output_video_frame(AVFrame *frame)
     //     return -1;
     // }
     
-    if(video_frame_count % 100 == 0){
+    if(video_frame_count == 449){
         printf("video_frame n:%d coded_n:%d, pts_n: " "%" PRId64 "\n",
-            video_frame_count, frame->coded_picture_number, frame->display_picture_number);
+            video_frame_count, frame->coded_picture_number, frame->pts);
     }
     video_frame_count++;
     /* copy decoded frame to destination buffer:
