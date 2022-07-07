@@ -28,7 +28,8 @@
  * decode audio and video data.
  * @example demuxing_decoding.c
  */
-extern "C" {
+extern "C"
+{
 #include <libavutil/imgutils.h>
 #include <libavutil/samplefmt.h>
 #include <libavutil/timestamp.h>
@@ -51,11 +52,11 @@ static int video_dst_linesize[4];
 static int video_dst_bufsize;
 
 static int video_stream_idx = -1, audio_stream_idx = -1;
-//static AVFrame *frame = NULL;
+// static AVFrame *frame = NULL;
 static AVPacket *pkt = NULL;
 static int video_frame_count = 0;
 static int audio_frame_count = 0;
-//g++ -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -fopenmp -O3 -Wall decomp_dc.cpp  -pthread -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale -o dmux_decode && ./dmux_decode Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 testout_r
+// g++ -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -fopenmp -O3 -Wall decomp_dc.cpp  -pthread -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale -o dmux_decode && ./dmux_decode Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 testout_r
 
 static AVFormatContext *fmt_ctx_msb = NULL;
 static AVCodecContext *video_dec_ctx_msb = NULL;
@@ -77,7 +78,14 @@ static AVFrame *frame_msb = NULL;
 static AVPacket *pkt_msb = NULL;
 static int video_frame_count_msb = 0;
 static int audio_frame_count_msb = 0;
-static uint8_t store_buf[1280*720*2] = {0};
+static uint8_t store_buf[1280 * 720 * 2] = {0};
+static int count_loop = 0;
+static int count_msb = 0;
+static int count_lsb = 0;
+// static int local_count_msb = 0;
+// static int local_count_lsb = 0;
+static AVFrame *lst_lsb[10] = {NULL};
+static AVFrame *lst_msb[10] = {NULL};
 static int output_video_frame(AVFrame *frame)
 {
     AVRational fel;
@@ -96,10 +104,12 @@ static int output_video_frame(AVFrame *frame)
     //             av_get_pix_fmt_name(frame->format));
     //     return -1;
     // }
-    
-    if(video_frame_count == 449){
-        printf("video_frame n:%d coded_n:%d, pts_n: " "%" PRId64 "\n",
-            video_frame_count, frame->coded_picture_number, frame->pts);
+
+    if (video_frame_count == 449)
+    {
+        printf("video_frame n:%d coded_n:%d, pts_n: "
+               "%" PRId64 "\n",
+               video_frame_count, frame->coded_picture_number, frame->pts);
     }
     video_frame_count++;
     /* copy decoded frame to destination buffer:
@@ -129,8 +139,10 @@ static int output_audio_frame(AVFrame *frame)
 static void extract_yuv_plane(AVFrame *frame, int width, int height)
 {
     int x = 0, y = 0, i = 0;
-    for(y = 0; y < height; ++y){
-        for (x = 0; x < width; ++x){
+    for (y = 0; y < height; ++y)
+    {
+        for (x = 0; x < width; ++x)
+        {
             store_buf[i++] = frame->data[0][y * frame->linesize[0] + x];
         }
     }
@@ -145,14 +157,114 @@ static void extract_yuv_plane(AVFrame *frame, int width, int height)
     //     buf += width;
     //     data += linesize;
     // }
-    //return store_buf;
-    //return buf;
+    // return store_buf;
+    // return buf;
 }
-static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame_in)
+/*
+static int decode_packet(AVCodecContext *dec, AVCodecContext *dec_msb,
+                         const AVPacket *pkt, const AVPacket *pkt_msb, AVFrame *frame, AVFrame *frame_msb, int flush, int read_frm_lsb, int read_frm_msb)
+{
+    int ret = 0, ret_msb = 0;
+    int64_t er = 0, er_msb = 0;
+    int count_lsb = 0, count_msb = 0;
+    int i = 0, j = 0;
+    AVFrame *lsb_lst[6] = {NULL};
+    AVFrame *msb_lst[6] = {NULL};
+    if (read_frm_lsb >= 0)
+    {
+        ret = avcodec_send_packet(dec, pkt);
+        if (ret < 0)
+        {
+            fprintf(stderr, "Error sending a packet for decoding \n");
+            return ret;
+        }
+    }
+    if (read_frm_msb >= 0){
+        ret_msb = avcodec_send_packet(dec_msb, pkt_msb);
+        if (ret_msb < 0 && count_loop >= 3)
+        {
+            fprintf(stderr, "Error sending a packet for decoding\n");
+            return ret_msb;
+        }
+    }
+    // fprintf(stderr, "read_frm_lsb %d read_frm_msb %d\n", read_frm_lsb, read_frm_msb);
+    // if(flush){
+    //     avcodec_send_frame(dec, NULL);
+    //     avcodec_send_frame(dec_msb, NULL);
+    // }
+
+    while (ret >= 0)
+    {
+        ret = avcodec_receive_frame(dec, frame);
+        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+        {
+
+            break;
+        }
+        else if (ret < 0)
+        {
+
+            fprintf(stderr, "Error during decoding lsb: ret: %d\n", ret);
+            exit(1);
+        }
+        lsb_lst[count_lsb++] = frame;
+        er = frame->best_effort_timestamp;
+        count_loop_lsb++;
+        // av_frame_unref(frame);
+    }
+    // av_frame_unref(frame);
+    if(read_frm_msb >= 0){
+        while (ret_msb >= 0)
+        {
+            ret_msb = avcodec_receive_frame(dec_msb, frame_msb);
+            if (ret_msb == AVERROR(EAGAIN) || ret_msb == AVERROR_EOF)
+            {
+
+                break;
+            }
+            else if (ret_msb < 0)
+            {
+                fprintf(stderr, "Error during decoding msb: ret: %d\n", ret_msb);
+                exit(1);
+            }
+            msb_lst[count_msb++] = frame_msb;
+            er_msb = frame_msb->best_effort_timestamp;
+            count_loop_msb++;
+            // av_frame_unref(frame_msb);
+        }
+    }
+    while (lsb_lst[i] != NULL)
+    {
+        // extract_yuv_plane(lsb_lst[i], width, height);
+        av_frame_unref(lsb_lst[i]);
+        i++;
+    }
+
+    while (msb_lst[j] != NULL)
+    {
+        // extract_yuv_plane(msb_lst[j], width, height);
+        av_frame_unref(msb_lst[j]);
+        j++;
+    }
+    if (count_loop < 3)
+    {
+        fprintf(stderr, ">>>>>>\n");
+        fprintf(stderr, "ret: %d, ret_msb: %d, er: %" PRId64 " er_msb:%" PRId64 " \n", ret, ret_msb, er, er_msb);
+    }
+    fprintf(stderr, "lsb: %d, msb: %d, i: %d, j: %d, count_loop: %d, count_loop_lsb: %d count_loop_msb %d\n", count_lsb, count_msb, i, j, count_loop, count_loop_lsb, count_loop_msb);
+    ++count_loop;
+    av_frame_unref(frame);
+    av_frame_unref(frame_msb);
+
+    return ret == AVERROR_EOF || ret_msb == AVERROR_EOF || ret_msb == AVERROR(EAGAIN) || ret == AVERROR(EAGAIN) ? 0 : 1;
+
+}*/
+
+static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count)
 {
     int ret = 0;
-    extract_yuv_plane(frame_in, 1280, 720);
-    
+    // extract_yuv_plane(frame_in, 1280, 720);
+
     // submit the packet to the decoder
     ret = avcodec_send_packet(dec, pkt);
     if (ret < 0)
@@ -164,27 +276,53 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
     // get all the available frames from the decoder
     while (ret >= 0)
     {
-        ret = avcodec_receive_frame(dec, frame_in);
+        ret = avcodec_receive_frame(dec, frame);
         if (ret < 0)
         {
             // those two return values are special and mean there is no output
             // frame available, but there were no errors during decoding
             if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+            {
+                //fprintf(stderr, "called here ret: %d, count_loop %d, before: %d\n", ret, count_loop, before);
                 return 0;
-
+            }
             fprintf(stderr, "Error during decoding \n");
             return ret;
         }
 
         // write the frame data to output file
-        if (dec->codec->type == AVMEDIA_TYPE_VIDEO)
-            ret = output_video_frame(frame_in);
-        else
-            ret = output_audio_frame(frame_in);
+        if (*count >= 0)
+        {
+            // ret = output_video_frame(frame_in);
 
-        av_frame_unref(frame_in);
+            if (typ == 0)
+            {
+                // set = 1;
+                lst_lsb[*count] = frame;
+                ++(*count);
+                ++count_lsb;
+                ret = output_video_frame(lst_lsb[(*count - 1)]);
+                
+                //fprintf(stderr, " >>> lsb count_lsb: %d, *count %d\n", count_lsb, *count);
+            }
+            else if (typ == 1)
+            {
+                // set = 1;
+                lst_msb[*count] = frame;
+                ++(*count);
+                ++count_msb;
+                ret = output_video_frame(lst_msb[(*count - 1)]);
+                //fprintf(stderr, "  &&& msb count_msb: %d, *count %d\n", count_msb, *count);
+            }
+
+            //++count_loop;
+        }
+
+        av_frame_unref(frame);
         if (ret < 0)
+        {
             return ret;
+        }
     }
 
     return 0;
@@ -284,7 +422,15 @@ static int get_format_from_sample_fmt(const char **fmt,
 int main(int argc, char **argv)
 {
     int ret = 0;
+    int read_frm_lsb = -1;
+    int read_frm_msb = -1;
+    int *pt_y = NULL;
+    int *pt_x = NULL;
+    int i = 0, j = 0, y = 0, x = 0;
+
     AVFrame *frame_in = NULL;
+    pt_x = &x;
+    pt_y = &y;
     if (argc != 4)
     {
         fprintf(stderr, "usage: %s  input_file video_output_file audio_output_file\n"
@@ -298,8 +444,8 @@ int main(int argc, char **argv)
     src_filename = argv[1];
     src_filename_msb = argv[2];
     video_dst_filename = argv[3];
-    //video_dst_filename = argv[2];
-    //audio_dst_filename = argv[3];
+    // video_dst_filename = argv[2];
+    // audio_dst_filename = argv[3];
 
     /* open input file, and allocate format context */
     if (avformat_open_input(&fmt_ctx, src_filename, NULL, NULL) < 0)
@@ -355,7 +501,7 @@ int main(int argc, char **argv)
     {
         video_stream = fmt_ctx_msb->streams[video_stream_idx_msb];
 
-        //video_dst_file = fopen(video_dst_filename, "wb");
+        // video_dst_file = fopen(video_dst_filename, "wb");
         if (!video_dst_file)
         {
             fprintf(stderr, "Could not open destination file %s\n", video_dst_filename);
@@ -407,7 +553,8 @@ int main(int argc, char **argv)
         goto end;
     }
     frame_msb = av_frame_alloc();
-    if(!frame_msb){
+    if (!frame_msb)
+    {
         fprintf(stderr, "Could not allocate frame\n");
         ret = AVERROR(ENOMEM);
         goto end;
@@ -430,25 +577,97 @@ int main(int argc, char **argv)
     }
 
     if (video_stream)
-        printf("Demuxing video from file '%s' into '%s'\n", src_filename, video_dst_filename);
-
-    /* read frames from the file */
-    //int k = 0;
-
-    while (av_read_frame(fmt_ctx, pkt) >= 0)
     {
-        // check if the packet belongs to a stream we are interested in, otherwise
-        // skip it
-        if (pkt->stream_index == video_stream_idx)
-            ret = decode_packet(video_dec_ctx, pkt, frame_in);
-
-        av_packet_unref(pkt);
-        if (ret < 0)
-            break;
-        // printf("%d\n", ++k);
+        printf("Demuxing video from file '%s' into '%s'\n", src_filename, video_dst_filename);
     }
+
+    if (video_stream_msb)
+    {
+        printf("Demuxing msb video from file '%s' into '%s'\n", src_filename_msb, video_dst_filename);
+    }
+    /* read frames from the file */
+    // int k = 0;
+    while (count_msb < 1799 && count_lsb < 1799)
+    {
+        while (*pt_x < 10)
+        {
+            // check if the packet belongs to a stream we are interested in, otherwise
+            // skip it
+            if (av_read_frame(fmt_ctx, pkt) >= 0)
+            {
+                if (pkt->stream_index == video_stream_idx)
+                {
+
+                    ret = decode_packet(video_dec_ctx, pkt, frame_in, 0, pt_x);
+                }
+
+                av_packet_unref(pkt);
+
+                if (ret < 0)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+            // printf("%d\n", ++k);
+        }
+        *pt_x = 0;
+        while (*pt_y < 10)
+        {
+
+            if (av_read_frame(fmt_ctx_msb, pkt_msb) >= 0)
+            {
+                // check if the packet belongs to a stream we are interested in, otherwise
+                // skip it
+                if (pkt_msb->stream_index == video_stream_idx_msb)
+                    ret = decode_packet(video_dec_ctx_msb, pkt_msb, frame_msb, 1, pt_y);
+
+                av_packet_unref(pkt_msb);
+                if (ret < 0)
+                    break;
+                // printf("%d\n", ++k);
+            }
+            else
+            {
+                break;
+            }
+        }
+        *pt_y = 0;
+        *pt_x = 0;
+        i = 0;
+        //fprintf(stderr, "hi\n");
+        while (i < 10) 
+        {
+            av_frame_unref(lst_lsb[i]);
+            lst_lsb[i] = NULL;
+            ++i;
+        }
+        j = 0;
+        while (j < 10)
+        {
+            av_frame_unref(lst_msb[j]);
+            lst_msb[j] = NULL;
+            ++j;
+        }
+        
+    }
+
+    *pt_x = -1;
+    *pt_y = -1;
+
     if (video_dec_ctx)
-        decode_packet(video_dec_ctx, NULL, frame_in);
+    {
+        decode_packet(video_dec_ctx, NULL, frame_in, 0, pt_x);
+    }
+    if (video_dec_ctx_msb)
+    {
+        decode_packet(video_dec_ctx_msb, NULL, frame_msb, 1, pt_y);
+    }
+    // decode_packet(video_dec_ctx_msb, NULL, frame_msb);
+
     /*
     if(video_stream_msb){
         printf("Demuxing msb video from file '%s' into '%s'\n", src_filename_msb, video_dst_filename);
@@ -466,11 +685,8 @@ int main(int argc, char **argv)
             break;
         // printf("%d\n", ++k);
     }
+    */
 
-
-    if(video_dec_ctx_msb)
-        decode_packet(video_dec_ctx_msb, NULL, frame_msb);
-        */
     // if (audio_dec_ctx)
     //     decode_packet(audio_dec_ctx, NULL, frame_in);
 
