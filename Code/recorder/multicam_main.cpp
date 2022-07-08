@@ -63,6 +63,7 @@
 #include <iomanip>
 #include <fstream>
 #include <iostream>
+#include <random>
 extern "C"
 {
 #include <time.h>
@@ -84,6 +85,7 @@ extern "C"
 #include <libavutil/frame.h>
 #include <libavcodec/avfft.h>
 #include <libavformat/avio.h>
+
 //#define STREAM_DURATION 10.0
 #define STREAM_FRAME_RATE 30                  /* 25 images/s */
 #define STREAM_PIX_FMT AV_PIX_FMT_YUV420P10LE /* default pix_fmt */
@@ -206,7 +208,7 @@ extern "C"
     /* Add an output stream. */
     static void add_stream(OutputStream *ost, AVFormatContext *oc,
                            const AVCodec **codec,
-                           enum AVCodecID codec_id, const char * crf)
+                           enum AVCodecID codec_id, const char *crf)
     {
         AVCodecContext *c = NULL;
         int i;
@@ -241,15 +243,15 @@ extern "C"
             exit(1);
         }
         ost->enc = c;
-        printf("hih\n");
+        // printf("hih\n");
         c->codec_id = codec_id;
-        c->flags = AV_CODEC_FLAG_GRAY;
-        // c->bit_rate = 2 * 1000000;
-        
+        // c->flags = AV_CODEC_FLAG_GRAY;
+        //  c->bit_rate = 2 * 1000000;
+
         /* Resolution must be a multiple of two. */
         c->width = 1280;
         c->height = 720;
-        c->thread_count = 4;
+        c->thread_count = 3;
 
         // av_opt_set(c->priv_data, "crf", "24", 0);
         //  av_opt_set(c->priv_data, "
@@ -265,21 +267,21 @@ extern "C"
         c->framerate = (AVRational){STREAM_FRAME_RATE, 1};
         // c->noise_reduction = 1;
         c->bits_per_raw_sample = 10;
-        //c->bit_rate = (80 * 8 * 10000000) / 60;
-        // c->field_order = AV_FIELD_UNKNOWN;
-        // c->field_order = AV_F;
-        // c->frame_size =
-        //  c->rc_min_rate
-        //  c->gop_size = 5; /* emit one intra frame every twelve frames at most */
-        //  c->max_b_frames = 3;
+        // c->bit_rate = (80 * 8 * 10000000) / 60;
+        //  c->field_order = AV_FIELD_UNKNOWN;
+        //  c->field_order = AV_F;
+        //  c->frame_size =
+        //   c->rc_min_rate
+        //   c->gop_size = 5; /* emit one intra frame every twelve frames at most */
+        //   c->max_b_frames = 3;
         c->pix_fmt = AV_PIX_FMT_YUV420P10LE;
         // c->chromaoffest = 5;
         av_opt_set(c->priv_data, "preset", "veryfast", 0);
-        //av_opt_set(c->priv_data, "noise_reduction", "1", 0);
+        av_opt_set(c->priv_data, "noise_reduction", "45", 0);
         av_opt_set(c->priv_data, "crf", crf, 0);
         // av_opt_set(c->priv_data, "tune", "psnr", 0);
         // av_opt_set(c->priv_data, "crf", "25", 0);
-        av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=61", 0);
+        av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-20", 0);
         // printf("Bits per raw sample %d\n", c->bits_per_raw_sample);
         //  switch ((*codec)->type)
         //  {
@@ -448,7 +450,6 @@ extern "C"
     //         /pict->data[1] + y * pict->linesize[1] = cd;
     // }
 
-
     static int ceiling(int a, int denom)
     {
         return (a + denom - 1) / denom;
@@ -462,32 +463,32 @@ extern "C"
         // I assumed that I didn't need to shift the bits in the data as this didn't seem to change anything
         int x = 0, y = 0, i = 0;
         int cd = 0;
-        //i = frame_index;
-        // av_get_output_timestamp
-        // AVBUfferRef *ref = av_buffer_create(data, width * height * 2, NULL, NULL, NULL);
+        // i = frame_index;
+        //  av_get_output_timestamp
+        //  AVBUfferRef *ref = av_buffer_create(data, width * height * 2, NULL, NULL, NULL);
+        //   int b = avpicture_get_size(AV_PIX_FMT_YUV420P10LE, width, height);
+        //   fprintf(stderr, "size_pict: %d\n", b);
+        //   pict->data[0] = data;
         //  int b = avpicture_get_size(AV_PIX_FMT_YUV420P10LE, width, height);
         //  fprintf(stderr, "size_pict: %d\n", b);
-        //  pict->data[0] = data;
-        // int b = avpicture_get_size(AV_PIX_FMT_YUV420P10LE, width, height);
-        // fprintf(stderr, "size_pict: %d\n", b);
-        // fprintf(stderr, "linesize pict->data[0]: %d\n", pict->linesize[0]);
-        // fprintf(stderr, "Y plane dimensions is %d\n", pict->linesize[0] * height);
-        // fprintf(stderr, "linesize pict->data[1]: %d\n", pict->linesize[1]);
-        // fprintf(stderr, "linesize pict->data[2]: %d\n", pict->linesize[2]);
-        // fprintf(stderr, "size of pict->data[0][0]: %d\n", sizeof(pict->data[0][0]));
-        // fprintf(stderr, "size of pict->data[1][0]: %d\n", sizeof(pict->data[1][0]));
-        // fprintf(stderr, "size of pict->data[2][0]: %d\n", sizeof(pict->data[2][0]));
-        // fprintf(stderr, "chroma_locations: %d\n", pict->chroma_location);
-        // for (y = 0; y < height; y++)
-        // {
-        //     for (x = 0; x < width; x++)
-        //     {
+        //  fprintf(stderr, "linesize pict->data[0]: %d\n", pict->linesize[0]);
+        //  fprintf(stderr, "Y plane dimensions is %d\n", pict->linesize[0] * height);
+        //  fprintf(stderr, "linesize pict->data[1]: %d\n", pict->linesize[1]);
+        //  fprintf(stderr, "linesize pict->data[2]: %d\n", pict->linesize[2]);
+        //  fprintf(stderr, "size of pict->data[0][0]: %d\n", sizeof(pict->data[0][0]));
+        //  fprintf(stderr, "size of pict->data[1][0]: %d\n", sizeof(pict->data[1][0]));
+        //  fprintf(stderr, "size of pict->data[2][0]: %d\n", sizeof(pict->data[2][0]));
+        //  fprintf(stderr, "chroma_locations: %d\n", pict->chroma_location);
+        //  for (y = 0; y < height; y++)
+        //  {
+        //      for (x = 0; x < width; x++)
+        //      {
 
         //         pict->data[0][y * pict->linesize[0] + x] = data[cd++];
         //     }
         // }
-        //We know pict->data[0] is same size as data, so we can just memcpy it
-        //memcpy(pict->data[0], data, width * height * 2);
+        // We know pict->data[0] is same size as data, so we can just memcpy it
+        // memcpy(pict->data[0], data, width * height * 2);
         pict->data[0] = data;
         // for (y = 0; y < ceiling(height, 2); y++)
         // {
@@ -1122,7 +1123,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     pipe.start(cfg); // Start the pipe with the cfg
 
     /** Libav Help **/
-    const char * crf_to_c = std::to_string(crf_lsb).c_str();
+    const char *crf_to_c = std::to_string(crf_lsb).c_str();
     OutputStream video_st = {0}; //, audio_st = {0};
     const AVOutputFormat *fmt;
     AVFormatContext *oc;
@@ -1150,7 +1151,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
      * and initialize the codecs. */
     if (fmt->video_codec != AV_CODEC_ID_NONE)
     {
-        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264,  crf_to_c);
+        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264, crf_to_c);
         have_video = 1;
         encode_video = 1;
     }
@@ -1203,10 +1204,12 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::string frame_file_nm = dirname + "frame_num_";
     // int i = 0;
     int k = 0;
+
     float min_dis = 0.0f;
     float max_dis = 16.0f;
     std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
     std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
+    std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
     rs2::frameset frameset;
     rs2::colorizer coloriz;
     rs2::frame color_frame;
@@ -1216,6 +1219,48 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
+
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::vector<int> rand_vec;
+    std::uniform_int_distribution<> distr(300, 1280 * 720);
+    int randun = 0;
+    int size_of_vec = 92160;
+    FILE * output_vec_ind = NULL;
+    FILE *output_vec_val = NULL;
+    char * output_vec_ind_file = "Testing_DIR/output_vec_ind_file.txt";
+    char * output_vec_vals_file = "Testing_DIR/output_vec_vals_file.txt";
+    if((output_vec_ind = fopen(output_vec_ind_file, "w")) == NULL || (output_vec_val = fopen(output_vec_vals_file, "w")) == NULL)
+    {
+        printf("Error opening file!\n");
+        return 0;
+    }
+
+    for (int n = 0; n < size_of_vec; n++)
+    {   
+        randun = distr(gen);
+        if (std::find(rand_vec.begin(), rand_vec.end(), randun) == rand_vec.end())
+        {
+            rand_vec.push_back(randun);
+            fprintf(output_vec_ind, "%d\n", randun);
+            // if (n == 0){
+            //     fprintf("{%d, ", randun);
+               
+            // }else if (n == size_of_vec - 1){
+            //     printf("%d}\n", randun);
+            // }else{
+            //     printf("%d, ", randun);
+            // }
+        }else{
+            n--;
+        }
+        //rand_vec.push_back();
+    }
+    fclose(output_vec_ind);
+    //printf("}\n");
+    //std::cout << rand_vec << std::endl;
+
     // uint16_t *color_data = NULL;
     timer tStart;
 
@@ -1232,10 +1277,11 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
         if (depth_frame_in = frameset.get_depth_frame())
         {
-            //depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
+            // depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
             uint8_t *p_depth_frame_char = (uint8_t *)depth_frame_in.get_data();
-            uint8_t *df = (uint8_t *)depth_frame_in.get_data();
-
+            // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
+            uint16_t *df = (uint16_t *)depth_frame_in.get_data();
+            std::copy(df, df + num_bytes, store_frame_depth.begin());
             // uint8_t *df =
             //  rs2::depth_frame rse =  (rs2::depth_frame)depth_frame_in;
             //  const int stride= rse.get_stride_in_bytes();
@@ -1249,18 +1295,33 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //      for(i=0;i<(1280*720)/2;++i)
             //          color_data[i] = UINT16_MAX / 2; //dummy middle value for U/V, equals 128 << 8, equals 32768
             //  }
-            
+            for (i = 0; i < num_bytes; ++i)
+            {
+                store_frame_depth[i] &= (uint16_t)1023;
+            }
+            // if (counter == 200)
+            // {
+            //     while (rand_vec.size() > 0)
+            //     {
+            //         int hb = rand_vec[rand_vec.size() - 1];
+            //         rand_vec.pop_back();
+            //         fprintf(output_vec_val, "%d\n", store_frame_depth[hb]);
+            //     }
+            //     fclose(output_vec_val);
+            // }
+
             for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
             {
                 store_frame_msb[k] = p_depth_frame_char[i + 1] >> 2;
-                df[i + 1] &= 0x03; // clear the two LSBs; 
+                // store_frame_lsb[i + 1] = 0x03;//0x03; // clear the two LSBs;
+                // store_frame_lsb[i] &= 0x1;
             }
 
             if (encode_video)
             {
                 //
 
-                encode_video = !write_video_frame(oc, &video_st, (uint8_t *)df, time_run);
+                encode_video = !write_video_frame(oc, &video_st, (uint8_t *)store_frame_depth.data(), time_run);
             }
             else
             {
@@ -1318,7 +1379,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             {
                 if (counter < (long)num_frm_collect)
                 {
-                    std::string bin_out = frame_file_nm + std::to_string(counter + 1) + "_data.bin";
+                    std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
                     FILE *p_file;
                     if ((p_file = fopen(bin_out.c_str(), "wb")))
                     {

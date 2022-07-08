@@ -57,6 +57,7 @@ def apply_custom_colormap(img):
     # #Blue
     # lut[:, 0, 2] = [195,194,193,191,190,189,188,187,186,185,184,183,182,181,179,178,177,176,175,174,173,172,171,170,169,167,166,165,164,163,162,161,160,159,158,157,155,154,153,152,151,150,149,148,147,146,145,143,142,141,140,139,138,137,136,135,134,133,131,130,129,128,127,126,125,125,125,125,125,125,125,125,125,125,125,125,125,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126,126]
     # #print(lut.size)
+    #stretch = img
     return cv2.applyColorMap(stretch, cv2.COLORMAP_JET)
 
 def check_imgs(dir):
@@ -79,7 +80,8 @@ def folder_maker(path: str) -> None:
 
 def recombine_frames(img_msb: np.uint8, img_lsb: np.uint16) -> np.uint16:
     depth_right_shifted = img_msb[:,:,0]
-    arr_left_shift = np.left_shift(np.uint16(depth_right_shifted), 10, dtype=np.uint16)
+    
+    arr_left_shift = np.left_shift(np.uint16(depth_right_shifted), 8, dtype=np.uint16)
     return np.bitwise_or(arr_left_shift, img_lsb, dtype=np.uint16)
 
 def decode_8bitrgb_to_16bit_vsplit2_arr(img_msb: np.uint8, img_lsb: np.uint8) -> np.uint16:
@@ -125,6 +127,19 @@ def find_PSNR_btwn_imgs(raw: np.uint16, compressed: np.uint16):
     if MSE == 0:
         return 100.0
     max_pixel_value = ((2**16) - 1)
+    rmse = math.sqrt(MSE)
+    psnr = 20.0 * math.log10(max_pixel_value / rmse)
+    return (psnr, rmse)
+
+def find_PSNR_btwn_imgs_10(raw: np.uint16, compressed: np.uint16):
+    """
+    Returns Peak Signal-to-Noise Ratio (PSNR) in dB
+    """
+    
+    MSE = np.mean((raw - compressed)**2)
+    if MSE == 0:
+        return 100.0
+    max_pixel_value = ((2**10) - 1)
     rmse = math.sqrt(MSE)
     psnr = 20.0 * math.log10(max_pixel_value / rmse)
     return (psnr, rmse)
@@ -204,8 +219,10 @@ def decompress_imgs(vidmsb, vidlsb, path_img, vidraw):
     lsb_vid = read_video_in(vidlsb)
     # msb_vid = read_video_in(vidmsb)
     frm_nm = 0
-    path_read = [pth for pth in glob.glob(vidraw + "*.bin")]
+    path_read = [pth for pth in glob.glob(vidraw + "frame_num_*")]
+    path_read_2 = [pth for pth in glob.glob(vidraw + "file_out_comp*")]
     sort_nicely(path_read)
+    sort_nicely(path_read_2)
     psnr_lst = []
     ssim_lst = []
     out = cv2.VideoWriter(path_write, cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 30, (RESOLUTION_WIDTH, RESOLUTION_HEIGHT))
@@ -219,12 +236,22 @@ def decompress_imgs(vidmsb, vidlsb, path_img, vidraw):
                 with open(path_read.pop(0), mode='rb') as fp:
                     bter = fp.read()
                     raw_img = np.frombuffer(bter, np.uint16).reshape(720, 1280)
+                with open(path_read_2.pop(0), mode = "rb") as fc:
+                    bter = fc.read()
+                    nber  = np.frombuffer(bter, np.uint16).reshape(720, 1280)
             except(IndexError):
                 break
-            psnr, _ = find_PSNR_btwn_imgs(raw_img, frame_lossy)
+            #other_now = raw_img << 6
+            #other_now = other_now >> 6
+            psnr, _ = find_PSNR_btwn_imgs(raw_img, nber)
+            print("PSNR: {}".format(psnr))
+            #ssim, _  = structural_similarity(raw_img, nber, full=True)
+            #print(ssim)
+        
             psnr_lst.append(psnr)
             #print(psnr)
-            dfeg = apply_custom_colormap(frame_lossy)
+
+            dfeg = apply_custom_colormap(nber)
             dfeg_raw = apply_custom_colormap(raw_img)
             #cv2.putText(dfeg, "Compressed Video Colormap", (50,50), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,255), 2 )
             out.write(dfeg)
@@ -232,8 +259,9 @@ def decompress_imgs(vidmsb, vidlsb, path_img, vidraw):
             #ssim, _  = structural_similarity(raw_img, frame_lossy, full=True)
             #ssim_lst.append(ssim)
             #print(ssim)
-            #cv2.imwrite(os.path.join(path_img, "decomp" + str(frm_nm) + ".png"), frame_lossy)
-            #cv2.imwrite(os.path.join(path_img, "decomp" + str(frm_nm) + "_raw.png"), raw_img)
+            if frm_nm < 20:
+                cv2.imwrite("png_store/decomp" + str(frm_nm) + ".png",nber)
+                cv2.imwrite("png_store/decomp_raw" + str(frm_nm) + ".png",raw_img)
             # if frm_nm > 10000:
             #     print("Too many frames more than 10000")
             #     break
@@ -385,7 +413,8 @@ def process_vid_other(vidmsb, vidlsb, path_img, vidraw):
     avg_psnr = 0
     frm_nm = 0
     num_frames_read_at_once = 1
-    path_read = [pth for pth in glob.glob(vidraw + "*.bin")]
+    path_read = [pth for pth in glob.glob(vidraw + "frame*.bin")]
+
     sort_nicely(path_read)
     print(path_read)
     while True:
