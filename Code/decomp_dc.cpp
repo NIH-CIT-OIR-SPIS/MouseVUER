@@ -635,11 +635,12 @@ int main(int argc, char **argv)
             else
             {
                 fprintf(stderr, "Error 2 while called packet\n");
-                //ret = -1
                 break;
             }
-            // printf("%d\n", ++k);
         }
+
+
+
         *pt_x = 0;
         
         while (*pt_y < FRM_GROUP_SIZE)
