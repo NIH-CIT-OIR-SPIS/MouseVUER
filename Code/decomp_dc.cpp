@@ -92,8 +92,8 @@ static int width_msb, height_msb;
 static enum AVPixelFormat pix_fmt_msb;
 static AVStream *video_stream_msb = NULL, *audio_stream_msb = NULL;
 static const char *src_filename_msb = NULL;
-static const char *video_dst_filename_msb = NULL;
-static const char *audio_dst_filename_msb = NULL;
+//static const char *video_dst_filename_msb = NULL;
+//static const char *audio_dst_filename_msb = NULL;
 static FILE *video_dst_file_msb = NULL;
 static FILE *audio_dst_file_msb = NULL;
 
@@ -450,19 +450,17 @@ int main(int argc, char **argv)
     pt_y = &y;
     pt_lsb_frm_count = &frm_count_lsb;
     pt_msb_frm_count = &frm_count_msb;
-    if (argc != 4)
+    if (argc != 3)
     {
-        fprintf(stderr, "usage: %s  input_file video_output_file audio_output_file\n"
+        fprintf(stderr, "usage: %s  lsb_file msb_file \n"
                         "API example program to show how to read frames from an input file.\n"
-                        "This program reads frames from a file, decodes them, and writes decoded\n"
-                        "video frames to a rawvideo file named video_output_file, and decoded\n"
-                        "audio frames to a rawaudio file named audio_output_file.\n",
+                        "This program reads frames from a file, decodes them, and compares them\n",
                 argv[0]);
         exit(1);
     }
     src_filename = argv[1];
     src_filename_msb = argv[2];
-    video_dst_filename = argv[3];
+    //video_dst_filename = argv[3];
     
     ffprobe_cmd = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + std::string(src_filename);
     ffprobe_cmd2 =  "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + std::string(src_filename_msb);
@@ -500,13 +498,13 @@ int main(int argc, char **argv)
     {
         video_stream = fmt_ctx->streams[video_stream_idx];
 
-        video_dst_file = fopen(video_dst_filename, "wb");
-        if (!video_dst_file)
-        {
-            fprintf(stderr, "Could not open destination file %s\n", video_dst_filename);
-            ret = 1;
-            goto end;
-        }
+        // //video_dst_file = fopen(video_dst_filename, "wb");
+        // if (!video_dst_file)
+        // {
+        //     fprintf(stderr, "Could not open destination file %s\n", video_dst_filename);
+        //     ret = 1;
+        //     goto end;
+        // }
 
         /* allocate image where the decoded image will be put */
         width = video_dec_ctx->width;
@@ -527,12 +525,12 @@ int main(int argc, char **argv)
         video_stream = fmt_ctx_msb->streams[video_stream_idx_msb];
 
         // video_dst_file = fopen(video_dst_filename, "wb");
-        if (!video_dst_file)
-        {
-            fprintf(stderr, "Could not open destination file %s\n", video_dst_filename);
-            ret = 1;
-            goto end;
-        }
+        // if (!video_dst_file)
+        // {
+        //     fprintf(stderr, "Could not open destination file %s\n", video_dst_filename);
+        //     ret = 1;
+        //     goto end;
+        // }
 
         /* allocate image where the decoded image will be put */
         width_msb = video_dec_ctx_msb->width;
@@ -601,15 +599,15 @@ int main(int argc, char **argv)
         goto end;
     }
 
-    if (video_stream)
-    {
-        printf("Demuxing video from file '%s' into '%s'\n", src_filename, video_dst_filename);
-    }
+    // if (video_stream)
+    // {
+    //     printf("Demuxing video from file '%s' into '%s'\n", src_filename, video_dst_filename);
+    // }
 
-    if (video_stream_msb)
-    {
-        printf("Demuxing msb video from file '%s' into '%s'\n", src_filename_msb, video_dst_filename);
-    }
+    // if (video_stream_msb)
+    // {
+    //     printf("Demuxing msb video from file '%s' into '%s'\n", src_filename_msb, video_dst_filename);
+    // }
     /* read frames from the file */
     // int k = 0;
     while (*pt_lsb_frm_count < num_frames_lsb && *pt_msb_frm_count < num_frames_msb)
@@ -737,9 +735,8 @@ int main(int argc, char **argv)
     if (video_stream)
     {
         printf("Play the output video file with the command:\n"
-               "ffplay -f rawvideo -pix_fmt %s -video_size %dx%d %s\n",
-               av_get_pix_fmt_name(pix_fmt), width, height,
-               video_dst_filename);
+               "ffplay -f rawvideo -pix_fmt %s -video_size %dx%d\n",
+               av_get_pix_fmt_name(pix_fmt), width, height);
     }
     /*
     if (audio_stream)
