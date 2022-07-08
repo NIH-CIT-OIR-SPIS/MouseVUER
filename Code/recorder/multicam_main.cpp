@@ -246,12 +246,12 @@ extern "C"
         // printf("hih\n");
         c->codec_id = codec_id;
         // c->flags = AV_CODEC_FLAG_GRAY;
-        //  c->bit_rate = 2 * 1000000;
+        c->bit_rate = 1 * 1000000;
 
         /* Resolution must be a multiple of two. */
         c->width = 1280;
         c->height = 720;
-        c->thread_count = 3;
+        c->thread_count = 4;
 
         // av_opt_set(c->priv_data, "crf", "24", 0);
         //  av_opt_set(c->priv_data, "
@@ -277,11 +277,14 @@ extern "C"
         c->pix_fmt = AV_PIX_FMT_YUV420P10LE;
         // c->chromaoffest = 5;
         av_opt_set(c->priv_data, "preset", "veryfast", 0);
-        av_opt_set(c->priv_data, "noise_reduction", "45", 0);
+        av_opt_set(c->priv_data, "noise_reduction", "20", 0); //45
+        
+        
         av_opt_set(c->priv_data, "crf", crf, 0);
-        // av_opt_set(c->priv_data, "tune", "psnr", 0);
-        // av_opt_set(c->priv_data, "crf", "25", 0);
-        av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-20", 0);
+
+
+        //av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-2", 0);
+        av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59", 0);
         // printf("Bits per raw sample %d\n", c->bits_per_raw_sample);
         //  switch ((*codec)->type)
         //  {
@@ -1220,7 +1223,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
 
-
+    /*
     std::random_device rd;
     std::mt19937 gen(rd());
     std::vector<int> rand_vec;
@@ -1257,7 +1260,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
         //rand_vec.push_back();
     }
-    fclose(output_vec_ind);
+    fclose(output_vec_ind);*/
     //printf("}\n");
     //std::cout << rand_vec << std::endl;
 
@@ -1277,7 +1280,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
         if (depth_frame_in = frameset.get_depth_frame())
         {
-            // depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
+            //depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
             uint8_t *p_depth_frame_char = (uint8_t *)depth_frame_in.get_data();
             // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
             uint16_t *df = (uint16_t *)depth_frame_in.get_data();
