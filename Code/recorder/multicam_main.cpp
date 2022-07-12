@@ -414,7 +414,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int k = 0;
 
     float min_dis = 0.0f;
-    float max_dis = 16.0f;
+    float max_dis = 4.0f;
     std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
     std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
     std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
@@ -487,7 +487,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
         if (depth_frame_in = frameset.get_depth_frame())
         {
-            // depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
+            depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
             uint8_t *p_depth_frame_char = (uint8_t *)depth_frame_in.get_data();
             // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
             uint16_t *df = (uint16_t *)depth_frame_in.get_data();
