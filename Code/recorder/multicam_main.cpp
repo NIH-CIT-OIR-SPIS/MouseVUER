@@ -246,7 +246,7 @@ extern "C"
         // printf("hih\n");
         c->codec_id = codec_id;
         // c->flags = AV_CODEC_FLAG_GRAY;
-        c->bit_rate = 1 * 1000000;
+        //c->bit_rate = 1 * 1000000;
 
         /* Resolution must be a multiple of two. */
         c->width = 1280;
