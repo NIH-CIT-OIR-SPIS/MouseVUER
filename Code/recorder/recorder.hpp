@@ -21,8 +21,7 @@ extern "C"
 #include <libavutil/frame.h>
 #include <libavcodec/avfft.h>
 #include <libavformat/avio.h>
-#define STREAM_FRAME_RATE 30                  /* 25 images/s */
-#define STREAM_PIX_FMT AV_PIX_FMT_YUV420P10LE 
+
     /**
      * @brief OutputStream
      *
@@ -61,15 +60,21 @@ extern "C"
                            AVStream *st, AVFrame *frame, AVPacket *pkt);
 
     /**
-     * @brief Initializes the output stream.
-     * #ifndef MULTICAM_MAIN_H
-#define MULTICAM_MAIN_H
-#ifdef __cplusplus
-     * @param crf  The CRF to use.
+     * @brief Adds a stream
+     * 
+     * @param ost 
+     * @param oc 
+     * @param codec 
+     * @param codec_id 
+     * @param crf 
+     * @param pix_fmt 
+     * @param width 
+     * @param height 
+     * @param fps 
      */
     void add_stream(OutputStream *ost, AVFormatContext *oc,
                            const AVCodec **codec,
-                           enum AVCodecID codec_id, const char *crf);
+                           enum AVCodecID codec_id, const char *crf, AVPixelFormat pix_fmt, int width, int height, int fps);
 
     /**
      * @brief Allocates a picture and sets its fields to default values.
@@ -88,19 +93,19 @@ extern "C"
      * @param codec  The codec to use.
      * @param ost  The output stream.
      * @param opt_arg  The additional arguments.
+     * @param pix_fmt The pixel format.
      */
     void open_video(AVFormatContext *oc, const AVCodec *codec,
-                           OutputStream *ost, AVDictionary *opt_arg);
+                           OutputStream *ost, AVDictionary *opt_arg, AVPixelFormat pix_fmt);
 
     /**
      * @brief Get the video frame object
      *
      * @param ost The output stream.
-     * @param time_run How long the video has been running.
      * @param data The data to use.
      * @return AVFrame*  The frame.
      */
-    AVFrame *get_video_frame(OutputStream *ost, long time_run, uint8_t *data);
+    AVFrame *get_video_frame(OutputStream *ost, uint8_t *data);
 
     /**
      * @brief Write the video frame using the encoding feature as well as checking for writeable frame.
@@ -108,10 +113,9 @@ extern "C"
      * @param oc  The output context.
      * @param ost  The output stream.
      * @param data  The uint8_t data buffer to use for the frame->data[0] field.
-     * @param time_run  How long the video has been running.
      * @return int 0 on success, negative on error.
      */
-     int write_video_frame(AVFormatContext *oc, OutputStream *ost, uint8_t *data, long time_run);
+      int write_video_frame(AVFormatContext *oc, OutputStream *ost, uint8_t *data);
     /**
      * @brief Free all stream related resources.
      *

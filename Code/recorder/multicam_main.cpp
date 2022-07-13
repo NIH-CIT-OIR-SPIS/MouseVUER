@@ -165,12 +165,17 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                    bool ffmpeg_verbose = false, bool collect_raw = false, int num_frm_collect = 0, bool show_preview = false,
                    std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false)
 {
-    if (fps <= 0U || fps > 60U || height > 1080U || width > 1920U || time_run > 24L * 60 * 60 * 7 * 5 || crf_lsb > 50 || crf_lsb < -1 || crf_color < -1 || crf_color > 50 || time_run <= 0L)
+    const auto processor_count = std::thread::hardware_concurrency();
+    if (time_run > 2147483646)
+    {
+        std::cout << "You're running a recording for 60+ years. You better know what you're doing." << std::endl;
+    }
+    if (fps <= 0U || fps > 60U || height > 1080U || width > 1920U || crf_lsb > 80 || crf_lsb < -1 || crf_color < -1 || crf_color > 50 || time_run <= 0L)
     {
         std::cout << width << "x" << height << "@" << fps << "fps, Time run: " << time_run << " CRF: " << crf_lsb << std::endl;
         return 0;
     }
-    if (fps > 30U)
+    if (fps > 60U)
     {
         std::cout << "FPS too high must be less than 30: " << fps << " fps" << std::endl;
         return 0;
@@ -178,6 +183,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     if (height % 2 != 0 || width % 2 != 0 || width > 1280 || height > 720 || width < 640 || height < 480)
     {
         std::cout << "Dimensions incorrect: " << width << "x" << height << "@" << fps << "fps" << std::endl;
+        std::cout << "Dimensions must be even" << std::endl;
         return 0;
     }
     if (collect_raw && num_frm_collect < 0)
@@ -185,21 +191,31 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "Numbec_cpp_propertiesr frames collect greater than 1800 at: " << num_frm_collect << std::endl;
         return 0;
     }
-    int width_color = 640;  // width / 2;
-    int height_color = 480; // height / 2;
+    int width_color = width;  // width / 2;
+    int height_color = height; // height / 2;
+    int ret = 0;
+    int have_video = 0;
+    int encode_video = 0;
+    int i = 0, k = 0;
+    int num_bytes = width * height;
+    float min_dis = 0.0f;
+    float max_dis = 16.0f;
+    long counter = 0;
+
+
     std::string path_raw = dirname + "test_raw";
     std::string path_msb = dirname + "test_msb.mp4";
     std::string path_lsb = dirname + "test_lsb.mp4";
     std::string color_lsb_path = dirname + "test_color.mp4";
-    std::cout << ffmpeg_verbose << std::endl;
-
-    std::string str_lsb = build_ffmpeg_cmd("gray10le", "yuv420p10le", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
+    //std::cout << ffmpeg_verbose << std::endl;
+    
+    //std::string str_lsb = build_ffmpeg_cmd("gray10le", "yuv420p10le", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
     // std::string str_msb = build_ffmpeg_cmd("gray", "yuvj420p", "libx264", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
     std::string str_msb = build_ffmpeg_cmd("rgb24", "rgb24", "libx264rgb", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
 
     std::string color_lsb = build_ffmpeg_cmd("rgb24", "yuv420p", "libx264", color_lsb_path, time_run, count_threads, width_color, height_color, fps, crf_color, ffmpeg_verbose, depth_lossless, 2);
     // std::string raw_cmd = build_ffmpeg_cmd("gray16le", "gray16le", "rawvideo", path_raw, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 4);
-    if (str_lsb == "" || str_msb == "")
+    if (str_msb == "")
     {
         std::cerr << "Error with build_ffmpeg_cmd " << std::endl;
         return 0;
@@ -209,10 +225,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "FFmpeg command for color stream too " << std::endl;
         std::cout << color_lsb << std::endl;
     }
-    std::cout << "FFmpeg command for str_lsb LSB frames:" << std::endl;
-    std::cout << str_lsb << std::endl;
+    //std::cout << "FFmpeg command for str_lsb LSB frames:" << std::endl;
+    //std::cout << str_lsb << std::endl;
     std::cout << "FFmpeg command for str_msb MSB frames:" << std::endl;
-    std::cout << str_msb << std::endl;
+    //std::cout << str_msb << std::endl;
     FILE *pipe_lsb = NULL;
     FILE *pipe_msb = NULL;
     FILE *p_pipe_raw = NULL;
@@ -225,11 +241,16 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cerr << "fopen error" << std::endl;
         return 0;
     }
-
+    /*
     if (!(pipe_lsb = _popen(str_lsb.c_str(), "wb")) || !(pipe_msb = _popen(str_msb.c_str(), "wb")))
     {
         std::cerr << "_popen error" << std::endl;
         exit(1);
+    }*/
+    if (!(pipe_msb = _popen(str_msb.c_str(), "wb")))
+    {
+        std::cerr << "_popen error" << std::endl;
+        return 0;
     }
     // }
     if (color)
@@ -336,11 +357,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     const AVOutputFormat *fmt;
     AVFormatContext *oc;
     const AVCodec *video_codec;
-    int ret = 0;
-    int have_video = 0;
-    int encode_video = 0;
+
     AVDictionary *opt = NULL;
-    int i = 0;
+
     const char *filename = path_lsb.c_str();
     /* allocate the output media context */
     avformat_alloc_output_context2(&oc, NULL, NULL, filename);
@@ -359,7 +378,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
      * and initialize the codecs. */
     if (fmt->video_codec != AV_CODEC_ID_NONE)
     {
-        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264, crf_to_c);
+        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264, crf_to_c, AV_PIX_FMT_YUV420P10LE, width, height, fps);
         have_video = 1;
         encode_video = 1;
     }
@@ -379,7 +398,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
      * video codecs and allocate the necessary encode buffers. */
     if (have_video)
     {
-        open_video(oc, video_codec, &video_st, opt);
+        open_video(oc, video_codec, &video_st, opt, AV_PIX_FMT_YUV420P10LE);
     }
     // if (have_audio)
     //     open_audio(oc, audio_codec, &audio_st, opt);
@@ -407,17 +426,20 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     /**End Libav help **/
 
-    int num_bytes = width * height; //* bytes_per_pixel * sizeof(uint8_t);
-    long counter = 0;
-    std::string frame_file_nm = dirname + "frame_num_";
-    // int i = 0;
-    int k = 0;
+     //* bytes_per_pixel * sizeof(uint8_t);
 
-    float min_dis = 0.0f;
-    float max_dis = 4.0f;
-    std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
-    std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
-    std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
+    std::string frame_file_nm = dirname + "frame_num_";  
+    // int i = 0;
+
+
+
+    //std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
+    //std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
+    //std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
+    uint8_t * store_frame_lsb = (uint8_t *)malloc(height * width * 2 * sizeof(uint8_t));
+    uint8_t * store_frame_msb = (uint8_t *)malloc(height * width * 3 * sizeof(uint8_t));
+    memset(store_frame_lsb, 0, height * width * 2 * sizeof(uint8_t));
+    memset(store_frame_msb, 0, height * width * 3 * sizeof(uint8_t));
     rs2::frameset frameset;
     rs2::colorizer coloriz;
     rs2::frame color_frame;
@@ -472,6 +494,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // std::cout << rand_vec << std::endl;
 
     // uint16_t *color_data = NULL;
+    uint8_t *ptr_depth_frm = NULL;
     timer tStart;
 
     while ((long)time_run * fps > counter)
@@ -488,14 +511,14 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         if (depth_frame_in = frameset.get_depth_frame())
         {
             depth_frame_in = thresh_filter.process(depth_frame_in); // Filter frames that are between these two depths
-            uint8_t *p_depth_frame_char = (uint8_t *)depth_frame_in.get_data();
+            ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
             // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
-            uint16_t *df = (uint16_t *)depth_frame_in.get_data();
-            std::copy(df, df + num_bytes, store_frame_depth.begin());
+            //uint16_t *df = (uint16_t *)depth_frame_in.get_data();
+            std::copy(ptr_depth_frm, ptr_depth_frm + num_bytes * 2, store_frame_lsb);
             // uint8_t *df =
             //  rs2::depth_frame rse =  (rs2::depth_frame)depth_frame_in;
             //  const int stride= rse.get_stride_in_bytes();
-            //  //std::copy(p_depth_frame_char, p_depth_frame_char + (num_bytes * 2), store_frame_lsb.begin());
+            //  //std::copy(ptr_depth_frm, ptr_depth_frm + (num_bytes * 2), store_frame_lsb.begin());
             //  // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
             //  if(!color_data)
             //  {  //prepare dummy color plane for P010LE format, half the size of Y
@@ -505,10 +528,11 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //      for(i=0;i<(1280*720)/2;++i)
             //          color_data[i] = UINT16_MAX / 2; //dummy middle value for U/V, equals 128 << 8, equals 32768
             //  }
-            for (i = 0; i < num_bytes; ++i)
-            {
-                store_frame_depth[i] &= (uint16_t)1023;
-            }
+            // for (i = 0; i < num_bytes*2 ; i += 2)
+            // {
+            //     //store_frame_lsb[i] &= (uint16_t)1023;
+                
+            // }
             // if (counter == 200)
             // {
             //     while (rand_vec.size() > 0)
@@ -522,7 +546,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
             for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
             {
-                store_frame_msb[k] = p_depth_frame_char[i + 1] >> 2;
+                store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
+                store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
                 // store_frame_lsb[i + 1] = 0x03;//0x03; // clear the two LSBs;
                 // store_frame_lsb[i] &= 0x1;
             }
@@ -531,14 +556,14 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             {
                 //
 
-                encode_video = !write_video_frame(oc, &video_st, (uint8_t *)store_frame_depth.data(), time_run);
+                encode_video = !write_video_frame(oc, &video_st, (uint8_t *)store_frame_lsb);
             }
             else
             {
                 fprintf(stderr, "\n\nError encoding video only %ld\n\n", counter);
             }
 
-            if (!fwrite(store_frame_msb.data(), 1, height * width * 3U, pipe_msb))
+            if (!fwrite(store_frame_msb, 1, height * width * 3U, pipe_msb))
 
             {
                 std::cout << "Error with fwrite frames" << std::endl;
@@ -594,8 +619,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     if ((p_file = fopen(bin_out.c_str(), "wb")))
                     {
                         // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
-                        fwrite(p_depth_frame_char, 1, num_bytes * 2, p_file);
+                        fwrite(ptr_depth_frm, 1, num_bytes * 2, p_file);
                         fclose(p_file);
+                    }else{
+                        std::cout << "Problem writing raw file " << bin_out << std::endl;
                     }
                     // if (!fwrite((uint8_t*)depth_frame_in.get_data(), 1, num_bytes*2, p_pipe_raw))
                     // {
@@ -640,7 +667,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     /* free the stream */
     avformat_free_context(oc);
-
+    free(store_frame_lsb);
+    free(store_frame_msb);
     try
     {
 #ifdef _WIN32

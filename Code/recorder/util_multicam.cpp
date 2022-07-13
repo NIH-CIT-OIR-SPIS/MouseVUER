@@ -104,7 +104,7 @@ extern "C"
             pkt->stream_index = st->index;
 
             /* Write the compressed frame to the media file. */
-            // log_packet(fmt_ctx, pkt);
+            //log_packet(fmt_ctx, pkt);
             ret = av_interleaved_write_frame(fmt_ctx, pkt);
             /* pkt is now blank (av_interleaved_write_frame() takes ownership of
              * its contents and resets pkt), so that no unreferencing is necessary.
@@ -121,7 +121,7 @@ extern "C"
     /* Add an output stream. */
     void add_stream(OutputStream *ost, AVFormatContext *oc,
                            const AVCodec **codec,
-                           enum AVCodecID codec_id, const char *crf)
+                           enum AVCodecID codec_id, const char *crf, AVPixelFormat pix_fmt, int width, int height, int fps)
     {
         AVCodecContext *c = NULL;
         int i;
@@ -162,8 +162,8 @@ extern "C"
         //c->bit_rate = 1 * 1000000;
 
         /* Resolution must be a multiple of two. */
-        c->width = 1280;
-        c->height = 720;
+        c->width = width;
+        c->height = height;
         c->thread_count = 4;
 
         // av_opt_set(c->priv_data, "crf", "24", 0);
@@ -174,12 +174,12 @@ extern "C"
          * timebase should be 1/framerate and timestamp increments should be
          * identical to 1. */
         // ost->st->r_frame_rate =
-        ost->st->time_base = (AVRational){1, STREAM_FRAME_RATE};
+        ost->st->time_base = (AVRational){1,fps};
         // ost->st->nb_frames = 450;
         c->time_base = ost->st->time_base;
-        c->framerate = (AVRational){STREAM_FRAME_RATE, 1};
+        c->framerate = (AVRational){fps, 1};
         // c->noise_reduction = 1;
-        c->bits_per_raw_sample = 10;
+        //c->bits_per_raw_sample = 10;
         // c->bit_rate = (80 * 8 * 10000000) / 60;
         //  c->field_order = AV_FIELD_UNKNOWN;
         //  c->field_order = AV_F;
@@ -187,21 +187,37 @@ extern "C"
         //   c->rc_min_rate
         //   c->gop_size = 5; /* emit one intra frame every twelve frames at most */
         //   c->max_b_frames = 3;
-        c->pix_fmt = AV_PIX_FMT_YUV420P10LE;
+        c->pix_fmt = pix_fmt;
         // c->chromaoffest = 5;
-        av_opt_set(c->priv_data, "preset", "veryfast", 0);
-        av_opt_set(c->priv_data, "noise_reduction", "20", 0); //45
-        
-        
-        av_opt_set(c->priv_data, "crf", crf, 0);
+        if (c->codec_id == AV_CODEC_ID_H264)
+        {
+            
+                /* just for testing, we also add B frames */
+            av_opt_set(c->priv_data, "preset", "veryfast", 0);
+            av_opt_set(c->priv_data, "noise_reduction", "20", 0); //45
+            
+            
+            av_opt_set(c->priv_data, "crf", crf, 0);
 
 
-        //av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-2", 0);
-        av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59", 0);
+            //av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-2", 0);
+            av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59", 0);
+        } else if(c->codec_id == AV_CODEC_ID_HEVC){
+            av_opt_set(c->priv_data, "preset", "ultrafast", 0);
+            av_opt_set(c->priv_data, "crf", crf, 0);
+            av_opt_set(c->priv_data, "tune", "zerolatency", 0);
+            av_opt_set(c->priv_data, "x265-params", "qpmin=0:qpmax=59", 0);
+        }else{
+            fprintf(stderr, "Could not find encoder for '%s'\n",
+                    avcodec_get_name(codec_id));
+            exit(1);
+        }
+
 
         /* Some formats want stream headers to be separate. */
-        if (oc->oformat->flags & AVFMT_GLOBALHEADER)
+        if (oc->oformat->flags & AVFMT_GLOBALHEADER){
             c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+        }
     }
 
     AVFrame *alloc_picture(enum AVPixelFormat pix_fmt, int width, int height)
@@ -229,7 +245,7 @@ extern "C"
     }
 
     void open_video(AVFormatContext *oc, const AVCodec *codec,
-                           OutputStream *ost, AVDictionary *opt_arg)
+                           OutputStream *ost, AVDictionary *opt_arg, AVPixelFormat pix_fmt)
     {
         int ret;
         AVCodecContext *c = ost->enc;
@@ -247,7 +263,7 @@ extern "C"
         }
 
         /* allocate and init a re-usable frame */
-        ost->frame = alloc_picture(AV_PIX_FMT_YUV420P10LE, c->width, c->height);
+        ost->frame = alloc_picture(pix_fmt, c->width, c->height);
 
         if (!ost->frame)
         {
@@ -256,7 +272,7 @@ extern "C"
         }
 
 
-        ost->tmp_frame = NULL;
+        //ost->tmp_frame = NULL;
         /* copy the stream parameters to the muxer */
         ret = avcodec_parameters_from_context(ost->st->codecpar, c);
         if (ret < 0)
@@ -267,7 +283,7 @@ extern "C"
     }
  
 
-    AVFrame *get_video_frame(OutputStream *ost, long time_run, uint8_t *data)
+    AVFrame *get_video_frame(OutputStream *ost, uint8_t *data)
     {
         AVCodecContext *c = ost->enc; // 64 + x + i * 5
 
@@ -295,16 +311,16 @@ extern "C"
      * encode one video frame and send it to the muxer
      * return 1 when encoding is finished, 0 otherwise
      */
-    int write_video_frame(AVFormatContext *oc, OutputStream *ost, uint8_t *data, long time_run)
+    int write_video_frame(AVFormatContext *oc, OutputStream *ost, uint8_t *data)
     {
-        return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data), ost->tmp_pkt);
+        return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, data), ost->tmp_pkt);
     }
 
     void close_stream(AVFormatContext *oc, OutputStream *ost)
     {
         avcodec_free_context(&ost->enc);
         av_frame_free(&ost->frame);
-        av_frame_free(&ost->tmp_frame);
+        //av_frame_free(&ost->tmp_frame);
         av_packet_free(&ost->tmp_pkt);
         sws_freeContext(ost->sws_ctx);
         swr_free(&ost->swr_ctx);
@@ -314,8 +330,9 @@ extern "C"
 
 InputParser::InputParser(int &argc, char **argv)
 {
-    for (int i = 1; i < argc; ++i)
+    for (int i = 1; i < argc; ++i){
         this->tokens.push_back(std::string(argv[i]));
+    }
 }
 
 const std::string &InputParser::getCmdOption(const std::string &option) const
