@@ -4,14 +4,14 @@
 
 # CXX_LFLAGS=-lrealsense2 -pthread -lglfw -lGL -lglut -lGLU -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale $(shell pkg-config --libs opencv4)
 
-# SOURCES=recorder/multicam_main.cpp recorder/util_multicam.cpp  #add your source files here
-# SOURCES2=decompress.cpp
+# SOURCES=recorder/multicam_main.cpp recorder/$(FILENM2).cpp  #add your source files here
+# SOURCES2=$(FILENM3).cpp
 # OBJECTS=$(SOURCES:.cpp=.o) #takes the .cpp files from the SOURCES var and replaces the .cpp with .o for each
 # OBJECTDIR=bin
-# EXEC=bin/multicam
-# EXEC2 =bin/decompress
+# EXEC=bin/$(FILENM)
+# EXEC2 =bin/$(FILENM3)
 
-# all: bin/ $(SOURCES) $(EXEC) bin/decompress 
+# all: bin/ $(SOURCES) $(EXEC) bin/$(FILENM3) 
 	
 # bin:
 # 	mkdir -p bin Testing_DIR
@@ -19,8 +19,8 @@
 
 
 
-# bin/decompress:
-# 	$(CXX) $(CXX_FLAGS) $(SOURCES2) $(CXX_LFLAGS) -o bin/decompress
+# bin/$(FILENM3):
+# 	$(CXX) $(CXX_FLAGS) $(SOURCES2) $(CXX_LFLAGS) -o bin/$(FILENM3)
 
 
 
@@ -44,28 +44,30 @@ CFLAGS = -std=c++17 $(shell pkg-config --cflags glfw3 opencv4) -D__STDC_CONSTANT
 CFLAGS += -D__STDC_LIMIT_MACROS -fopenmp -O3 -D__STDC_CONSTANT_MACROS -Wall
 LIBS = $(shell pkg-config --libs glfw3 opencv4) -lrealsense2 -pthread -lglfw -lGL -lglut -lGLU -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale
 
+FILENM = multicam
+FILENM2 = util_multicam
+FILENM3 = decompress
 
-
-all: bin/  bin/decompress bin/multicam
+all: bin/  bin/$(FILENM3) bin/$(FILENM)
 
 bin:
 	mkdir -p bin Testing_DIR
 
-bin/decompress: decompress.o
-	${CC} -o bin/decompress decompress.o $(LIBS)
+bin/$(FILENM3): $(FILENM3).o
+	${CC} -o bin/$(FILENM3) $(FILENM3).o $(LIBS)
 
-bin/multicam: multicam.o util_multicam.o
-	${CC} -o bin/multicam multicam.o util_multicam.o $(LIBS)
+bin/$(FILENM): $(FILENM).o $(FILENM2).o
+	${CC} -o bin/$(FILENM) $(FILENM).o $(FILENM2).o $(LIBS)
 
-decompress.o: decompress.cpp
-	${CC} $(CFLAGS) -c decompress.cpp
+$(FILENM3).o: $(FILENM3).cpp
+	${CC} $(CFLAGS) -c $(FILENM3).cpp
 
-multicam.o: recorder/multicam.cpp
-	${CC} $(CFLAGS) -c recorder/multicam.cpp
+$(FILENM).o: recorder/$(FILENM).cpp
+	${CC} $(CFLAGS) -c recorder/$(FILENM).cpp
 
-util_multicam.o: recorder/util_multicam.cpp
-	${CC} $(CFLAGS) -c recorder/util_multicam.cpp
+$(FILENM2).o: recorder/$(FILENM2).cpp
+	${CC} $(CFLAGS) -c recorder/$(FILENM2).cpp
 
 clean:
 	rm -f *.o
-	rm -f bin/decompress bin/multicam
+	rm -f bin/$(FILENM3) bin/$(FILENM)
