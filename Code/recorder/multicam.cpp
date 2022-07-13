@@ -514,6 +514,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
             //uint16_t *df = (uint16_t *)depth_frame_in.get_data();
             std::copy(ptr_depth_frm, ptr_depth_frm + num_bytes * 2, store_frame_lsb);
+
             // uint8_t *df =
             //  rs2::depth_frame rse =  (rs2::depth_frame)depth_frame_in;
             //  const int stride= rse.get_stride_in_bytes();
@@ -649,6 +650,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         cv::destroyAllWindows();
     }
 #endif
+    
 
     pipe.stop();
     // return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data, color_data, stride), ost->tmp_pkt);

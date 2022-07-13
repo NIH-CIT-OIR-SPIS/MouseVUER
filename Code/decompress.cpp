@@ -244,21 +244,46 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
     printf("PSNR value = %f\n", psnr_val);
     psnr_vector.push_back(psnr_val);
 #if __has_include(<opencv2/opencv.hpp>)
-
     cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
     raw_img_color = 0;
     cv::Mat dec_img_color(cv::Size(W, H), CV_8UC3);
     dec_img_color = 0;
     cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
     cv::Mat raw_img(cv::Size(W, H), CV_16U, store_raw_depth, cv::Mat::AUTO_STEP);
-    dec_img.convertTo(dec_img, CV_8U, 0.7);
-    raw_img.convertTo(raw_img, CV_8U, 0.7);
-    cv::applyColorMap(dec_img, dec_img_color, 2);
-    cv::applyColorMap(raw_img, raw_img_color, 2);
+
+
+
+
+    cv::normalize(dec_img, dec_img, 0, 65535, cv::NORM_MINMAX);
+    cv::normalize(raw_img, raw_img, 0, 65535, cv::NORM_MINMAX);
+    // cv::normalize(dec_img, dec_img_color, 0, 6, cv::NORM_MINMAX);
+    // cv::normalize(raw_img, raw_img_color, 0, 255, cv::NORM_MINMAX);
+    dec_img.convertTo(raw_img_color, CV_8U, 1.0/255);
+    raw_img.convertTo(dec_img_color, CV_8U, 1.0/255);
+    uint8_t *ptr_dec_img_color = dec_img_color.data;
+    for (uint b = 0; b < dec_img_color.cols * dec_img_color.rows; ++b) {
+        if (ptr_dec_img_color[b] < 1){
+            store_depth[b] = 0;
+        }
+    }
+
+    for (uint bx = 0; bx < 720; ++i )
+    psnr_val = get_psnr(store_depth, store_raw_depth);
+    printf("Get other PSNR value = %f\n", psnr_val);
+    //raw_img.convertTo(raw_img, CV_8U, 0.7);
+    //cv::applyColorMap(dec_img_color, dec_img_color, 9);
+    //cv::applyColorMap(raw_img_color, raw_img_color, 9);
     cv::namedWindow("Decompressed Image", cv::WINDOW_AUTOSIZE);
     cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
     cv::imshow("Decompressed Image", dec_img_color);
     cv::imshow("Raw Image", raw_img_color);
+    
+
+
+    if (video_frame_count == 30){
+        cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
+        cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
+    }
     if ((char)cv::waitKey(25) == 27) //
     {
         cv::destroyAllWindows();

@@ -20,7 +20,9 @@ To install with linux please follow directions here https://github.com/IntelReal
 https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/
 
 ## If the above doesn't work
-Install manually using guide below.
+from 
+https://docs.opencv.org/4.6.0/d7/d9f/tutorial_linux_install.html
+1) Install manually using guide below.
 ```
 sudo apt install -y g++ && \
 sudo apt install -y cmake && \
@@ -37,7 +39,45 @@ make -j5 && \
 sudo make install && \
 sudo ldconfig -v
 ```
-https://docs.opencv.org/4.6.0/d7/d9f/tutorial_linux_install.html
+
+2) Then 
+```
+sudo nano /usr/local/lib/pkgconfig/opencv4.pc
+```
+
+3) Then copy the following to the opencv4.pc file:
+```
+# Package Information for pkg-config
+
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include/opencv4
+
+Name: OpenCV
+Description: Open Source Computer Vision Library
+Version: 4.6.0 
+Libs: -L${exec_prefix}/lib -lopencv_gapi -lopencv_highgui -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching -lopencv_video -lopencv_calib3d -lopencv_features2d -lopencv_dnn -lopencv_flann -lopencv_videoio -lopencv_imgcodecs -lopencv_imgproc -lopencv_core
+Libs.private: -ldl -lm -lpthread -lrt
+Cflags: -I${includedir}
+```
+
+4) Then do 
+```
+sudo nano ~/.bashrc
+```
+
+5) Now copy the following at the bottom of the .bashrc file
+```
+PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
+export PKG_CONFIG_PATH
+```
+
+6) Now execute the command
+```
+sudo ldconfig -v
+```
+
 
 
 ### Install Boost, FFmpeg, GLFW3 and others using the following commands:
