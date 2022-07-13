@@ -7,9 +7,6 @@
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <librealsense2/rs_advanced_mode.hpp>
 
-#if __has_include(<example.hpp>)
-#include <example.hpp>
-#endif
 
 #include <boost/program_options/cmdline.hpp>
 #include <boost/program_options/options_description.hpp>

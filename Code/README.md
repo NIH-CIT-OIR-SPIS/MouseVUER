@@ -16,7 +16,28 @@ This is a guide on how to run the program
 To install with linux please follow directions here https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 
 ### Install OpenCV with the following directions
+
 https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/
+
+## If the above doesn't work
+Install manually using guide below.
+```
+sudo apt install -y g++ && \
+sudo apt install -y cmake && \
+sudo apt install -y make && \
+sudo apt install -y wget unzip && \
+sudo apt install -y git && \
+cd ~/ && \
+wget -O opencv.zip https://github.com/opencv/opencv/archive/4.x.zip && \
+unzip opencv.zip && \
+mv opencv-4.x opencv && \
+mkdir -p build && cd build && \
+cmake -DOPENCV_GENERATE_PKGCONFIG=ON ../opencv && \
+make -j5 && \
+sudo make install && \
+sudo ldconfig -v
+```
+https://docs.opencv.org/4.6.0/d7/d9f/tutorial_linux_install.html
 
 
 ### Install Boost, FFmpeg, GLFW3 and others using the following commands:

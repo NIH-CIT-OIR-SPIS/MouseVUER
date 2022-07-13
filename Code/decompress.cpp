@@ -200,10 +200,7 @@ static void lineRead( uint16_t * store_depth_lsb_in){
 static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
 {
 
-    cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
-    raw_img_color = 0;
-    cv::Mat dec_img_color(cv::Size(W, H), CV_8UC3);
-    dec_img_color = 0;
+
     int i = 0, y = 0, count = 0;
     double psnr_val = 0;
     uint16_t max = 0;
@@ -246,16 +243,30 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
     psnr_val = get_psnr(store_depth, store_raw_depth);
     printf("PSNR value = %f\n", psnr_val);
     psnr_vector.push_back(psnr_val);
-    // cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
-    // dec_img.convertTo(dec_img, CV_8U, 0.7);
-    // cv::applyColorMap(dec_img, dec_img_color, 2);
-    // cv::namedWindow("Decompressed Image", cv::WINDOW_AUTOSIZE);
-    // cv::imshow("Decompressed Image", dec_img_color);
-    // if ((char)cv::waitKey(25) == 27) //
-    // {
-    //     exit(1);
-    // }
+#if __has_include(<opencv2/opencv.hpp>)
+
+    cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
+    raw_img_color = 0;
+    cv::Mat dec_img_color(cv::Size(W, H), CV_8UC3);
+    dec_img_color = 0;
+    cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
+    cv::Mat raw_img(cv::Size(W, H), CV_16U, store_raw_depth, cv::Mat::AUTO_STEP);
+    dec_img.convertTo(dec_img, CV_8U, 0.7);
+    raw_img.convertTo(raw_img, CV_8U, 0.7);
+    cv::applyColorMap(dec_img, dec_img_color, 2);
+    cv::applyColorMap(raw_img, raw_img_color, 2);
+    cv::namedWindow("Decompressed Image", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Decompressed Image", dec_img_color);
+    cv::imshow("Raw Image", raw_img_color);
+    if ((char)cv::waitKey(25) == 27) //
+    {
+        cv::destroyAllWindows();
+        exit(1);
+    }
     //10872 vs 637
+
+#endif   
     fwrite(store_depth, sizeof(uint16_t), 1280*720, out_write);
     fclose(out_write);
     //printf("max: %u\n", max);
@@ -781,5 +792,8 @@ end:
     av_frame_free(&frame_msb);
     av_free(video_dst_data[0]);
     av_free(video_dst_data_msb[0]);
+#if __has_include(<opencv2/opencv.hpp>)
+    cv::destroyAllWindows();
+#endif
     return ret < 0;
 }

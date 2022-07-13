@@ -22,14 +22,13 @@
 
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
+
 #endif
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <librealsense2/rs_advanced_mode.hpp>
 
-// #if __has_include(<example.hpp>)
-
-// #endif
+#include <example.hpp>
 #include "../third-party/example.hpp"
 #include <boost/program_options/cmdline.hpp>
 #include <boost/program_options/options_description.hpp>
@@ -583,6 +582,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             }
             
 #if __has_include(<opencv2/opencv.hpp>)
+            //std::cerr << "Why no printing" << std::endl;
             if (show_preview)
             {
 
