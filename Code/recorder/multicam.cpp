@@ -163,7 +163,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
  * @param depth_lossless - Whether or not to store the depth frames losslessly. Taxing on CPU.
  * @return int
  */
-int startRecording(std::string dirname, long time_run, std::string bag_file_dir, int max_d, unsigned int width = 1280U,
+int startRecording(std::string dirname, long time_run, std::string bag_file_dir, int max_d, int min_d, unsigned int width = 1280U,
                    unsigned int height = 720U, unsigned int fps = 30U, int crf_lsb = 25, int count_threads = 2,
                    bool ffmpeg_verbose = false, bool collect_raw = false, int num_frm_collect = 0, bool show_preview = false,
                    std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false)
@@ -329,7 +329,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     auto device = ctx.query_devices();
     auto dev = device[0];
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configuration
-    if (!(json_file.size() > 0) || max_d != 65535)
+    if (!(json_file.size() > 0))
     {
         auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
         STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
@@ -458,15 +458,20 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // int min_dis = 0;
     // int max_dis = 16;
 
-    float min_dis = 0.0f;
-    // float max_dis = 16.0f;
+    float min_dis = (int)((min_d) / (65535)) * (16.0);
+        // float max_dis = 16.0f;
 
     float max_dis = (int)((max_d) / (65535)) * (16.0);
+    int diff = max_d - min_d;
     thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
     int min_dis_d = (int)min_dis;
     int max_dis_d = (int)max_dis;
+
+    std::cout << "min_dis_d: " << min_dis_d << std::endl;
+    std::cout << "max_dis_d: " << max_dis_d << std::endl;
+    std::cout << "diff: " << diff << std::endl;
     // if (show_preview){
     //     window app(1280, 960, "Camera Depth Device");
     // }
@@ -531,7 +536,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         if (depth_frame_in = frameset.get_depth_frame())
         {
 
-            if (max_dis < 15.0f)
+            if (max_dis < 16.0f)
             {
                 depth_frame_in = thresh_filter.process(depth_frame_in);
             }
@@ -569,16 +574,19 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //     }
             //     fclose(output_vec_val);
             // }
-            if (max_d > 1023.0f){
-            for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
+            if (diff > 1024) // WILL need to add logic for scaling
             {
+                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
+                {
 
-                store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
-                // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
-                store_frame_lsb[i + 1] &= (uint8_t)0b11;
-                // store_frame_test[y] = store_frame_lsb[i];
+                    store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
+                    // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
+                    store_frame_lsb[i + 1] &= (uint8_t)0b11;
+                    // store_frame_test[y] = store_frame_lsb[i];
+                }
             }
-            }else{
+            else
+            {
                 for (i = 0; i < num_bytes * 2; i += 2)
                 {
                     store_frame_lsb[i + 1] &= (uint8_t)0b11;
@@ -787,6 +795,7 @@ try
     std::string dir = "";
     long sec = 0;
     int max_depth = 65535;
+    int min_depth = 0;
     int width = 1280;
     int height = 720;
     int fps = 30;
@@ -872,6 +881,7 @@ try
     crf_color = parse_integer_cmd(input, "-crf_color", crf_color);
     depth_lossless = parse_integer_cmd(input, "-depth_lossless", depth_lossless);
     max_depth = parse_integer_cmd(input, "-max_depth", max_depth);
+    min_depth = parse_integer_cmd(input, "-min_depth", min_depth);
     // rosbag = parse_integer_cmd(input, "-rosbag", rosbag);
     if (width == -5 || width < 200 || width > 1920)
     {
@@ -928,9 +938,14 @@ try
         print_usage("-depth_lossless");
         return EXIT_FAILURE;
     }
-    if (max_depth < 1 || max_depth > 65535)
+    if (max_depth < 1 || max_depth > 65535 || max_depth < min_depth || max_depth == min_depth)
     {
         print_usage("-max_depth");
+        return EXIT_FAILURE;
+    }
+    if (min_depth < 1 || min_depth > 65535 || min_depth > max_depth || max_depth == min_depth)
+    {
+        print_usage("-min_depth");
         return EXIT_FAILURE;
     }
     // if(rosbag < 0 || rosbag > 1){
@@ -953,8 +968,9 @@ try
     std::cout << "crf_color " << crf_color << std::endl;
     std::cout << "depth_lossless: " << depth_lossless << std::endl;
     std::cout << "max_depth: " << max_depth << std::endl;
+    std::cout << "min_depth: " << min_depth << std::endl;
     // std::cout << "rosbag: " << bool(rosbag) << std::endl;
-    int retval = startRecording(dir, sec, bagfile, max_depth, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless));
+    int retval = startRecording(dir, sec, bagfile, max_depth, min_depth, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless));
     if (!retval)
     {
         std::cout << "FAILURE WHILE RECORDING" << std::endl;
