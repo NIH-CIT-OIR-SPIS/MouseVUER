@@ -50,6 +50,7 @@
 #include <array>
 #include <limits>
 #include <numeric>
+#include <bitset>
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
 #endif   
@@ -111,6 +112,7 @@ static int count_loop = 0;
 static uint16_t store_depth[1280 * 720] = {0};
 static uint16_t store_depth_lsb[1280 * 720] = {0};
 static uint16_t store_raw_depth[1280 * 720] = {0};
+static uint16_t store_raw_depth_lsb[1280 * 720] = {0};
 static std::vector<double> psnr_vector;
 static char * out_write = "Testing_DIR/testout_r.mp4";
 
@@ -200,7 +202,27 @@ static double get_psnr(uint16_t * m0, uint16_t * m1)
     uint sum_sq = 0;
     double mse = 0;
 //#pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i <1280*720; ++i){
+    for (int i = 0; i <H*W; ++i){
+        int p1 = m0[i];
+        int p2 = m1[i];
+        int err = abs_diff(p2, p1);
+        sum_sq += (err * err);
+    }
+    //res = res / (height * width);
+    if (mse <= 0){
+        return (double)100;
+    }
+    mse = (double)sum_sq / (H*W);
+    return (10.0 * log10(cg / mse));
+}
+
+static double get_psnr_10bit(uint16_t * m0, uint16_t * m1)
+{
+    long cg = 1023 * 1023;
+    uint sum_sq = 0;
+    double mse = 0;
+//#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i <H*W; ++i){
         int p1 = m0[i];
         int p2 = m1[i];
         int err = abs_diff(p2, p1);
@@ -208,9 +230,32 @@ static double get_psnr(uint16_t * m0, uint16_t * m1)
     }
     //res = res / (height * width);
     mse = (double)sum_sq / (H*W);
+    if (mse <= 0){
+        return (double)100;
+    }
     return (10.0 * log10(cg / mse));
 }
 
+
+static double get_psnr_6bit(uint16_t * m0, uint16_t * m1)
+{
+    long cg = 63* 63;
+    uint sum_sq = 0;
+    double mse = 0;
+//#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i <H*W; ++i){
+        int p1 = m0[i];
+        int p2 = m1[i];
+        int err = abs_diff(p2, p1);
+        sum_sq += (err * err);
+    }
+    //res = res / (height * width);
+    mse = (double)sum_sq / (H*W);
+    if (mse <= 0){
+        return (double)100;
+    }
+    return (10.0 * log10(cg / mse));
+}
 static int exec_ffprobe(std::string str_cmd) {
     const char * cmd = str_cmd.c_str();
     std::array<char, 128> buffer;
@@ -254,7 +299,9 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
 
 
     int i = 0, y = 0, count = 0;
+    //int count2 = 0;
     double psnr_val = 0;
+    //double psnr_val_10_bit = 0;
     uint16_t max = 0;
     uint16_t curr_lsb = 0;
     uint16_t store_num = 0;
@@ -271,17 +318,50 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
         return -1;
     }
     fread(store_raw_depth, sizeof(uint16_t), H*W, read_raw);
+    //uint8_t lsb_loss1 = 0;
+    //uint16_t lsb_loss2 = 0;
 
-    for (i = 0, y = 0; i < H*W*2; i += 2, ++y){
+    //uint16_t lossless = 0;
+    for (i = 0, y = 0; i < H*W*2 && y < H*W; i += 2, ++y){
+
+        // if ( count2 < 20 && store_raw_depth[y] < (uint16_t)1023 && store_raw_depth[y] > (uint16_t)700){
+        //     lsb_loss1 = frame_lsb[i];
+        //     lsb_loss2 = ((uint16_t)frame_lsb[i] |  (((uint16_t)frame_lsb[i+1]) << 8));//frame_lsb[i + 1];
+            
+        //     std::bitset<8> bits(lsb_loss1);
+        //     std::bitset<16> bits_sec(lsb_loss2);
+        //     std::bitset<16> bits_sec_2((store_raw_depth[y] & (uint16_t)1023));
+        //     std::string bits_str = bits.to_string();
+        //     std::string bits_sec_str = bits_sec.to_string();
+        //     std::string bits_sec_2_str = bits_sec_2.to_string();
+        //     std::cout << "temp " << (int)lsb_loss1 << " 0b"  
+        //     << bits_str << "; temp_sec " << (int)lsb_loss2 << " 0b" << bits_sec_str 
+        //     << "; temp_sec_2 " << (int)store_raw_depth[y] << " 0b" << bits_sec_2_str << std::endl;
+        //     ++count2;
+
+        // }
         curr_lsb = (uint16_t)frame_lsb[i] |  (((uint16_t)frame_lsb[i+1]) << 8);
+        
         curr_msb =  ((uint16_t)frame_msb[y]) << 10;
         
         store_num = curr_lsb | curr_msb;
+        // if (store_raw_depth[y] - store_num > 100 && count2 < 20){
+           
+        //     std::bitset<16> bits(store_raw_depth[y]);
+        //     std::bitset<16> bits_sec(store_num);
+        //     std::string bits_str = bits.to_string();
+        //     std::string bits_sec_str = bits_sec.to_string();
+        //     std::cout  << "diff " << store_raw_depth[y] - store_num << " " << "temp " << (int)store_raw_depth[y] << " 0b"
+        //     << bits_str << "; temp_sec " << (int)store_num << " 0b" << bits_sec_str << std::endl;
+        //     ++count2;
+        // }
         // if(store_lsb > max){
         //     max = store_lsb;
         // }
+        //store_raw_depth_lsb[y] = store_raw_depth[y] & (uint16_t)1023;
         store_depth[y] = store_num;
         store_depth_lsb[y] = curr_lsb;
+        
         // if(i == 460800*2 && video_frame_count ==200){
         //     fprintf(stderr, "store_depth[%d] = %u\n", i, curr_lsb);
         // }
@@ -297,7 +377,10 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
 
 
     psnr_val = get_psnr(store_depth, store_raw_depth);
+    //psnr_val_10_bit = get_psnr_10bit(store_depth_lsb , store_raw_depth_lsb);
+    //    printf("PSNR value 10 bit = %f\n", psnr_val_10_bit);
     printf("PSNR value = %f\n", psnr_val);
+
     psnr_vector.push_back(psnr_val);
 
 

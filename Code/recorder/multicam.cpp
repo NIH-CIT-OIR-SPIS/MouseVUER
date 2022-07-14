@@ -197,8 +197,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int encode_video = 0;
     int i = 0, k = 0;
     int num_bytes = width * height;
-    float min_dis = 0.0f;
-    float max_dis = 16.0f;
+
     long counter = 0;
 
 
@@ -361,6 +360,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     const char *filename = path_lsb.c_str();
     AVPixelFormat pix_fmt_use = AV_PIX_FMT_YUV420P10LE;
+    AVCodecID codec_id_in = AV_CODEC_ID_H264;
     /* allocate the output media context */
     avformat_alloc_output_context2(&oc, NULL, NULL, filename);
     if (!oc)
@@ -378,7 +378,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
      * and initialize the codecs. */
     if (fmt->video_codec != AV_CODEC_ID_NONE)
     {
-        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264, crf_to_c, pix_fmt_use, width, height, fps);
+        add_stream(&video_st, oc, &video_codec, codec_id_in, crf_to_c, pix_fmt_use, width, height, fps);
         have_video = 1;
         encode_video = 1;
     }
@@ -446,9 +446,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     rs2::frame depth_frame_in;
     rs2::frame rgb_frame;
     rs2::threshold_filter thresh_filter;
+    //int min_dis = 0;
+    //int max_dis = 16;
+
+    
+    float min_dis = 0.0f;
+    float max_dis = 4.0f;
+    
     thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
+    int min_dis_d = (int)min_dis;
+    int max_dis_d = (int)max_dis;
     // if (show_preview){
     //     window app(1280, 960, "Camera Depth Device");
     // }
@@ -547,8 +556,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
             for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
             {
+                
                 store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
-                store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
+                store_frame_lsb[i + 1] &= (uint8_t)0b11;//(uint8_t)0b00000011;
                 // store_frame_lsb[i + 1] = 0x03;//0x03; // clear the two LSBs;
                 // store_frame_lsb[i] &= 0x1;
             }
