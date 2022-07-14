@@ -362,7 +362,10 @@ bool InputParser::cmdOptionExists(const std::string &option) const
  */
 void print_usage(std::string choice)
 {
-    if (choice == "-depth_lossless")
+    if (choice == "-max_depth"){
+        std::cout << "Usage: -max_depth <int> maximum depth at certain distance at  1023 or lower depth you will only be using one stream " << std::endl;
+    }
+    else if (choice == "-depth_lossless")
     {
         std::cout << "-depth_lossless [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
     }

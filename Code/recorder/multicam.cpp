@@ -119,9 +119,9 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
         std::cout << "depth_lossless is a depricated feature" << std::endl;
         return "";
     }
-    if(typ == 0){
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) 
-        + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " " + path_name;
+    if (typ == 0)
+    {
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " " + path_name;
         return ffmpeg_command;
     }
     if (typ == 2)
@@ -163,7 +163,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
  * @param depth_lossless - Whether or not to store the depth frames losslessly. Taxing on CPU.
  * @return int
  */
-int startRecording(std::string dirname, long time_run, std::string bag_file_dir, unsigned int width = 1280U,
+int startRecording(std::string dirname, long time_run, std::string bag_file_dir, int max_d, unsigned int width = 1280U,
                    unsigned int height = 720U, unsigned int fps = 30U, int crf_lsb = 25, int count_threads = 2,
                    bool ffmpeg_verbose = false, bool collect_raw = false, int num_frm_collect = 0, bool show_preview = false,
                    std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false)
@@ -194,7 +194,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "Numbec_cpp_propertiesr frames collect greater than 1800 at: " << num_frm_collect << std::endl;
         return 0;
     }
-    int width_color = width;  // width / 2;
+    int width_color = width;   // width / 2;
     int height_color = height; // height / 2;
     int ret = 0;
     int have_video = 0;
@@ -204,13 +204,12 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     long counter = 0;
 
-
     std::string path_raw = dirname + "test_raw";
     std::string path_msb = dirname + "test_msb.mp4";
     std::string path_lsb = dirname + "test_lsb.mp4";
     std::string color_lsb_path = dirname + "test_color.mp4";
-    //std::cout << ffmpeg_verbose << std::endl;
-    
+    // std::cout << ffmpeg_verbose << std::endl;
+
     std::string str_lsb = build_ffmpeg_cmd("yuv420p10le", "yuv420p10le", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
     // std::string str_msb = build_ffmpeg_cmd("gray", "yuvj420p", "libx264", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
     std::string str_msb = build_ffmpeg_cmd("rgb24", "rgb24", "libx264rgb", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
@@ -227,10 +226,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "FFmpeg command for color stream too " << std::endl;
         std::cout << color_lsb << std::endl;
     }
-    //std::cout << "FFmpeg command for str_lsb LSB frames:" << std::endl;
-    //std::cout << str_lsb << std::endl;
+    // std::cout << "FFmpeg command for str_lsb LSB frames:" << std::endl;
+    // std::cout << str_lsb << std::endl;
     std::cout << "FFmpeg command for str_msb MSB frames:" << std::endl;
-    //std::cout << str_msb << std::endl;
+    // std::cout << str_msb << std::endl;
     FILE *pipe_lsb = NULL;
     FILE *pipe_msb = NULL;
     FILE *p_pipe_raw = NULL;
@@ -271,13 +270,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cerr << "fopen error" << std::endl;
         return 0;
     }
-    
-    if (!(pipe_lsb = popen(str_lsb.c_str(), "w")) )
+
+    if (!(pipe_lsb = popen(str_lsb.c_str(), "w")))
     {
         std::cerr << "popen error" << std::endl;
         return 0;
     }
-    
+
     if (!(pipe_msb = popen(str_msb.c_str(), "w")))
     {
         std::cerr << "popen error" << std::endl;
@@ -292,10 +291,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
     }
 #endif
-    //if (show_preview)
+    // if (show_preview)
     //{
 
-       
     //}
     rs2::context ctx;
     rs2::pipeline pipe(ctx);
@@ -321,18 +319,17 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             advanced_mode_dev.load_json(preset_json);
         }
     }
-    //std::cout << "HHHH " << bag_file_dir << std::endl;
+    // std::cout << "HHHH " << bag_file_dir << std::endl;
     if (bag_file_dir.size() > 1 && does_file_exist(bag_file_dir))
     {
         // cfg.enable_record_to_file("abag_file.bag");
-        //std::cout << "This shoudl happend" << std::endl;
+        // std::cout << "This shoudl happend" << std::endl;
         cfg.enable_device_from_file(bag_file_dir, false);
-        
     }
     auto device = ctx.query_devices();
     auto dev = device[0];
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configuration
-    if (!(json_file.size() > 0))
+    if (!(json_file.size() > 0) || max_d != 65535)
     {
         auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
         STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
@@ -433,26 +430,23 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     /**End Libav help **/
 
-     //* bytes_per_pixel * sizeof(uint8_t);
+    //* bytes_per_pixel * sizeof(uint8_t);
 
-    std::string frame_file_nm = dirname + "frame_num_";  
+    std::string frame_file_nm = dirname + "frame_num_";
     // int i = 0;
 
-
-
-    //std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
-    //std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
-    //std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
+    // std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
+    // std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
+    // std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
     int y_comp_10_bit = 2 * height * width; //
     int u_comp_10_bit = y_comp_10_bit / 4;
     int v_comp_10_bit = y_comp_10_bit / 4;
     int total_sz_10_bit = y_comp_10_bit + u_comp_10_bit + v_comp_10_bit;
 
-    
-    uint8_t * store_frame_lsb = (uint8_t *)malloc(total_sz_10_bit * sizeof(uint8_t));
-    uint8_t * store_frame_msb = (uint8_t *)malloc(height * width * 3 * sizeof(uint8_t));
-    uint8_t * store_frame_test = (uint8_t *)malloc(height * width * 1 * sizeof(uint8_t));
-    
+    uint8_t *store_frame_lsb = (uint8_t *)malloc(total_sz_10_bit * sizeof(uint8_t));
+    uint8_t *store_frame_msb = (uint8_t *)malloc(height * width * 3 * sizeof(uint8_t));
+    uint8_t *store_frame_test = (uint8_t *)malloc(height * width * 1 * sizeof(uint8_t));
+
     memset(store_frame_lsb, 0, total_sz_10_bit);
     memset(store_frame_msb, 0, height * width * 3 * sizeof(uint8_t));
     rs2::frameset frameset;
@@ -461,13 +455,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     rs2::frame depth_frame_in;
     rs2::frame rgb_frame;
     rs2::threshold_filter thresh_filter;
-    //int min_dis = 0;
-    //int max_dis = 16;
+    // int min_dis = 0;
+    // int max_dis = 16;
 
-    
     float min_dis = 0.0f;
-    float max_dis = 16.0f;
-    
+    // float max_dis = 16.0f;
+
+    float max_dis = (int)((max_d) / (65535)) * (16.0);
     thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
     std::map<int, rs2::frame> render_frames;
@@ -519,7 +513,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     // uint16_t *color_data = NULL;
     uint8_t *ptr_depth_frm = NULL;
-    //encode_video = 0;
+    // encode_video = 0;
     timer tStart;
 
     while ((long)time_run * fps > counter)
@@ -528,7 +522,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         {
             frameset = pipe.wait_for_frames(1000); // No frames seen for 1 second then exit
         }
-        
+
         catch (const rs2::error &e)
         {
             std::cout << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
@@ -537,15 +531,15 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         if (depth_frame_in = frameset.get_depth_frame())
         {
 
-            if(max_dis < 15.0f){
+            if (max_dis < 15.0f)
+            {
                 depth_frame_in = thresh_filter.process(depth_frame_in);
             }
-             // Filter frames that are between these two depths
+            // Filter frames that are between these two depths
             ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
-            //uint8_t *df = (uint8_t *)depth_frame_in.get_data();
-            ///std::copy(ptr_depth_frm, ptr_depth_frm + num_bytes , store_frame_test);
+            // uint8_t *df = (uint8_t *)depth_frame_in.get_data();
+            /// std::copy(ptr_depth_frm, ptr_depth_frm + num_bytes , store_frame_test);
             std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
-
 
             // uint8_t *df =
             //  rs2::depth_frame rse =  (rs2::depth_frame)depth_frame_in;
@@ -563,7 +557,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             // for (i = 0; i < num_bytes*2 ; i += 2)
             // {
             //     //store_frame_lsb[i] &= (uint16_t)1023;
-                
+
             // }
             // if (counter == 200)
             // {
@@ -575,16 +569,22 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //     }
             //     fclose(output_vec_val);
             // }
-
-            for (i = 0, k = 0, y = 0; i < num_bytes * 2; i += 2, k += 3, ++y)
+            if (max_d > 1023.0f){
+            for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
             {
-                
-                store_frame_msb[k] = ptr_depth_frm[i+1] >> 2 ;
-                //store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
-                store_frame_lsb[i + 1] &= (uint8_t)0b11;
-                //store_frame_test[y] = store_frame_lsb[i];
-            }
 
+                store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
+                // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
+                store_frame_lsb[i + 1] &= (uint8_t)0b11;
+                // store_frame_test[y] = store_frame_lsb[i];
+            }
+            }else{
+                for (i = 0; i < num_bytes * 2; i += 2)
+                {
+                    store_frame_lsb[i + 1] &= (uint8_t)0b11;
+                    // store_frame_test[y] = store_frame_lsb[i];
+                }
+            }
             // if (encode_video)
             // {
             //     //
@@ -595,11 +595,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             // {
             //     fprintf(stderr, "\n\nError encoding video only %ld\n\n", counter);
             // }
-
-            if (!fwrite(store_frame_msb, 1, height * width * 3U, pipe_msb) || !fwrite(store_frame_lsb, 1, total_sz_10_bit, pipe_lsb))
+            if (!fwrite(store_frame_lsb, 1, total_sz_10_bit, pipe_lsb))
             {
                 std::cout << "Error with fwrite frames" << std::endl;
                 break;
+            }
+            if (max_d > 1023.0f)
+            {
+                if (!fwrite(store_frame_msb, 1, height * width * 3U, pipe_msb))
+                {
+                    std::cout << "Error with fwrite frames" << std::endl;
+                    break;
+                }
             }
 
             if (color)
@@ -613,15 +620,14 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     }
                 }
             }
-            
+
 #if __has_include(<opencv2/opencv.hpp>)
-            //std::cerr << "Why no printing" << std::endl;
+            // std::cerr << "Why no printing" << std::endl;
             if (show_preview)
             {
 
                 if (counter % 15 == 0)
                 {
-
 
                     color_frame = coloriz.process(depth_frame_in);
                     cv::Mat img(cv::Size(width, height), CV_8UC3, (uint8_t *)color_frame.get_data(), cv::Mat::AUTO_STEP);
@@ -638,7 +644,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     {
                         break;
                     }
-
                 }
             }
 #endif
@@ -654,7 +659,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                         // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
                         fwrite(ptr_depth_frm, 1, num_bytes * 2, p_file);
                         fclose(p_file);
-                    }else{
+                    }
+                    else
+                    {
                         std::cout << "Problem writing raw file " << bin_out << std::endl;
                     }
                     // if (!fwrite((uint8_t*)depth_frame_in.get_data(), 1, num_bytes*2, p_pipe_raw))
@@ -666,7 +673,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             }
             // if (show_preview)
             // {
-
 
             // render_frames[0] = coloriz.process(depth_frame_in);
             // app.show(render_frames);
@@ -682,11 +688,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         cv::destroyAllWindows();
     }
 #endif
-    
 
     pipe.stop();
     // return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data, color_data, stride), ost->tmp_pkt);
-    
+
     // write_frame(oc, (&video_st)->enc, (&video_st)->st, NULL, (&video_st)->tmp_pkt);
     // av_write_trailer(oc);
     // // delete [] color_data;
@@ -766,7 +771,7 @@ try
     // using boost::program_options::detail::cmdline;
     std::cout << "RUNNING multicam c++ command line......" << std::endl;
     // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-    if (argc > 34 || argc < 2)
+    if (argc > 35 || argc < 2)
     {
         // std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
         print_usage("");
@@ -781,6 +786,7 @@ try
     }
     std::string dir = "";
     long sec = 0;
+    int max_depth = 65535;
     int width = 1280;
     int height = 720;
     int fps = 30;
@@ -865,6 +871,7 @@ try
     color = parse_integer_cmd(input, "-color", color);
     crf_color = parse_integer_cmd(input, "-crf_color", crf_color);
     depth_lossless = parse_integer_cmd(input, "-depth_lossless", depth_lossless);
+    max_depth = parse_integer_cmd(input, "-max_depth", max_depth);
     // rosbag = parse_integer_cmd(input, "-rosbag", rosbag);
     if (width == -5 || width < 200 || width > 1920)
     {
@@ -921,6 +928,11 @@ try
         print_usage("-depth_lossless");
         return EXIT_FAILURE;
     }
+    if (max_depth < 1 || max_depth > 65535)
+    {
+        print_usage("-max_depth");
+        return EXIT_FAILURE;
+    }
     // if(rosbag < 0 || rosbag > 1){
     //     print_usage("-rosbag");
     //     return EXIT_FAILURE;
@@ -940,8 +952,9 @@ try
     std::cout << "color: " << color << std::endl;
     std::cout << "crf_color " << crf_color << std::endl;
     std::cout << "depth_lossless: " << depth_lossless << std::endl;
+    std::cout << "max_depth: " << max_depth << std::endl;
     // std::cout << "rosbag: " << bool(rosbag) << std::endl;
-    int retval = startRecording(dir, sec, bagfile, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless));
+    int retval = startRecording(dir, sec, bagfile, max_depth, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless));
     if (!retval)
     {
         std::cout << "FAILURE WHILE RECORDING" << std::endl;
