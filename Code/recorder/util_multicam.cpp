@@ -199,6 +199,11 @@ extern "C"
 
             //av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-2", 0);
             av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59", 0);
+            if(pix_fmt == AV_PIX_FMT_YUV420P){
+                av_opt_set(c->priv_data, "x264-params", "profile=baseline:level=3.0", 0);
+                av_opt_set(c->priv_data, "x264-params", "bframes=3:ref=3:scenecut=0", 0);
+                //av_opt_set(c->priv_data, "color_range", "pc", 0);
+            }
         } else if(c->codec_id == AV_CODEC_ID_HEVC){
             av_opt_set(c->priv_data, "preset", "ultrafast", 0);
             av_opt_set(c->priv_data, "crf", crf, 0);
