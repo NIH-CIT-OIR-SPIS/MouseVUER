@@ -938,6 +938,8 @@ try
         print_usage("-depth_lossless");
         return EXIT_FAILURE;
     }
+    std::cout << "max_depth: " << max_depth << std::endl;
+    std::cout << "min_depth: " << min_depth << std::endl;
     if (max_depth < 1 || max_depth > 65535 || max_depth < min_depth || max_depth == min_depth)
     {
         print_usage("-max_depth");
