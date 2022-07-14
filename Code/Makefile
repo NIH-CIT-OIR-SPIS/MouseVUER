@@ -5,7 +5,7 @@
 # CXX_LFLAGS=-lrealsense2 -pthread -lglfw -lGL -lglut -lGLU -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale $(shell pkg-config --libs opencv4)
 
 # SOURCES=recorder/multicam_main.cpp recorder/$(FILENM2).cpp  #add your source files here
-# SOURCES2=$(FILENM3).cpp
+# SOURCES2=$(FILENM3).cpp24 GB / 60
 # OBJECTS=$(SOURCES:.cpp=.o) #takes the .cpp files from the SOURCES var and replaces the .cpp with .o for each
 # OBJECTDIR=bin
 # EXEC=bin/$(FILENM)
@@ -51,7 +51,7 @@ FILENM3 = decompress
 all: bin/  bin/$(FILENM3) bin/$(FILENM)
 
 bin:
-	mkdir -p bin Testing_DIR
+	mkdir -p bin/ Testing_DIR/
 
 bin/$(FILENM3): $(FILENM3).o
 	${CC} -o bin/$(FILENM3) $(FILENM3).o $(LIBS)
