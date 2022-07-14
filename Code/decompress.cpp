@@ -163,11 +163,11 @@ int loop_image_patch(uint16_t *data, int width, int height)
     for(y = 0; y < height; y += patch_height){
         for(x = 0; x < width; x += patch_width){
             sum = 0.0;
-            sizer = 0;
+            //sizer = 0;
             for(bh = 0; bh < patch_height; ++bh){
                 for(bw = 0; bw < patch_width; ++bw){
                     sum += data[(y + bh) * width + x + bw];
-                    ++sizer;
+                    //++sizer;
                 }
             }
             // if(sizer != patch_height * patch_width){
@@ -293,7 +293,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
     }
 
 
-    loop_image_patch(store_depth, W, H); //Will utilize later
+    //loop_image_patch(store_depth, W, H); //Will utilize later
 
 
     psnr_val = get_psnr(store_depth, store_raw_depth);
@@ -311,16 +311,20 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
 
 
 
-
+    
     cv::normalize(dec_img, dec_img, 0, 65535, cv::NORM_MINMAX);
     cv::normalize(raw_img, raw_img, 0, 65535, cv::NORM_MINMAX);
-    // cv::normalize(dec_img, dec_img_color, 0, 6, cv::NORM_MINMAX);
-    // cv::normalize(raw_img, raw_img_color, 0, 255, cv::NORM_MINMAX);
-    dec_img.convertTo(raw_img_color, CV_8U, 1.0/255);
-    raw_img.convertTo(dec_img_color, CV_8U, 1.0/255);
+    float alpha = 1.0/255;
+    //alpha = 0.7f;
+    
+    //cv::convertScaleAbs(dec_img, dec_img_color, alpha);
+    //cv::convertScaleAbs(raw_img, raw_img_color, alpha);
+    dec_img.convertTo(dec_img_color, CV_8U, alpha);
+    raw_img.convertTo(raw_img_color, CV_8U, alpha);
+    
+    ///dec_img.convertTo()
+    
     //uint8_t *ptr_dec_img_color = dec_img_color.data;
-
-
     //psnr_val = get_psnr(store_depth, store_raw_depth);
     //printf("Get other PSNR value = %f\n", psnr_val);
     //raw_img.convertTo(raw_img, CV_8U, 0.7);
@@ -345,7 +349,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
     //10872 vs 637
 
 #endif   
-    fwrite(store_depth, sizeof(uint16_t), 1280*720, out_write);
+    fwrite(store_depth, sizeof(uint16_t), H*W, out_write);
     fclose(out_write);
     //printf("max: %u\n", max);
     //fprintf(stderr, "video_frame_count: %d\n", video_frame_count);

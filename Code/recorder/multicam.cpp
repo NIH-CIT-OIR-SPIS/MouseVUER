@@ -360,6 +360,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     AVDictionary *opt = NULL;
 
     const char *filename = path_lsb.c_str();
+    AVPixelFormat pix_fmt_use = AV_PIX_FMT_YUV420P10LE;
     /* allocate the output media context */
     avformat_alloc_output_context2(&oc, NULL, NULL, filename);
     if (!oc)
@@ -377,7 +378,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
      * and initialize the codecs. */
     if (fmt->video_codec != AV_CODEC_ID_NONE)
     {
-        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264, crf_to_c, AV_PIX_FMT_YUV420P10LE, width, height, fps);
+        add_stream(&video_st, oc, &video_codec, AV_CODEC_ID_H264, crf_to_c, pix_fmt_use, width, height, fps);
         have_video = 1;
         encode_video = 1;
     }
@@ -397,7 +398,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
      * video codecs and allocate the necessary encode buffers. */
     if (have_video)
     {
-        open_video(oc, video_codec, &video_st, opt, AV_PIX_FMT_YUV420P10LE);
+        open_video(oc, video_codec, &video_st, opt, pix_fmt_use);
     }
     // if (have_audio)
     //     open_audio(oc, audio_codec, &audio_st, opt);
