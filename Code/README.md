@@ -136,4 +136,8 @@ To look at stats of a video please see the following from (https://ffmpeg.org/ff
 ffprobe -f lavfi movie=Testing_DIR/test_lsb.mp4,signalstats -show_entries frame_tags=lavfi.signalstats.YMAX,lavfi.signalstats.YMIN,lavfi.signalstats.YAVG,lavfi.signalstats.YBITDEPTH,lavfi.signalstats.YDIF
 ```
 
+```
+make -j4 && ./bin/multicam -sec 60 -thr 4 -fps 30 -crf 22 -numraw 450 -max_depth 1000 -dir Testing_DIR/ -bagfile ~/Downloads/fishy-fish.bag && ./bin/decompress Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 
+
+```
 
