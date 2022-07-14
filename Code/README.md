@@ -89,7 +89,7 @@ sudo apt-get -y install libglfw3 && \
 sudo apt-get -y install libglfw3-dev && \
 sudo apt-get -y install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
 sudo apt-get -y install ffmpeg && \
-sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev
+sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev libswscale-dev
 ```
 
 ### Directions for Use
