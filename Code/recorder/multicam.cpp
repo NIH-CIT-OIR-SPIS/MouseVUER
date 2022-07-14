@@ -945,7 +945,7 @@ try
         print_usage("-max_depth");
         return EXIT_FAILURE;
     }
-    if (min_depth < 1 || min_depth > 65535 || min_depth > max_depth || max_depth == min_depth)
+    if (min_depth < 0 || min_depth > 65535 || min_depth > max_depth || max_depth == min_depth)
     {
         print_usage("-min_depth");
         return EXIT_FAILURE;
