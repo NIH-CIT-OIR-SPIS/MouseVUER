@@ -45,7 +45,7 @@ sudo ldconfig -v
 sudo nano /usr/local/lib/pkgconfig/opencv4.pc
 ```
 
-3) Then copy the following to the opencv4.pc file:
+3) And if nothing is there then copy the following to the opencv4.pc file:
 ```
 # Package Information for pkg-config
 
