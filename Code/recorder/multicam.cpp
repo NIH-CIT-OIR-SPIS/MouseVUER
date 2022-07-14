@@ -458,10 +458,12 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // int min_dis = 0;
     // int max_dis = 16;
 
-    float min_dis = (int)((min_d) / (65535)) * (16.0);
-        // float max_dis = 16.0f;
+    //float min_dis = (int)((min_d) / (65535)) * (16.0);
 
-    float max_dis = (int)((max_d) / (65535)) * (16.0);
+
+    //float max_dis = (int)((max_d) / (65535)) * (16.0);
+    float min_dis = 0.0f;
+    float max_dis = 16.0f;
     int diff = max_d - min_d;
     thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
