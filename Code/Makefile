@@ -48,7 +48,7 @@ FILENM = multicam
 FILENM2 = util_multicam
 FILENM3 = decompress
 
-all: bin/  bin/$(FILENM3) bin/$(FILENM)
+all: bin  bin/$(FILENM3) bin/$(FILENM)
 
 bin:
 	mkdir -p bin/ Testing_DIR/
