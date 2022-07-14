@@ -321,10 +321,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             advanced_mode_dev.load_json(preset_json);
         }
     }
-    if (bag_file_dir.size() > 1 && does_dir_exist(bag_file_dir))
+    //std::cout << "HHHH " << bag_file_dir << std::endl;
+    if (bag_file_dir.size() > 1 && does_file_exist(bag_file_dir))
     {
         // cfg.enable_record_to_file("abag_file.bag");
+        //std::cout << "This shoudl happend" << std::endl;
         cfg.enable_device_from_file(bag_file_dir, false);
+        
     }
     auto device = ctx.query_devices();
     auto dev = device[0];
@@ -523,8 +526,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     {
         try
         {
-            frameset = pipe.wait_for_frames(5000); // No frames seen for 5 seconds exit
+            frameset = pipe.wait_for_frames(1000); // No frames seen for 1 second then exit
         }
+        
         catch (const rs2::error &e)
         {
             std::cout << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
@@ -532,6 +536,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
         if (depth_frame_in = frameset.get_depth_frame())
         {
+
             if(max_dis < 15.0f){
                 depth_frame_in = thresh_filter.process(depth_frame_in);
             }
