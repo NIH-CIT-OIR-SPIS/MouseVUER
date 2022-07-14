@@ -469,8 +469,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int min_dis_d = (int)min_dis;
     int max_dis_d = (int)max_dis;
 
-    std::cout << "min_dis_d: " << min_dis_d << std::endl;
-    std::cout << "max_dis_d: " << max_dis_d << std::endl;
+    std::cout << "min_dis_d: " << min_dis << std::endl;
+    std::cout << "max_dis_d: " << max_dis << std::endl;
     std::cout << "diff: " << diff << std::endl;
     // if (show_preview){
     //     window app(1280, 960, "Camera Depth Device");
@@ -574,7 +574,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //     }
             //     fclose(output_vec_val);
             // }
-            if (diff > 1024) // WILL need to add logic for scaling
+            if (max_d > 1023) // WILL need to add logic for scaling
             {
                 for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
                 {
@@ -608,7 +608,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 std::cout << "Error with fwrite frames" << std::endl;
                 break;
             }
-            if (max_d > 1023.0f)
+
+            if (max_d > 1023)
             {
                 if (!fwrite(store_frame_msb, 1, height * width * 3U, pipe_msb))
                 {
