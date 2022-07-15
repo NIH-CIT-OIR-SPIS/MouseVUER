@@ -251,8 +251,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     FILE *color_pipe = NULL;
     int diff = (int)max_d - (int)min_d;
     bool only_10_bits = false;
-    //floor( ( (double)(max_d - min_d) * 1000.0)/((double)depth_u)) <= 1023
-    if(diff <= 1023){
+    // floor( ( (double)(max_d - min_d) * 1000.0)/((double)depth_u)) <= 1023
+    if (diff <= 1023)
+    {
         only_10_bits = true;
     }
 #ifdef _WIN32
@@ -361,7 +362,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
         // depth_table.depthUnits = 0.001;
         // std::cout << "Depth units"
-        depth_table.depthUnits = (int32_t)depth_u;     // in micro meters
+        depth_table.depthUnits = (int32_t)depth_u;  // in micro meters
         depth_table.depthClampMin = (int32_t)min_d; // 100 mm
         depth_table.depthClampMax = (int32_t)max_d; //(int)pow(2, 16); // pow(2, 16);// 1000 mm
         advanced_mode_dev.set_depth_table(depth_table);
@@ -374,7 +375,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "Depth max: " << advanced_mode_dev.get_depth_table().depthClampMax << "mm Depth unit: " << advanced_mode_dev.get_depth_table().depthUnits << std::endl;
         std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
     }
-
 
     if (color)
     {
@@ -1021,7 +1021,6 @@ try
         print_usage("-depth_unit");
         return EXIT_FAILURE;
     }
-    
 
     // if(rosbag < 0 || rosbag > 1){
     //     print_usage("-rosbag");

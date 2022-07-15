@@ -1,5 +1,3 @@
-
-
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
 #endif
@@ -7,11 +5,9 @@
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <librealsense2/rs_advanced_mode.hpp>
 
-
 #include <boost/program_options/cmdline.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/detail/cmdline.hpp>
-
 
 #include <map>
 #include <vector>
@@ -55,11 +51,8 @@ extern "C"
 #include <libavcodec/avfft.h>
 #include <libavformat/avio.h>
 
-//#define STREAM_DURATION 10.0
-/* default pix_fmt */
-
-
-
+    //#define STREAM_DURATION 10.0
+    /* default pix_fmt */
 
     void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt)
     {
@@ -73,7 +66,7 @@ extern "C"
     }
 
     int write_frame(AVFormatContext *fmt_ctx, AVCodecContext *c,
-                           AVStream *st, AVFrame *frame, AVPacket *pkt)
+                    AVStream *st, AVFrame *frame, AVPacket *pkt)
     {
         int ret;
 
@@ -101,7 +94,7 @@ extern "C"
             pkt->stream_index = st->index;
 
             /* Write the compressed frame to the media file. */
-            //log_packet(fmt_ctx, pkt);
+            // log_packet(fmt_ctx, pkt);
             ret = av_interleaved_write_frame(fmt_ctx, pkt);
             /* pkt is now blank (av_interleaved_write_frame() takes ownership of
              * its contents and resets pkt), so that no unreferencing is necessary.
@@ -117,8 +110,8 @@ extern "C"
     }
     /* Add an output stream. */
     void add_stream(OutputStream *ost, AVFormatContext *oc,
-                           const AVCodec **codec,
-                           enum AVCodecID codec_id, const char *crf, AVPixelFormat pix_fmt, int width, int height, int fps)
+                    const AVCodec **codec,
+                    enum AVCodecID codec_id, const char *crf, AVPixelFormat pix_fmt, int width, int height, int fps)
     {
         AVCodecContext *c = NULL;
         int i;
@@ -156,7 +149,7 @@ extern "C"
         // printf("hih\n");
         c->codec_id = codec_id;
         // c->flags = AV_CODEC_FLAG_GRAY;
-        //c->bit_rate = 1 * 1000000;
+        // c->bit_rate = 1 * 1000000;
 
         /* Resolution must be a multiple of two. */
         c->width = width;
@@ -171,12 +164,12 @@ extern "C"
          * timebase should be 1/framerate and timestamp increments should be
          * identical to 1. */
         // ost->st->r_frame_rate =
-        ost->st->time_base = (AVRational){1,fps};
+        ost->st->time_base = (AVRational){1, fps};
         // ost->st->nb_frames = 450;
         c->time_base = ost->st->time_base;
         c->framerate = (AVRational){fps, 1};
         // c->noise_reduction = 1;
-        //c->bits_per_raw_sample = 10;
+        // c->bits_per_raw_sample = 10;
         // c->bit_rate = (80 * 8 * 10000000) / 60;
         //  c->field_order = AV_FIELD_UNKNOWN;
         //  c->field_order = AV_F;
@@ -188,36 +181,39 @@ extern "C"
         // c->chromaoffest = 5;
         if (c->codec_id == AV_CODEC_ID_H264)
         {
-            
-                /* just for testing, we also add B frames */
+
+            /* just for testing, we also add B frames */
             av_opt_set(c->priv_data, "preset", "veryfast", 0);
-            av_opt_set(c->priv_data, "noise_reduction", "20", 0); //45
-            
-            
+            av_opt_set(c->priv_data, "noise_reduction", "20", 0); // 45
+
             av_opt_set(c->priv_data, "crf", crf, 0);
 
-
-            //av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-2", 0);
+            // av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59:chroma_qp_offset=-2", 0);
             av_opt_set(c->priv_data, "x264-params", "qpmin=0:qpmax=59", 0);
-            if(pix_fmt == AV_PIX_FMT_YUV420P){
+            if (pix_fmt == AV_PIX_FMT_YUV420P)
+            {
                 av_opt_set(c->priv_data, "x264-params", "profile=baseline:level=3.0", 0);
                 av_opt_set(c->priv_data, "x264-params", "bframes=3:ref=3:scenecut=0", 0);
-                //av_opt_set(c->priv_data, "color_range", "pc", 0);
+                // av_opt_set(c->priv_data, "color_range", "pc", 0);
             }
-        } else if(c->codec_id == AV_CODEC_ID_HEVC){
+        }
+        else if (c->codec_id == AV_CODEC_ID_HEVC)
+        {
             av_opt_set(c->priv_data, "preset", "ultrafast", 0);
             av_opt_set(c->priv_data, "crf", crf, 0);
             av_opt_set(c->priv_data, "tune", "zerolatency", 0);
             av_opt_set(c->priv_data, "x265-params", "qpmin=0:qpmax=59", 0);
-        }else{
+        }
+        else
+        {
             fprintf(stderr, "Could not find encoder for '%s'\n",
                     avcodec_get_name(codec_id));
             exit(1);
         }
 
-
         /* Some formats want stream headers to be separate. */
-        if (oc->oformat->flags & AVFMT_GLOBALHEADER){
+        if (oc->oformat->flags & AVFMT_GLOBALHEADER)
+        {
             c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
         }
     }
@@ -247,7 +243,7 @@ extern "C"
     }
 
     void open_video(AVFormatContext *oc, const AVCodec *codec,
-                           OutputStream *ost, AVDictionary *opt_arg, AVPixelFormat pix_fmt)
+                    OutputStream *ost, AVDictionary *opt_arg, AVPixelFormat pix_fmt)
     {
         int ret;
         AVCodecContext *c = ost->enc;
@@ -273,8 +269,7 @@ extern "C"
             exit(1);
         }
 
-
-        //ost->tmp_frame = NULL;
+        // ost->tmp_frame = NULL;
         /* copy the stream parameters to the muxer */
         ret = avcodec_parameters_from_context(ost->st->codecpar, c);
         if (ret < 0)
@@ -283,7 +278,6 @@ extern "C"
             exit(1);
         }
     }
- 
 
     AVFrame *get_video_frame(OutputStream *ost, uint8_t *data)
     {
@@ -301,7 +295,7 @@ extern "C"
             exit(1);
         }
         // printf("HIeeeee\n");
-        //fill_yuv_image(ost->frame, ost->next_pts, c->width, c->height, data);
+        // fill_yuv_image(ost->frame, ost->next_pts, c->width, c->height, data);
         ost->frame->data[0] = data;
 
         ost->frame->pts = ost->next_pts++;
@@ -322,17 +316,17 @@ extern "C"
     {
         avcodec_free_context(&ost->enc);
         av_frame_free(&ost->frame);
-        //av_frame_free(&ost->tmp_frame);
+        // av_frame_free(&ost->tmp_frame);
         av_packet_free(&ost->tmp_pkt);
         sws_freeContext(ost->sws_ctx);
         swr_free(&ost->swr_ctx);
     }
 }
 
-
 InputParser::InputParser(int &argc, char **argv)
 {
-    for (int i = 1; i < argc; ++i){
+    for (int i = 1; i < argc; ++i)
+    {
         this->tokens.push_back(std::string(argv[i]));
     }
 }
@@ -349,12 +343,10 @@ const std::string &InputParser::getCmdOption(const std::string &option) const
     return empty_string;
 }
 
-
 bool InputParser::cmdOptionExists(const std::string &option) const
 {
     return this->tokens.end() != std::find(this->tokens.begin(), this->tokens.end(), option);
 }
-
 
 /**
  * @brief print_usage statement
@@ -362,17 +354,21 @@ bool InputParser::cmdOptionExists(const std::string &option) const
  */
 void print_usage(std::string choice)
 {
-    if(choice == "-depth_unit"){
+    if (choice == "-depth_unit")
+    {
         std::cout << "Usage: ./depth_unit -depth_unit <int>  Depth units represent the measurement length of a single depth step. A Depth step is difference between each discrete depth value in a depth image." << std::endl;
         std::cout << "For example if my depth unit is 1000 then each difference in 1 mm in the image will result in one value difference in the actual depth values." << std::endl;
         std::cout << "To obtain back the true depth distance one needs to use the following formula: for each i in depth array: dist = depth_unit * depth_value[i] , where the dist is measured in micrometers" << std::endl;
         std::cout << "1 depth_unit is about a micrometer, so 1000 micrometers is the default depth resolution (~ 1 mm). " << std::endl;
         std::cout << "Max depth unit is 100000 micrometers" << std::endl;
         std::cout << "Min viable depth unit is 40 micrometers" << std::endl;
-    } else if(choice == "-min_depth"){
+    }
+    else if (choice == "-min_depth")
+    {
         std::cout << "Usage: -max_depth <int> depth diff of 1023 or lower depth you will only be using one stream " << std::endl;
-    }else
-    if (choice == "-max_depth"){
+    }
+    else if (choice == "-max_depth")
+    {
         std::cout << "Usage: -max_depth <int> depth diff of 1023 or lower depth you will only be using one stream " << std::endl;
     }
     else if (choice == "-depth_lossless")
@@ -483,7 +479,6 @@ int parse_integer_cmd(InputParser &input, std::string cmd, int prev_val)
     return ret;
 }
 
-
 bool does_file_exist(std::string path)
 {
     FILE *fp = NULL;
@@ -494,7 +489,6 @@ bool does_file_exist(std::string path)
     }
     return false;
 }
-
 
 bool does_dir_exist(std::string path)
 {
