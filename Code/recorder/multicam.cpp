@@ -300,7 +300,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cerr << "popen error" << std::endl;
         return 0;
     }
-    if (only_10_bits)
+    if (diff > 1023)
     {
         if (!(pipe_msb = popen(str_msb.c_str(), "w")))
         {
@@ -355,7 +355,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     auto device = ctx.query_devices();
     auto dev = device[0];
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configuration
-    if (!(json_file.size() > 0) || max_d < 65535 || min_d > 0 || depth_u > 1000 || depth_u < 1000)
+    if (!(json_file.size() > 0))
     {
         auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
         STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
@@ -1016,7 +1016,7 @@ try
         print_usage("-min_depth");
         return EXIT_FAILURE;
     }
-    if (depth_unit < 200 || depth_unit > 100000)
+    if (depth_unit < 40 || depth_unit > 100000)
     {
         print_usage("-depth_unit");
         return EXIT_FAILURE;

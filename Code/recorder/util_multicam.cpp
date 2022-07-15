@@ -368,7 +368,7 @@ void print_usage(std::string choice)
         std::cout << "To obtain back the true depth distance one needs to use the following formula: for each i in depth array: dist = depth_unit * depth_value[i] , where the dist is measured in micrometers" << std::endl;
         std::cout << "1 depth_unit is about a micrometer, so 1000 micrometers is the default depth resolution (~ 1 mm). " << std::endl;
         std::cout << "Max depth unit is 100000 micrometers" << std::endl;
-        std::cout << "Min viable depth unit is 200 micrometers" << std::endl;
+        std::cout << "Min viable depth unit is 40 micrometers" << std::endl;
     } else if(choice == "-min_depth"){
         std::cout << "Usage: -max_depth <int> depth diff of 1023 or lower depth you will only be using one stream " << std::endl;
     }else
