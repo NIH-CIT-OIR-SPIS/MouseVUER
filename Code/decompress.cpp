@@ -315,21 +315,11 @@ static void lineRead(uint16_t *store_depth_lsb_in)
 static void read_max_min(int *max, int *min)
 {
     std::ifstream infile("Testing_DIR/video_head_file.txt");
-    int a;
-    int count = 0;
-    for (count = 0; count < 2 && infile >> a; ++count)
+    int a, b;
+    while (infile >> a >> b)
     {
-        // printf("%d\n", a);
-        if (count = 0)
-        {
-            *min = a;
-        }
-        else if (count = 1)
-        {
-            *max = a;
-            break;
-        }
-        ++count;
+        *max = a;
+        *min = b;
     }
     printf("Max %d Min %d\n", *max, *min);
     infile.close();

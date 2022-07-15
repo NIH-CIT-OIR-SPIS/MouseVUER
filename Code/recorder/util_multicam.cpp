@@ -362,7 +362,14 @@ bool InputParser::cmdOptionExists(const std::string &option) const
  */
 void print_usage(std::string choice)
 {
-    if(choice == "-min_depth"){
+    if(choice == "-depth_unit"){
+        std::cout << "Usage: ./depth_unit -depth_unit <int>  Depth units represent the measurement length of a single depth step. A Depth step is difference between each discrete depth value in a depth image." << std::endl;
+        std::cout << "For example if my depth unit is 1000 then each difference in 1 mm in the image will result in one value difference in the actual depth values." << std::endl;
+        std::cout << "To obtain back the true depth distance one needs to use the following formula: for each i in depth array: dist = depth_unit * depth_value[i] , where the dist is measured in micrometers" << std::endl;
+        std::cout << "1 depth_unit is about a micrometer, so 1000 micrometers is the default depth resolution (~ 1 mm). " << std::endl;
+        std::cout << "Max depth unit is 100000 micrometers" << std::endl;
+        std::cout << "Min viable depth unit is 200 micrometers" << std::endl;
+    } else if(choice == "-min_depth"){
         std::cout << "Usage: -max_depth <int> depth diff of 1023 or lower depth you will only be using one stream " << std::endl;
     }else
     if (choice == "-max_depth"){
