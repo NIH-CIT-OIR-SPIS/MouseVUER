@@ -312,16 +312,17 @@ static void lineRead(uint16_t *store_depth_lsb_in)
     }
     fclose(out_put_diff);
 }
-static void read_max_min(int *max, int *min)
+static void read_max_min(int *max, int *min, int *depth_units)
 {
     std::ifstream infile("Testing_DIR/video_head_file.txt");
-    int a, b;
-    while (infile >> a >> b)
+    int a, b, c;
+    while (infile >> a >> b >> c)
     {
         *max = a;
         *min = b;
+        *depth_units = c;
     }
-    printf("Max %d Min %d\n", *max, *min);
+    printf("Max %d Min %d Depth_units in micrometers: %d\n", *max, *min, *depth_units);
     infile.close();
 }
 static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
@@ -625,9 +626,10 @@ int main(int argc, char **argv)
     pt_y = &y;
     pt_lsb_frm_count = &frm_count_lsb;
     pt_msb_frm_count = &frm_count_msb;
-    int iop_max = 0, iop_min = 0;
+    int iop_max = 0, iop_min = 0, iop_dep = 0;
     int *ptr_max = &iop_max;
     int *ptr_min = &iop_min;
+    int *ptr_depth_unit = &iop_dep;
     bool take_msb = true;
     if (argc != 3)
     {
@@ -640,7 +642,7 @@ int main(int argc, char **argv)
     src_filename = argv[1];
     src_filename_msb = argv[2];
     // video_dst_filename = argv[3];
-    read_max_min(ptr_max, ptr_min);
+    read_max_min(ptr_max, ptr_min, ptr_depth_unit);
     max_d = *ptr_max;
     min_d = *ptr_min;
 

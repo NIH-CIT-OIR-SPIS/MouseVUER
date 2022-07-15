@@ -493,7 +493,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     //  float min_dis = 0.0f;
     //  float max_dis = 16.0f;
 
-    std::string text_out = std::to_string(max_d) + " " + std::to_string(min_d);
+    std::string text_out = std::to_string(max_d) + " " + std::to_string(min_d) + " " + std::to_string(depth_u);
     write_txt_to_file(dirname + "video_head_file.txt", text_out);
     // thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     // thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
