@@ -115,7 +115,8 @@ static uint16_t store_raw_depth[1280 * 720] = {0};
 static uint16_t store_raw_depth_lsb[1280 * 720] = {0};
 static std::vector<double> psnr_vector;
 static char * out_write = "Testing_DIR/testout_r.mp4";
-
+static uint16_t max_d = 65535;
+static uint16_t min_d = 0;
 
 template<typename T>
 double getAverage(std::vector<T> const& v) {
