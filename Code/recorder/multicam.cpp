@@ -264,10 +264,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cerr << "_popen error" << std::endl;
         exit(1);
     }
-    if (diff > 1023 && !(pipe_msb = _popen(str_msb.c_str(), "wb")))
+    if (diff > 1023)
     {
-        std::cerr << "_popen error" << std::endl;
-        // return 0;
+        if (!(pipe_msb = _popen(str_msb.c_str(), "wb")))
+        {
+            std::cerr << "_popen error" << std::endl;
+            // return 0;
+        }
     }
     // }
     if (color)
@@ -292,11 +295,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cerr << "popen error" << std::endl;
         return 0;
     }
-
-    if (diff > 1023 && !(pipe_msb = popen(str_msb.c_str(), "w")))
+    if (diff > 1023)
     {
-        std::cerr << "Not greater than diff or popen error" << std::endl;
-        // return 0;
+        if (!(pipe_msb = popen(str_msb.c_str(), "w")))
+        {
+            std::cerr << "Not greater than diff or popen error" << std::endl;
+            // return 0;
+        }
     }
     if (color)
     {
@@ -481,7 +486,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     //  float min_dis = 0.0f;
     //  float max_dis = 16.0f;
 
-    std::string text_out = std::to_string(max_d) + "\n" + std::to_string(min_d);
+    std::string text_out = std::to_string(max_d) + " " + std::to_string(min_d);
     write_txt_to_file(dirname + "video_head_file.txt", text_out);
     // thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     // thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
@@ -593,10 +598,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             {
                 ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
 
-                //Remember all data after width * height *2 is 0 so we don't have to put total_sz_10_bit here
-                std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb); 
+                // Remember all data after width * height *2 is 0 so we don't have to put total_sz_10_bit here
+                std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
 
-                for (i = 0, k = 0; i < num_bytes * 2 ; i += 2, k += 3)
+                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += 3)
                 {
 
                     store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
@@ -764,13 +769,15 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             _pclose(pipe_lsb);
             pipe_lsb = NULL;
         }
-        if(pipe_msb){
+        if (pipe_msb)
+        {
             fflush(pipe_msb);
             _pclose(pipe_msb);
             pipe_msb = NULL;
         }
         // }
-        if(p_pipe_raw){
+        if (p_pipe_raw)
+        {
             fflush(p_pipe_raw);
             _pclose(p_pipe_raw);
             p_pipe_raw = NULL;
@@ -790,13 +797,15 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             pclose(pipe_lsb);
             pipe_lsb = NULL;
         }
-        if(pipe_msb){
+        if (pipe_msb)
+        {
             fflush(pipe_msb);
             pclose(pipe_msb);
             pipe_msb = NULL;
         }
         // }
-        if(p_pipe_raw){
+        if (p_pipe_raw)
+        {
             fflush(p_pipe_raw);
             pclose(p_pipe_raw);
             p_pipe_raw = NULL;

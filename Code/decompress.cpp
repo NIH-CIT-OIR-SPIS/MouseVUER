@@ -53,7 +53,7 @@
 #include <bitset>
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
-#endif   
+#endif
 extern "C"
 {
 #include <libavutil/imgutils.h>
@@ -93,8 +93,8 @@ static int width_msb, height_msb;
 static enum AVPixelFormat pix_fmt_msb;
 static AVStream *video_stream_msb = NULL, *audio_stream_msb = NULL;
 static const char *src_filename_msb = NULL;
-//static const char *video_dst_filename_msb = NULL;
-//static const char *audio_dst_filename_msb = NULL;
+// static const char *video_dst_filename_msb = NULL;
+// static const char *audio_dst_filename_msb = NULL;
 static FILE *video_dst_file_msb = NULL;
 static FILE *audio_dst_file_msb = NULL;
 
@@ -114,32 +114,35 @@ static uint16_t store_depth_lsb[1280 * 720] = {0};
 static uint16_t store_raw_depth[1280 * 720] = {0};
 static uint16_t store_raw_depth_lsb[1280 * 720] = {0};
 static std::vector<double> psnr_vector;
-static char * out_write = "Testing_DIR/testout_r.mp4";
+static char *out_write = "Testing_DIR/testout_r.mp4";
 static uint16_t max_d = 65535;
 static uint16_t min_d = 0;
 
-template<typename T>
-double getAverage(std::vector<T> const& v) {
-    if (v.empty()) {
+template <typename T>
+double getAverage(std::vector<T> const &v)
+{
+    if (v.empty())
+    {
         return 0;
     }
- 
+
     double sum = 0.0;
-    for (const T &i: v) {
+    for (const T &i : v)
+    {
         sum += (double)i;
     }
     return sum / v.size();
 }
 
 /**
- * @brief Loops over an image patch given the patchHeight and patchWidth are fixed 
- * and assuming that we don't have to caclulate on the fly. 
- * 
- * 
- * @param data 
- * @param width 
- * @param height 
- * @return int 
+ * @brief Loops over an image patch given the patchHeight and patchWidth are fixed
+ * and assuming that we don't have to caclulate on the fly.
+ *
+ *
+ * @param data
+ * @param width
+ * @param height
+ * @return int
  */
 int loop_image_patch(uint16_t *data, int width, int height)
 {
@@ -153,22 +156,26 @@ int loop_image_patch(uint16_t *data, int width, int height)
     int patch_height = 4;
     int patch_width = 4;
 
-    if ((width*height) % (patch_width*patch_height) != 0)
+    if ((width * height) % (patch_width * patch_height) != 0)
     {
         return 0;
-        //numBlocks = (width*height) / (patch_width*patch_height);
+        // numBlocks = (width*height) / (patch_width*patch_height);
     }
     // else
     // {
     //     //numBlocks = (width*height) / (patch_width*patch_height) + 1;
     // }
-    
-    for(y = 0; y < height; y += patch_height){
-        for(x = 0; x < width; x += patch_width){
+
+    for (y = 0; y < height; y += patch_height)
+    {
+        for (x = 0; x < width; x += patch_width)
+        {
             sum = 0.0;
-            //sizer = 0;
-            for(bh = 0; bh < patch_height; ++bh){
-                for(bw = 0; bw < patch_width; ++bw){
+            // sizer = 0;
+            for (bh = 0; bh < patch_height; ++bh)
+            {
+                for (bw = 0; bw < patch_width; ++bw)
+                {
                     sum += data[(y + bh) * width + x + bw];
                     //++sizer;
                 }
@@ -180,11 +187,11 @@ int loop_image_patch(uint16_t *data, int width, int height)
             ++numBlocks;
         }
     }
-    //printf("Num Blocks %d\n", numBlocks);
+    // printf("Num Blocks %d\n", numBlocks);
     return numBlocks;
 }
 
-static inline int  abs_diff(int a, int b)
+static inline int abs_diff(int a, int b)
 {
 
     if (a - b < 0)
@@ -197,225 +204,192 @@ static inline int  abs_diff(int a, int b)
     }
 }
 
-static double get_psnr(uint16_t * m0, uint16_t * m1)
+static double get_psnr(uint16_t *m0, uint16_t *m1)
 {
     long cg = 65535U * 65535U;
     uint sum_sq = 0;
     double mse = 0;
-//#pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i <H*W; ++i){
+    //#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < H * W; ++i)
+    {
         int p1 = m0[i];
         int p2 = m1[i];
         int err = abs_diff(p2, p1);
         sum_sq += (err * err);
     }
-    //res = res / (height * width);
+    // res = res / (height * width);
 
-    mse = (double)sum_sq / (H*W);
+    mse = (double)sum_sq / (H * W);
     return (10.0 * log10(cg / mse));
 }
 
-static double get_psnr_10bit(uint16_t * m0, uint16_t * m1)
+static double get_psnr_10bit(uint16_t *m0, uint16_t *m1)
 {
     long cg = 1023 * 1023;
     uint sum_sq = 0;
     double mse = 0;
-//#pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i <H*W; ++i){
+    //#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < H * W; ++i)
+    {
         int p1 = m0[i];
         int p2 = m1[i];
         int err = abs_diff(p2, p1);
         sum_sq += (err * err);
     }
-    //res = res / (height * width);
-    mse = (double)sum_sq / (H*W);
+    // res = res / (height * width);
+    mse = (double)sum_sq / (H * W);
 
     return (10.0 * log10(cg / mse));
 }
-
-
-static double get_psnr_6bit(uint16_t * m0, uint16_t * m1)
+bool does_file_exist(std::string path)
 {
-    long cg = 63* 63;
+    FILE *fp = NULL;
+    if ((fp = fopen(path.c_str(), "r")))
+    {
+        fclose(fp);
+        return true;
+    }
+    return false;
+}
+static double get_psnr_6bit(uint16_t *m0, uint16_t *m1)
+{
+    long cg = 63 * 63;
     uint sum_sq = 0;
     double mse = 0;
-//#pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i <H*W; ++i){
+    //#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < H * W; ++i)
+    {
         int p1 = m0[i];
         int p2 = m1[i];
         int err = abs_diff(p2, p1);
         sum_sq += (err * err);
     }
-    //res = res / (height * width);
-    mse = (double)sum_sq / (H*W);
+    // res = res / (height * width);
+    mse = (double)sum_sq / (H * W);
 
     return (10.0 * log10(cg / mse));
 }
-static int exec_ffprobe(std::string str_cmd) {
-    const char * cmd = str_cmd.c_str();
+static int exec_ffprobe(std::string str_cmd)
+{
+    const char *cmd = str_cmd.c_str();
     std::array<char, 128> buffer;
     std::string result;
     std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) {
+    if (!pipe)
+    {
         throw std::runtime_error("popen() failed!");
     }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+    {
         result += buffer.data();
     }
-    return  atoi(result.c_str());
+    return atoi(result.c_str());
 }
 
-static void lineRead( uint16_t * store_depth_lsb_in){
-        FILE * out_put_diff = NULL;
-        char *output_diff_fl = "Testing_DIR/output_diff_fl.txt";
-        if(!(out_put_diff = fopen(output_diff_fl, "w")))
+static void lineRead(uint16_t *store_depth_lsb_in)
+{
+    FILE *out_put_diff = NULL;
+    char *output_diff_fl = "Testing_DIR/output_diff_fl.txt";
+    if (!(out_put_diff = fopen(output_diff_fl, "w")))
+    {
+        printf("Could not open file for writing\n");
+        exit(1);
+    }
+    std::vector<int> rand_vec;
+    std::ifstream infile("Testing_DIR/output_vec_ind_file.txt");
+    int a;
+    while (infile >> a)
+    {
+        // printf("%d\n", a);
+        rand_vec.push_back(a);
+    }
+    infile.close();
+    while (rand_vec.size() > 0)
+    {
+
+        fprintf(out_put_diff, "%d\n", store_depth_lsb_in[rand_vec.back()]);
+        rand_vec.pop_back();
+    }
+    fclose(out_put_diff);
+}
+static void read_max_min(int *max, int *min)
+{
+    std::ifstream infile("Testing_DIR/video_head_file.txt");
+    int a;
+    int count = 0;
+    for (count = 0; count < 2 && infile >> a; ++count)
+    {
+        // printf("%d\n", a);
+        if (count = 0)
         {
-            printf("Could not open file for writing\n");
-            exit(1);
+            *min = a;
         }
-        std::vector<int> rand_vec;
-        std::ifstream infile("Testing_DIR/output_vec_ind_file.txt");
-        int a;
-        while(infile >> a){
-            //printf("%d\n", a);
-            rand_vec.push_back(a);
+        else if (count = 1)
+        {
+            *max = a;
+            break;
         }
-        infile.close();
-        while(rand_vec.size() > 0){
-
-            fprintf(out_put_diff, "%d\n", store_depth_lsb_in[rand_vec.back()]);
-            rand_vec.pop_back();
-        }
-        fclose(out_put_diff);
+        ++count;
+    }
+    printf("Max %d Min %d\n", *max, *min);
+    infile.close();
 }
-
 static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
 {
 
-
     int i = 0, y = 0, count = 0;
-    //int count2 = 0;
+    // int count2 = 0;
     double psnr_val = 0;
-    //double psnr_val_6_bit = 0;
+    // double psnr_val_6_bit = 0;
     uint16_t max = 0;
     uint16_t curr_lsb = 0;
     uint16_t store_num = 0;
     uint16_t curr_msb = 0;
     FILE *out_write = NULL;
-    
+
     FILE *read_raw = NULL;
     std::string raw_str = "Testing_DIR/frame_num_" + std::to_string(video_frame_count) + "_data.bin";
     std::string outer = "Testing_DIR/file_out_comp" + std::to_string(video_frame_count) + ".bin";
 
-    if(!(out_write = fopen(outer.c_str(), "wb")) || !(read_raw = fopen(raw_str.c_str(), "rb")))
+    if (!(out_write = fopen(outer.c_str(), "wb")) || !(read_raw = fopen(raw_str.c_str(), "rb")))
     {
         printf("Could not open file for writing\n");
         return -1;
     }
-    fread(store_raw_depth, sizeof(uint16_t), H*W, read_raw);
-    //uint8_t lsb_loss1 = 0;
-    //uint16_t lsb_loss2 = 0;
+    fread(store_raw_depth, sizeof(uint16_t), H * W, read_raw);
 
-    //uint16_t lossless = 0;
-    // for (y = 0;  y < H*W; ++y){
+    if (max_d - min_d <= 1023 || frame_msb == NULL)
+    {
+        for (i = 0, y = 0; i < H * W * 2; i += 2, ++y)
+        {
+            store_num = (uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8);
 
-    //     // if ( count2 < 20 && store_raw_depth[y] < (uint16_t)1023 && store_raw_depth[y] > (uint16_t)700){
-    //     //     lsb_loss1 = frame_lsb[i];
-    //     //     lsb_loss2 = ((uint16_t)frame_lsb[i] |  (((uint16_t)frame_lsb[i+1]) << 8));//frame_lsb[i + 1];
-            
-    //     //     std::bitset<8> bits(lsb_loss1);
-    //     //     std::bitset<16> bits_sec(lsb_loss2);
-    //     //     std::bitset<16> bits_sec_2((store_raw_depth[y] & (uint16_t)1023));
-    //     //     std::string bits_str = bits.to_string();
-    //     //     std::string bits_sec_str = bits_sec.to_string();
-    //     //     std::string bits_sec_2_str = bits_sec_2.to_string();
-    //     //     std::cout << "temp " << (int)lsb_loss1 << " 0b"  
-    //     //     << bits_str << "; temp_sec " << (int)lsb_loss2 << " 0b" << bits_sec_str 
-    //     //     << "; temp_sec_2 " << (int)store_raw_depth[y] << " 0b" << bits_sec_2_str << std::endl;
-    //     //     ++count2;
-
-    //     // }
-    //     curr_lsb = (uint16_t)frame_lsb[i]; //|  (((uint16_t)frame_lsb[i+1]) << 8);
-        
-    //     curr_msb =  ((uint16_t)frame_msb[y]) << 8;
-        
-    //     store_num = curr_lsb | curr_msb;
-    //     // if (store_raw_depth[y] - store_num > 100 && count2 < 20){
-           
-    //     //     std::bitset<16> bits(store_raw_depth[y]);
-    //     //     std::bitset<16> bits_sec(store_num);
-    //     //     std::string bits_str = bits.to_string();
-    //     //     std::string bits_sec_str = bits_sec.to_string();
-    //     //     std::cout  << "diff " << store_raw_depth[y] - store_num << " " << "temp " << (int)store_raw_depth[y] << " 0b"
-    //     //     << bits_str << "; temp_sec " << (int)store_num << " 0b" << bits_sec_str << std::endl;
-    //     //     ++count2;
-    //     // }
-    //     // if(store_lsb > max){
-    //     //     max = store_lsb;
-    //     // }
-    //     //store_raw_depth_lsb[y] = store_raw_depth[y] & (uint16_t)1023;
-    //     store_depth[y] = store_num;
-
-
-    //     //store_depth_lsb[y] = (curr_msb >> 10);
-    //     //store_raw_depth_lsb[y] = store_raw_depth[y] >> 10;
-        
-    //     // if(i == 460800*2 && video_frame_count ==200){
-    //     //     fprintf(stderr, "store_depth[%d] = %u\n", i, curr_lsb);
-    //     // }
-    // }
-  for (i = 0, y = 0; i < H*W*2 && y < H*W; i += 2, ++y){
-
-        // if ( count2 < 20 && store_raw_depth[y] < (uint16_t)1023 && store_raw_depth[y] > (uint16_t)700){
-        //     lsb_loss1 = frame_lsb[i];
-        //     lsb_loss2 = ((uint16_t)frame_lsb[i] |  (((uint16_t)frame_lsb[i+1]) << 8));//frame_lsb[i + 1];
-            
-        //     std::bitset<8> bits(lsb_loss1);
-        //     std::bitset<16> bits_sec(lsb_loss2);
-        //     std::bitset<16> bits_sec_2((store_raw_depth[y] & (uint16_t)1023));
-        //     std::string bits_str = bits.to_string();
-        //     std::string bits_sec_str = bits_sec.to_string();
-        //     std::string bits_sec_2_str = bits_sec_2.to_string();
-        //     std::cout << "temp " << (int)lsb_loss1 << " 0b"  
-        //     << bits_str << "; temp_sec " << (int)lsb_loss2 << " 0b" << bits_sec_str 
-        //     << "; temp_sec_2 " << (int)store_raw_depth[y] << " 0b" << bits_sec_2_str << std::endl;
-        //     ++count2;
-
-        // }
-        curr_lsb = (uint16_t)frame_lsb[i] |  (((uint16_t)frame_lsb[i+1]) << 8);
-        
-        curr_msb =  ((uint16_t)frame_msb[y]) << 10;
-        
-        store_num = curr_lsb | curr_msb;
-        // if (store_raw_depth[y] - store_num > 100 && count2 < 20){
-           
-        //     std::bitset<16> bits(store_raw_depth[y]);
-        //     std::bitset<16> bits_sec(store_num);
-        //     std::string bits_str = bits.to_string();
-        //     std::string bits_sec_str = bits_sec.to_string();
-        //     std::cout  << "diff " << store_raw_depth[y] - store_num << " " << "temp " << (int)store_raw_depth[y] << " 0b"
-        //     << bits_str << "; temp_sec " << (int)store_num << " 0b" << bits_sec_str << std::endl;
-        //     ++count2;
-        // }
-        // if(store_lsb > max){
-        //     max = store_lsb;
-        // }
-        //store_raw_depth_lsb[y] = store_raw_depth[y] & (uint16_t)1023;
-        store_depth[y] = store_num;
-        store_depth_lsb[y] = curr_lsb;
-        
-        // if(i == 460800*2 && video_frame_count ==200){
-        //     fprintf(stderr, "store_depth[%d] = %u\n", i, curr_lsb);
-        // }
+            store_num += min_d;
+            store_depth[y] = store_num;
+            store_depth_lsb[y] = store_num;
+        }
     }
+    else
+    {
+        for (i = 0, y = 0; i < H * W * 2; i += 2, ++y)
+        {
 
-    if(video_frame_count == 200){
+            curr_lsb = ((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
+
+            curr_msb = ((uint16_t)frame_msb[y]) << 10;
+
+            store_num = curr_lsb | curr_msb;
+
+            store_depth[y] = store_num;
+            store_depth_lsb[y] = curr_lsb;
+        }
+    }
+    if (video_frame_count == 200)
+    {
         lineRead(store_depth_lsb);
     }
 
-
-    //loop_image_patch(store_depth, W, H); //Will utilize later
-
+    // loop_image_patch(store_depth, W, H); //Will utilize later
 
     psnr_val = get_psnr(store_depth, store_raw_depth);
     // psnr_val_6_bit = get_psnr_6bit(store_depth_lsb , store_raw_depth_lsb);
@@ -423,7 +397,6 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
     printf("PSNR value = %f\n", psnr_val);
 
     psnr_vector.push_back(psnr_val);
-
 
 #if __has_include(<opencv2/opencv.hpp>)
     cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
@@ -433,35 +406,31 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
     cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
     cv::Mat raw_img(cv::Size(W, H), CV_16U, store_raw_depth, cv::Mat::AUTO_STEP);
 
-
-
-    
     cv::normalize(dec_img, dec_img, 0, 65535, cv::NORM_MINMAX);
     cv::normalize(raw_img, raw_img, 0, 65535, cv::NORM_MINMAX);
-    float alpha = 1.0/255;
-    //alpha = 0.7f;
-    
-    //cv::convertScaleAbs(dec_img, dec_img_color, alpha);
-    //cv::convertScaleAbs(raw_img, raw_img_color, alpha);
+    float alpha = 1.0 / 255;
+    // alpha = 0.7f;
+
+    // cv::convertScaleAbs(dec_img, dec_img_color, alpha);
+    // cv::convertScaleAbs(raw_img, raw_img_color, alpha);
     dec_img.convertTo(dec_img_color, CV_8U, alpha);
     raw_img.convertTo(raw_img_color, CV_8U, alpha);
-    
-    ///dec_img.convertTo()
-    
-    //uint8_t *ptr_dec_img_color = dec_img_color.data;
-    //psnr_val = get_psnr(store_depth, store_raw_depth);
-    //printf("Get other PSNR value = %f\n", psnr_val);
-    //raw_img.convertTo(raw_img, CV_8U, 0.7);
+
+    /// dec_img.convertTo()
+
+    // uint8_t *ptr_dec_img_color = dec_img_color.data;
+    // psnr_val = get_psnr(store_depth, store_raw_depth);
+    // printf("Get other PSNR value = %f\n", psnr_val);
+    // raw_img.convertTo(raw_img, CV_8U, 0.7);
     cv::applyColorMap(dec_img_color, dec_img_color, 9);
     cv::applyColorMap(raw_img_color, raw_img_color, 9);
     cv::namedWindow("Decompressed Image", cv::WINDOW_AUTOSIZE);
     cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
     cv::imshow("Decompressed Image", dec_img_color);
     cv::imshow("Raw Image", raw_img_color);
-    
 
-
-    if (video_frame_count == 30){
+    if (video_frame_count == 30)
+    {
         cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
         cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
     }
@@ -470,13 +439,13 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
         cv::destroyAllWindows();
         exit(1);
     }
-    //10872 vs 637
+    // 10872 vs 637
 
-#endif   
-    fwrite(store_depth, sizeof(uint16_t), H*W, out_write);
+#endif
+    fwrite(store_depth, sizeof(uint16_t), H * W, out_write);
     fclose(out_write);
-    //printf("max: %u\n", max);
-    //fprintf(stderr, "video_frame_count: %d\n", video_frame_count);
+    // printf("max: %u\n", max);
+    // fprintf(stderr, "video_frame_count: %d\n", video_frame_count);
 
     // fprintf(stderr, "lsb_frame pts_n: %" PRId64 " time_stamp: %" PRId64 " \n", frame_lsb->pts, frame_lsb->best_effort_timestamp);
     // fprintf(stderr, "msb_frame pts_n: %" PRId64 " time_stamp: %" PRId64 " \n", frame_msb->pts, frame_msb->best_effort_timestamp);
@@ -534,20 +503,19 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
 
                 ++(*count);
                 ++(*ptr_frm_count);
-                //fprintf(stderr, " lsb count: %d, ptr_frm_count: %d, timstamp: %" PRId64 " \n", *count, *ptr_frm_count, frame->best_effort_timestamp);
-                //fprintf(stderr, " >>> lsb (*ptr_frm_count): %d, *count %d\n", (*ptr_frm_count), *count);
+                // fprintf(stderr, " lsb count: %d, ptr_frm_count: %d, timstamp: %" PRId64 " \n", *count, *ptr_frm_count, frame->best_effort_timestamp);
+                // fprintf(stderr, " >>> lsb (*ptr_frm_count): %d, *count %d\n", (*ptr_frm_count), *count);
             }
             else if (typ == 1)
             {
-                data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height); //2 is the red channel
+                data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height); // 2 is the red channel
 
                 memcpy(data[*count], frame->data[2], frame->linesize[0] * frame->height);
 
                 // std::copy(frame->data[0], frame->data[0] + frame->linesize[0] * frame->height, std::back_inserter(msb_buf[*count]));
                 ++(*count);
                 ++(*ptr_frm_count);
-                //fprintf(stderr, " msb count: %d, ptr_frm_count: %d, timstamp: %" PRId64 " \n", *count, *ptr_frm_count, frame->best_effort_timestamp);
-
+                // fprintf(stderr, " msb count: %d, ptr_frm_count: %d, timstamp: %" PRId64 " \n", *count, *ptr_frm_count, frame->best_effort_timestamp);
             }
         }
 
@@ -667,6 +635,10 @@ int main(int argc, char **argv)
     pt_y = &y;
     pt_lsb_frm_count = &frm_count_lsb;
     pt_msb_frm_count = &frm_count_msb;
+    int iop_max = 0, iop_min = 0;
+    int *ptr_max = &iop_max;
+    int *ptr_min = &iop_min;
+    bool take_msb = true;
     if (argc != 3)
     {
         fprintf(stderr, "usage: %s  lsb_file msb_file \n"
@@ -677,12 +649,28 @@ int main(int argc, char **argv)
     }
     src_filename = argv[1];
     src_filename_msb = argv[2];
-    //video_dst_filename = argv[3];
-    
+    // video_dst_filename = argv[3];
+    read_max_min(ptr_max, ptr_min);
+    max_d = *ptr_max;
+    min_d = *ptr_min;
+
+    if (max_d - min_d <= 1023)
+    {
+        printf("max_d - min_d <= 1023\n");
+        take_msb = false;
+    }
     ffprobe_cmd = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + std::string(src_filename);
-    ffprobe_cmd2 =  "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + std::string(src_filename_msb);
+    if (does_file_exist(src_filename_msb))
+    {
+        ffprobe_cmd2 = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + std::string(src_filename_msb);
+        num_frames_msb = exec_ffprobe(ffprobe_cmd2);
+    }
+    else
+    {
+        num_frames_msb = 0;
+    }
     num_frames_lsb = exec_ffprobe(ffprobe_cmd);
-    num_frames_msb = exec_ffprobe(ffprobe_cmd2);
+
     printf("num_frames_lsb: %d, num_frames_msb: %d\n", num_frames_lsb, num_frames_msb);
     // video_dst_filename = argv[2];
     // audio_dst_filename = argv[3];
@@ -694,23 +682,14 @@ int main(int argc, char **argv)
         exit(1);
     }
     /* open input file, and allocate format context */
-    if (avformat_open_input(&fmt_ctx_msb, src_filename_msb, NULL, NULL) < 0)
-    {
-        fprintf(stderr, "Could not open source file %s\n", src_filename_msb);
-        exit(1);
-    }
+
     /* retrieve stream information */
     if (avformat_find_stream_info(fmt_ctx, NULL) < 0)
     {
         fprintf(stderr, "Could not find stream information\n");
         exit(1);
     }
-    /* retrieve stream information */
-    if (avformat_find_stream_info(fmt_ctx_msb, NULL) < 0)
-    {
-        fprintf(stderr, "Could not find stream information\n");
-        exit(1);
-    }
+
     if (open_codec_context(&video_stream_idx, &video_dec_ctx, fmt_ctx, AVMEDIA_TYPE_VIDEO) >= 0)
     {
         video_stream = fmt_ctx->streams[video_stream_idx];
@@ -736,47 +715,60 @@ int main(int argc, char **argv)
         }
         video_dst_bufsize = ret;
     }
-
-    if (open_codec_context(&video_stream_idx_msb, &video_dec_ctx_msb, fmt_ctx_msb, AVMEDIA_TYPE_VIDEO) >= 0)
+    if (take_msb)
     {
-        video_stream = fmt_ctx_msb->streams[video_stream_idx_msb];
-
-        // video_dst_file = fopen(video_dst_filename, "wb");
-        // if (!video_dst_file)
-        // {
-        //     fprintf(stderr, "Could not open destination file %s\n", video_dst_filename);
-        //     ret = 1;
-        //     goto end;
-        // }
-
-        /* allocate image where the decoded image will be put */
-        width_msb = video_dec_ctx_msb->width;
-        height_msb = video_dec_ctx_msb->height;
-        pix_fmt_msb = video_dec_ctx_msb->pix_fmt;
-        ret = av_image_alloc(video_dst_data_msb, video_dst_linesize_msb,
-                             width_msb, height_msb, pix_fmt_msb, 1);
-        if (ret < 0)
+        if (avformat_open_input(&fmt_ctx_msb, src_filename_msb, NULL, NULL) < 0)
         {
-            fprintf(stderr, "Could not allocate raw video buffer\n");
-            goto end;
+            fprintf(stderr, "Could not open source file %s\n", src_filename_msb);
+            exit(1);
         }
-        video_dst_bufsize_msb = ret;
+        /* retrieve stream information */
+        if (take_msb && avformat_find_stream_info(fmt_ctx_msb, NULL) < 0)
+        {
+            fprintf(stderr, "Could not find stream information\n");
+            exit(1);
+        }
+        if (open_codec_context(&video_stream_idx_msb, &video_dec_ctx_msb, fmt_ctx_msb, AVMEDIA_TYPE_VIDEO) >= 0)
+        {
+            video_stream = fmt_ctx_msb->streams[video_stream_idx_msb];
+
+            // video_dst_file = fopen(video_dst_filename, "wb");
+            // if (!video_dst_file)
+            // {
+            //     fprintf(stderr, "Could not open destination file %s\n", video_dst_filename);
+            //     ret = 1;
+            //     goto end;
+            // }
+
+            /* allocate image where the decoded image will be put */
+            width_msb = video_dec_ctx_msb->width;
+            height_msb = video_dec_ctx_msb->height;
+            pix_fmt_msb = video_dec_ctx_msb->pix_fmt;
+            ret = av_image_alloc(video_dst_data_msb, video_dst_linesize_msb,
+                                 width_msb, height_msb, pix_fmt_msb, 1);
+            if (ret < 0)
+            {
+                fprintf(stderr, "Could not allocate raw video buffer\n");
+                goto end;
+            }
+            video_dst_bufsize_msb = ret;
+        }
     }
 
-    if (open_codec_context(&audio_stream_idx, &audio_dec_ctx, fmt_ctx, AVMEDIA_TYPE_AUDIO) >= 0)
-    {
-        audio_stream = fmt_ctx->streams[audio_stream_idx];
-        audio_dst_file = fopen(audio_dst_filename, "wb");
-        if (!audio_dst_file)
-        {
-            fprintf(stderr, "Could not open destination file %s\n", audio_dst_filename);
-            ret = 1;
-            goto end;
-        }
-    }
+    // if (open_codec_context(&audio_stream_idx, &audio_dec_ctx, fmt_ctx, AVMEDIA_TYPE_AUDIO) >= 0)
+    // {
+    //     audio_stream = fmt_ctx->streams[audio_stream_idx];
+    //     audio_dst_file = fopen(audio_dst_filename, "wb");
+    //     if (!audio_dst_file)
+    //     {
+    //         fprintf(stderr, "Could not open destination file %s\n", audio_dst_filename);
+    //         ret = 1;
+    //         goto end;
+    //     }
+    // }
 
     /* dump input information to stderr */
-    av_dump_format(fmt_ctx, 0, src_filename, 0);
+    // av_dump_format(fmt_ctx, 0, src_filename, 0);
 
     // if (!audio_stream && !video_stream)
     // {
@@ -792,12 +784,15 @@ int main(int argc, char **argv)
         ret = AVERROR(ENOMEM);
         goto end;
     }
-    frame_msb = av_frame_alloc();
-    if (!frame_msb)
+    if (take_msb)
     {
-        fprintf(stderr, "Could not allocate frame\n");
-        ret = AVERROR(ENOMEM);
-        goto end;
+        frame_msb = av_frame_alloc();
+        if (!frame_msb)
+        {
+            fprintf(stderr, "Could not allocate frame\n");
+            ret = AVERROR(ENOMEM);
+            goto end;
+        }
     }
 
     pkt = av_packet_alloc();
@@ -808,12 +803,15 @@ int main(int argc, char **argv)
         goto end;
     }
 
-    pkt_msb = av_packet_alloc();
-    if (!pkt_msb)
+    if (take_msb)
     {
-        fprintf(stderr, "Could not allocate packet\n");
-        ret = AVERROR(ENOMEM);
-        goto end;
+        pkt_msb = av_packet_alloc();
+        if (!pkt_msb)
+        {
+            fprintf(stderr, "Could not allocate packet\n");
+            ret = AVERROR(ENOMEM);
+            goto end;
+        }
     }
 
     // if (video_stream)
@@ -827,103 +825,151 @@ int main(int argc, char **argv)
     // }
     /* read frames from the file */
     // int k = 0;
-    while (*pt_lsb_frm_count < num_frames_lsb && *pt_msb_frm_count < num_frames_msb)
+
+    if (take_msb)
     {
-        while (*pt_x < FRM_GROUP_SIZE)
+        while (*pt_lsb_frm_count < num_frames_lsb && *pt_msb_frm_count < num_frames_msb)
         {
-            // check if the packet belongs to a stream we are interested in, otherwise
-            // skip it
-            if (av_read_frame(fmt_ctx, pkt) >= 0)
-            {
-                if (pkt->stream_index == video_stream_idx)
-                {
-
-                    ret = decode_packet(video_dec_ctx, pkt, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
-                }
-
-                av_packet_unref(pkt);
-
-                if (ret < 0)
-                {
-                    fprintf(stderr, "Error while called packet\n");
-                    break;
-                }
-            }
-            else
-            {
-                fprintf(stderr, "Error 2 while called packet\n");
-                break;
-            }
-        }
-
-
-
-        *pt_x = 0;
-        
-        while (*pt_y < FRM_GROUP_SIZE)
-        {
-
-            if (av_read_frame(fmt_ctx_msb, pkt_msb) >= 0)
+            while (*pt_x < FRM_GROUP_SIZE)
             {
                 // check if the packet belongs to a stream we are interested in, otherwise
                 // skip it
-                if (pkt_msb->stream_index == video_stream_idx_msb)
-                    ret = decode_packet(video_dec_ctx_msb, pkt_msb, frame_msb, 1, pt_y, msb_frame_buf, pt_msb_frm_count);
+                if (av_read_frame(fmt_ctx, pkt) >= 0)
+                {
+                    if (pkt->stream_index == video_stream_idx)
+                    {
 
-                av_packet_unref(pkt_msb);
-                if (ret < 0){
-                    fprintf(stderr, "Error 3 while called packet\n");
+                        ret = decode_packet(video_dec_ctx, pkt, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
+                    }
+
+                    av_packet_unref(pkt);
+
+                    if (ret < 0)
+                    {
+                        fprintf(stderr, "Error while called packet\n");
+                        break;
+                    }
+                }
+                else
+                {
+                    fprintf(stderr, "Error 2 while called packet\n");
                     break;
                 }
-                // printf("%d\n", ++k);
             }
-            else
+
+            *pt_x = 0;
+
+            while (*pt_y < FRM_GROUP_SIZE)
             {
-                fprintf(stderr, "Error 4 while called packet\n");
-                //ret = -1
-                break;
+
+                if (av_read_frame(fmt_ctx_msb, pkt_msb) >= 0)
+                {
+                    // check if the packet belongs to a stream we are interested in, otherwise
+                    // skip it
+                    if (pkt_msb->stream_index == video_stream_idx_msb)
+                        ret = decode_packet(video_dec_ctx_msb, pkt_msb, frame_msb, 1, pt_y, msb_frame_buf, pt_msb_frm_count);
+
+                    av_packet_unref(pkt_msb);
+                    if (ret < 0)
+                    {
+                        fprintf(stderr, "Error 3 while called packet\n");
+                        break;
+                    }
+                    // printf("%d\n", ++k);
+                }
+                else
+                {
+                    fprintf(stderr, "Error 4 while called packet\n");
+                    // ret = -1
+                    break;
+                }
             }
+            *pt_y = 0;
+            for (i = 0; i < FRM_GROUP_SIZE; ++i)
+            {
+                if (lsb_frame_buf[i] != NULL && msb_frame_buf[i] != NULL)
+                {
+                    output_both_buffs(lsb_frame_buf[i], msb_frame_buf[i]);
+                }
+                if (lsb_frame_buf[i] != NULL)
+                {
+                    free(lsb_frame_buf[i]);
+                    lsb_frame_buf[i] = NULL;
+                }
+                if (msb_frame_buf[i] != NULL)
+                {
+                    free(msb_frame_buf[i]);
+                    msb_frame_buf[i] = NULL;
+                }
+            }
+            // fprintf(stderr, "hi\n");
+            //  while (i < 10 && lst_lsb[i] != NULL && lst_msb[i] != NULL)
+            //  {
+            //      ret = output_both_frames(lst_lsb[i], lst_msb[i]);
+            //      av_frame_unref(lst_lsb[i]);
+            //      av_frame_unref(lst_msb[i]);
+            //      lst_lsb[i] = NULL;
+            //      lst_msb[i] = NULL;
+            //      ++i;
+            //  }
         }
-        *pt_y = 0;
-        for (i = 0; i < FRM_GROUP_SIZE; ++i)
+
+        *pt_x = -1;
+        *pt_y = -1;
+
+        if (video_dec_ctx_msb)
         {
-            if (lsb_frame_buf[i] != NULL && msb_frame_buf[i] != NULL){
-                output_both_buffs(lsb_frame_buf[i], msb_frame_buf[i]);
-            }
-            if (lsb_frame_buf[i] != NULL)
+            decode_packet(video_dec_ctx_msb, NULL, frame_msb, 1, pt_y, msb_frame_buf, pt_msb_frm_count);
+        }
+    }
+    else
+    {
+
+        while (*pt_lsb_frm_count < num_frames_lsb)
+        {
+            while (*pt_x < FRM_GROUP_SIZE)
             {
-                free(lsb_frame_buf[i]);
-                lsb_frame_buf[i] = NULL;
+                // check if the packet belongs to a stream we are interested in, otherwise
+                // skip it
+                if (av_read_frame(fmt_ctx, pkt) >= 0)
+                {
+                    if (pkt->stream_index == video_stream_idx)
+                    {
+
+                        ret = decode_packet(video_dec_ctx, pkt, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
+                    }
+
+                    av_packet_unref(pkt);
+
+                    if (ret < 0)
+                    {
+                        fprintf(stderr, "Error while called packet\n");
+                        break;
+                    }
+                }
+                else
+                {
+                    fprintf(stderr, "Error 2 while called packet\n");
+                    goto end;
+                }
             }
-            if (msb_frame_buf[i] != NULL)
+            *pt_x = 0;
+
+            for (i = 0; i < FRM_GROUP_SIZE; ++i)
             {
-                free(msb_frame_buf[i]);
-                msb_frame_buf[i] = NULL;
+                if (lsb_frame_buf[i] != NULL)
+                {
+
+                    output_both_buffs(lsb_frame_buf[i], NULL);
+                    free(lsb_frame_buf[i]);
+                    lsb_frame_buf[i] = NULL;
+                }
             }
         }
-        // fprintf(stderr, "hi\n");
-        //  while (i < 10 && lst_lsb[i] != NULL && lst_msb[i] != NULL)
-        //  {
-        //      ret = output_both_frames(lst_lsb[i], lst_msb[i]);
-        //      av_frame_unref(lst_lsb[i]);
-        //      av_frame_unref(lst_msb[i]);
-        //      lst_lsb[i] = NULL;
-        //      lst_msb[i] = NULL;
-        //      ++i;
-        //  }
+        *pt_x = -1;
+        *pt_y = -1;
     }
 
-    *pt_x = -1;
-    *pt_y = -1;
-
-    if (video_dec_ctx)
-    {
-        decode_packet(video_dec_ctx, NULL, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
-    }
-    if (video_dec_ctx_msb)
-    {
-        decode_packet(video_dec_ctx_msb, NULL, frame_msb, 1, pt_y, msb_frame_buf, pt_msb_frm_count);
-    }
     // decode_packet(video_dec_ctx_msb, NULL, frame_msb);
 
     /*
@@ -948,14 +994,6 @@ int main(int argc, char **argv)
     // if (audio_dec_ctx)
     //     decode_packet(audio_dec_ctx, NULL, frame_in);
 
-    printf("Demuxing succeeded.\n");
-    std::cout << "Average PSNR: " << getAverage(psnr_vector) << std::endl;
-    if (video_stream)
-    {
-        printf("Play the output video file with the command:\n"
-               "ffplay -f rawvideo -pix_fmt %s -video_size %dx%d\n",
-               av_get_pix_fmt_name(pix_fmt), width, height);
-    }
     /*
     if (audio_stream)
     {
@@ -983,6 +1021,18 @@ int main(int argc, char **argv)
     }
     */
 end:
+    if (video_dec_ctx)
+    {
+        decode_packet(video_dec_ctx, NULL, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
+    }
+    printf("Demuxing succeeded.\n");
+    std::cout << "Average PSNR: " << getAverage(psnr_vector) << std::endl;
+    if (video_stream)
+    {
+        printf("Play the output video file with the command:\n"
+               "ffplay -f rawvideo -pix_fmt %s -video_size %dx%d\n",
+               av_get_pix_fmt_name(pix_fmt), width, height);
+    }
     avcodec_free_context(&video_dec_ctx);
     avcodec_free_context(&video_dec_ctx_msb);
     avcodec_free_context(&audio_dec_ctx);
