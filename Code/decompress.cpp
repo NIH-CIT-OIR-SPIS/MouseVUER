@@ -20,6 +20,8 @@
 #include <limits>
 #include <numeric>
 #include <bitset>
+
+#include <filesystem> // C++17
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
 #endif
@@ -505,21 +507,18 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     return 0;
 }
 
-static int unpack_bframes(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
-                          int *ptr_frm_count, int debug_flag)
-{
-    /* Decode B-frames regardless of pts */
+// static int unpack_bframes(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
+//                           int *ptr_frm_count, int debug_flag)
+// {
+//     /* Decode B-frames regardless of pts */
 
-    int ret = 0;
-    
-
-}
+// }
 static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
                          int *ptr_frm_count, int debug_flag)
 {
     int ret = 0;
     // submit the packet to the decoder
-    //dec->frame_skip_threshold =
+    // dec->frame_skip_threshold =
     ret = avcodec_send_packet(dec, pkt);
     if (ret < 0)
     {
@@ -539,6 +538,10 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             {
                 if (debug_flag == 1)
                 {
+                    // AVPictureType pict_type = av_frame_get_pict_type(frame);
+                    // AVPictureType pict_type = frame->pict_type;
+                    // printf("Picture frame->pict_type = %d\n", frame->pict_type);
+
                     printf("wq *count: %d ret %d \n", *count, ret);
                 }
 
@@ -574,6 +577,7 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
                 // fprintf(stderr, " msb count: %d, ptr_frm_count: %d, timstamp: %" PRId64 " \n", *count, *ptr_frm_count, frame->best_effort_timestamp);
             }
         }
+
         if (debug_flag == 1)
         {
             printf("type: %d *count: %d\n", typ, *count);
@@ -733,7 +737,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
 
         /* allocate image where the decoded image will be put */
         // video_dec_ctx->
-        //video_dec_ctx->delay = 2;
+        // video_dec_ctx->delay = 2;
         width = video_dec_ctx->width;
         height = video_dec_ctx->height;
         pix_fmt = video_dec_ctx->pix_fmt;
@@ -745,6 +749,9 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             goto end;
         }
         video_dst_bufsize = ret;
+        // video_dec_ctx->skip_frame = AVDISCARD_NONE;
+        // video_dec_ctx->b_f
+        // video_dec_ctx->flags |= CODEC_FLAG_GRAY;
     }
     if (take_msb)
     {
@@ -770,7 +777,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             //     ret = 1;
             //     goto end;
             // }
-            //video_dec_ctx_msb->delay = 2;
+            // video_dec_ctx_msb->delay = 2;
             /* allocate image where the decoded image will be put */
             width_msb = video_dec_ctx_msb->width;
             height_msb = video_dec_ctx_msb->height;
@@ -1007,7 +1014,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                 }
             }
 
-            if(counte > 10)
+            if (counte > 10)
             {
                 break;
             }
@@ -1042,17 +1049,25 @@ end:
     for (i = 0; i < frm_group_size; i++)
     {
         if (lsb_frame_buf[i] != NULL)
+        {
             free(lsb_frame_buf[i]);
+        }
         if (msb_frame_buf[i] != NULL)
+        {
             free(msb_frame_buf[i]);
+        }
     }
 #if __has_include(<opencv2/opencv.hpp>)
     cv::destroyAllWindows();
 #endif
-    printf("video_frm_count: %d\n", buff_global::video_frame_count);
     return 1;
 }
 
+long double getCompressionRatio(std::uintmax_t sz, int num_frames)
+{
+    std::uintmax_t calc_raw_sz = (std::uintmax_t)num_frames * H * W * 2;
+    return (long double)calc_raw_sz / (long double)sz;
+}
 int main(int argc, char *argv[])
 {
     int deref1 = 0, deref2 = 0, deref3 = 0; // deref4 = 0, deref5 = 0, deref6 = 0;
@@ -1159,23 +1174,40 @@ int main(int argc, char *argv[])
         }
     }
 
-    int i = 100;
+    // int i = 100;
 
-    for (; i > 3; i--)
-    {
-        if (num_frames_lsb % i == 0)
-        {
-            frm_group_size = i;
-            break;
-        }
-    }
+    // for (; i > 3; i--)
+    // {
+    //     if (num_frames_lsb % i == 0)
+    //     {
+    //         frm_group_size = i;
+    //         break;
+    //     }
+    // }
     frm_group_size = 10;
     printf("frm_group_size: %d\n", frm_group_size);
+
+    std::uintmax_t total_compressed_sz = 0;
+    try
+    {
+        total_compressed_sz = std::filesystem::file_size(input_lsb_file);
+        if (input_msb_file != "")
+        {
+            total_compressed_sz += std::filesystem::file_size(input_msb_file);
+        }
+    }
+    catch (std::filesystem::filesystem_error &e)
+    {
+        std::cout << e.what() << '\n';
+    }
+
     if (!decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir))
     {
+
         std::cout << "Decompression failed" << std::endl;
         return EXIT_FAILURE;
     }
-
+    std::cout << "Compression ratio is: " << getCompressionRatio(total_compressed_sz, num_frames_lsb) << std::endl;
+    std::cout << buff_global::video_frame_count << " frames were compressed" << std::endl;
     return EXIT_SUCCESS;
 }

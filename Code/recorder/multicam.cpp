@@ -129,22 +129,28 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     std::string thread_counter = (count_threads > 0 && count_threads < 8) ? " -threads " + std::to_string(count_threads) : "";
     std::string banner = (ffmpeg_verbose) ? " -loglevel repeat+level+debug " : " -loglevel error -nostats "; //" -loglevel trace";
     std::string ffmpeg_command;
+    int num_bframes = 0;
     if (depth_lossless)
     {
         std::cout << "depth_lossless is a depricated feature" << std::endl;
         return "";
     }
     if (typ == 0)
-    {
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=0 -movflags +faststart " + path_name;
+    { 
+        //typ 0 is LSB frames which ares stored in luma component of yuv420p10le format
+        //note how we have to set bframes to 0 in order to align the lossless RGB frames with the lossy LSB frames.
+        //This may however come at cost of quality.
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + path_name;
         return ffmpeg_command;
     }
     else if (typ == 1)
     {
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart " + path_name;
+        //typ 1 is MSB RGB frames lossless stored in red channel 
+        //By default B-frames are turned off for lossless encoding. Lossless encoding for libx264rgb encoder is crf of 0
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart " + path_name; //
         return ffmpeg_command;
-    }else
-    if (typ == 2)
+    }
+    else if (typ == 2)
     {
         ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast " + " -crf " + std::to_string(crf) + " -movflags +faststart " + path_name;
         return ffmpeg_command;
@@ -735,8 +741,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
             // }
             ++counter;
-            //fflush(pipe_lsb);
-            //fflush(pipe_msb);
+            // fflush(pipe_lsb);
+            // fflush(pipe_msb);
         }
     }
     unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();
@@ -867,7 +873,7 @@ try
     int height = 720;
     int fps = 30;
     int crf = 18;
-    int thr = 1;
+    int thr = 2;
     int numraw = 0;
     int verbose = 0;
     int view = 0;
