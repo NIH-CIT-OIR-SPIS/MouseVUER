@@ -38,6 +38,7 @@ extern "C"
 #include <libavutil/timestamp.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+
 #include <sys/stat.h>
 //#define frm_group_size 3
 #define W 1280
@@ -504,11 +505,21 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     return 0;
 }
 
+static int unpack_bframes(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
+                          int *ptr_frm_count, int debug_flag)
+{
+    /* Decode B-frames regardless of pts */
+
+    int ret = 0;
+    
+
+}
 static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
                          int *ptr_frm_count, int debug_flag)
 {
     int ret = 0;
     // submit the packet to the decoder
+    //dec->frame_skip_threshold =
     ret = avcodec_send_packet(dec, pkt);
     if (ret < 0)
     {
@@ -530,7 +541,7 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
                 {
                     printf("wq *count: %d ret %d \n", *count, ret);
                 }
-                
+
                 // fprintf(stderr, "called here ret: %d, count_loop %d, before: %d\n", ret, count_loop, before);
                 return 0;
             }
@@ -721,6 +732,8 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         // }
 
         /* allocate image where the decoded image will be put */
+        // video_dec_ctx->
+        //video_dec_ctx->delay = 2;
         width = video_dec_ctx->width;
         height = video_dec_ctx->height;
         pix_fmt = video_dec_ctx->pix_fmt;
@@ -757,7 +770,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             //     ret = 1;
             //     goto end;
             // }
-
+            video_dec_ctx_msb->delay = 2;
             /* allocate image where the decoded image will be put */
             width_msb = video_dec_ctx_msb->width;
             height_msb = video_dec_ctx_msb->height;
@@ -828,13 +841,15 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                 {
                     if (pkt->stream_index == video_stream_idx)
                     {
+
                         if (lsb_frames_dec < 5)
                         {
                             ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 1);
-                        }else{
+                        }
+                        else
+                        {
                             ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 0);
                         }
-                        
                     }
 
                     av_packet_unref(pkt);
@@ -845,7 +860,6 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                         break;
                     }
                     ++lsb_frames_dec;
-
                 }
                 else
                 {
@@ -890,7 +904,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                 }
             }
 
-            if(msb_frames_dec != lsb_frames_dec)
+            if (msb_frames_dec != lsb_frames_dec)
             {
                 fprintf(stderr, "Something wriong with number of frames on iter, msb_frames_dec = %d, lsb_frames_dec = %d, *pt_x %d *pt_y %d\n", msb_frames_dec, lsb_frames_dec, *pt_x, *pt_y);
             }
@@ -1002,6 +1016,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
     }
 
 end:
+    std::cout << "Average PSNR: " << getAverage(buff_global::psnr_vector) << std::endl;
     // if (src_filename_msb != NULL)
     // {
     //     free(src_filename_msb);
@@ -1148,7 +1163,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    frm_group_size = 2;
+    frm_group_size = 10;
     printf("frm_group_size: %d\n", frm_group_size);
     if (!decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir))
     {
