@@ -770,7 +770,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             //     ret = 1;
             //     goto end;
             // }
-            video_dec_ctx_msb->delay = 2;
+            //video_dec_ctx_msb->delay = 2;
             /* allocate image where the decoded image will be put */
             width_msb = video_dec_ctx_msb->width;
             height_msb = video_dec_ctx_msb->height;
