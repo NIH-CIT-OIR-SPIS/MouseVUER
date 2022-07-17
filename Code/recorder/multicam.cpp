@@ -146,8 +146,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     }else
     if (typ == 2)
     {
-
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -vf format=" + pix_fmt + ",format=" + pix_fmt_out + " -color_range 2 -c:v " + encoder + " -color_range 2 -preset veryfast " + " -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -movflags +write_colr " + path_name;
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast " + " -crf " + std::to_string(crf) + " -movflags +faststart " + path_name;
         return ffmpeg_command;
     }
 
