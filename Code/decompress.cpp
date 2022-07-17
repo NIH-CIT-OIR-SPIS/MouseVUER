@@ -892,7 +892,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
 
             if(msb_frames_dec != lsb_frames_dec)
             {
-                fprintf(stderr, "Something wriong with number of frames on iter, msb_frames_dec = %d, lsb_frames_dec = %d, *pt_x %d *pt_y %d\n", msb_frames_dec, lsb_frames_dec, *pt_x, *pt_y);
+                fprintf(stderr, "Something wrong with number of frames on iter, msb_frames_dec = %d, lsb_frames_dec = %d, *pt_x %d *pt_y %d\n", msb_frames_dec, lsb_frames_dec, *pt_x, *pt_y);
             }
 
             for (i = 0; i < frm_group_size; ++i)
@@ -976,7 +976,8 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                 else
                 {
                     fprintf(stderr, "Error 2 while called packet\n");
-                    goto end;
+                    ++counte;
+                    break;
                 }
             }
             *pt_x = 0;
@@ -990,6 +991,11 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                     free(lsb_frame_buf[i]);
                     lsb_frame_buf[i] = NULL;
                 }
+            }
+
+            if(counte > 10)
+            {
+                break;
             }
         }
         *pt_x = -1;
