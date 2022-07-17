@@ -735,6 +735,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
             // }
             ++counter;
+            //fflush(pipe_lsb);
+            //fflush(pipe_msb);
         }
     }
     unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();

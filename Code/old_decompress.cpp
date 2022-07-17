@@ -1,3 +1,34 @@
+/*
+ * Copyright (c) 2012 Stefano Sabatini
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+/**
+ * @file
+ * Demuxing and decoding example.
+ *
+ * Show how to use the libavformat and libavcodec API to demux and
+ * decode audio and video data.
+ * @example demuxing_decoding.c
+ */
+
 #include <map>
 #include <vector>
 #include <thread>
@@ -23,14 +54,6 @@
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
 #endif
-
-// #include <boost/program_options/cmdline.hpp>
-// #include <boost/program_options/options_description.hpp>
-// #include <boost/program_options/detail/cmdline.hpp>
-// // #include <boost/program_options/detail/config_file.hpp>
-// // #include <boost/program_options/parsers.hpp>
-// #include <boost/program_options/variables_map.hpp>
-
 extern "C"
 {
 #include <libavutil/imgutils.h>
@@ -38,136 +61,63 @@ extern "C"
 #include <libavutil/timestamp.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <sys/stat.h>
 #define FRM_GROUP_SIZE 10
 #define W 1280
 #define H 720
 }
+static AVFormatContext *fmt_ctx = NULL;
+static AVCodecContext *video_dec_ctx = NULL, *audio_dec_ctx;
+static int width, height;
+static enum AVPixelFormat pix_fmt;
+static AVStream *video_stream = NULL, *audio_stream = NULL;
+static const char *src_filename = NULL;
+static const char *video_dst_filename = NULL;
+static const char *audio_dst_filename = NULL;
+static FILE *video_dst_file = NULL;
+static FILE *audio_dst_file = NULL;
 
-namespace buff_global
-{
-    int video_frame_count = 0;
-    uint16_t store_depth[1280 * 720] = {0};
-    uint16_t store_depth_lsb[1280 * 720] = {0};
-    uint16_t store_raw_depth[1280 * 720] = {0};
-    uint16_t store_raw_depth_lsb[1280 * 720] = {0};
-    std::vector<double> psnr_vector;
-    std::string input_raw_dir_gl = "";
-    std::string output_dir_gl = "";
+static uint8_t *video_dst_data[4] = {NULL};
+static int video_dst_linesize[4];
+static int video_dst_bufsize;
 
-}
-class InputParser
-{
-public:
-    InputParser(int &argc, char **argv);
+static int video_stream_idx = -1, audio_stream_idx = -1;
+// static AVFrame *frame = NULL;
+static AVPacket *pkt = NULL;
+static int video_frame_count = 0;
+static int audio_frame_count = 0;
+// g++ -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -fopenmp -O3 -Wall decomp_dc.cpp  -pthread -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale -o dmux_decode && ./dmux_decode Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 testout_r
 
-    const std::string &getCmdOption(const std::string &option) const;
+static AVFormatContext *fmt_ctx_msb = NULL;
+static AVCodecContext *video_dec_ctx_msb = NULL;
+static int width_msb, height_msb;
+static enum AVPixelFormat pix_fmt_msb;
+static AVStream *video_stream_msb = NULL, *audio_stream_msb = NULL;
+static const char *src_filename_msb = NULL;
+// static const char *video_dst_filename_msb = NULL;
+// static const char *audio_dst_filename_msb = NULL;
+static FILE *video_dst_file_msb = NULL;
+static FILE *audio_dst_file_msb = NULL;
 
-    bool cmdOptionExists(const std::string &option) const;
+static uint8_t *video_dst_data_msb[4] = {NULL};
+static int video_dst_linesize_msb[4];
+static int video_dst_bufsize_msb;
 
-private:
-    std::vector<std::string> tokens;
-};
+static int video_stream_idx_msb = -1, audio_stream_idx_msb = -1;
+static AVFrame *frame_msb = NULL;
+static AVPacket *pkt_msb = NULL;
+static int video_frame_count_msb = 0;
+static int audio_frame_count_msb = 0;
+static uint8_t store_buf[1280 * 720 * 2] = {0};
+static int count_loop = 0;
+static uint16_t store_depth[1280 * 720] = {0};
+static uint16_t store_depth_lsb[1280 * 720] = {0};
+static uint16_t store_raw_depth[1280 * 720] = {0};
+static uint16_t store_raw_depth_lsb[1280 * 720] = {0};
+static std::vector<double> psnr_vector;
+static char *out_write = "Testing_DIR/testout_r.mp4";
+static uint16_t max_d = 65535;
+static uint16_t min_d = 0;
 
-InputParser::InputParser(int &argc, char **argv)
-{
-    for (int i = 1; i < argc; ++i)
-    {
-        this->tokens.push_back(std::string(argv[i]));
-    }
-}
-
-const std::string &InputParser::getCmdOption(const std::string &option) const
-{
-    std::vector<std::string>::const_iterator itr;
-    itr = std::find(this->tokens.begin(), this->tokens.end(), option);
-    if (itr != this->tokens.end() && ++itr != this->tokens.end())
-    {
-        return *itr;
-    }
-    static const std::string empty_string("");
-    return empty_string;
-}
-
-bool InputParser::cmdOptionExists(const std::string &option) const
-{
-    return this->tokens.end() != std::find(this->tokens.begin(), this->tokens.end(), option);
-}
-
-int parse_integer_cmd(InputParser &input, std::string cmd, int prev_val)
-{
-    int ret = prev_val;
-    if (input.cmdOptionExists(cmd))
-    {
-        std::string opt = input.getCmdOption(cmd);
-        if (opt.empty())
-        {
-            return -5;
-        }
-        if (!sscanf(opt.c_str(), "%d", &ret))
-        {
-            return -5;
-        }
-    }
-    return ret;
-}
-
-bool does_file_exist(std::string path)
-{
-    FILE *fp = NULL;
-    if ((fp = fopen(path.c_str(), "r")))
-    {
-        fclose(fp);
-        return true;
-    }
-    return false;
-}
-
-bool does_dir_exist(std::string path)
-{
-    struct stat info;
-    const char *pathname = path.c_str();
-    if (stat(pathname, &info) != 0)
-    {
-        return false;
-    }
-    else if (info.st_mode & S_IFDIR)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-static int exec_ffprobe(std::string str_cmd)
-{
-    const char *cmd = str_cmd.c_str();
-    std::array<char, 128> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe)
-    {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
-    {
-        result += buffer.data();
-    }
-    return atoi(result.c_str());
-}
-void print_usage(std::string choice = "")
-{
-    std::cout << "Usage: " << std::endl;
-    std::cout << "  ./help_decomp [options]" << std::endl;
-    std::cout << "Options:" << std::endl;
-    std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
-    std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
-    std::cout << " -hd <header txt file> : required Header file" << std::endl;
-    std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
-    std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
-    std::cout << " -h                   : Print this help" << std::endl;
-}
 template <typename T>
 double getAverage(std::vector<T> const &v)
 {
@@ -182,6 +132,63 @@ double getAverage(std::vector<T> const &v)
         sum += (double)i;
     }
     return sum / v.size();
+}
+
+/**
+ * @brief Loops over an image patch given the patchHeight and patchWidth are fixed
+ * and assuming that we don't have to caclulate on the fly.
+ *
+ *
+ * @param data
+ * @param width
+ * @param height
+ * @return int
+ */
+int loop_image_patch(uint16_t *data, int width, int height)
+{
+
+    int bw = 0;
+    int bh = 0;
+    int y = 0, x = 0;
+    int numBlocks = 0;
+    int sizer = 0;
+    float sum = 0;
+    int patch_height = 4;
+    int patch_width = 4;
+
+    if ((width * height) % (patch_width * patch_height) != 0)
+    {
+        return 0;
+        // numBlocks = (width*height) / (patch_width*patch_height);
+    }
+    // else
+    // {
+    //     //numBlocks = (width*height) / (patch_width*patch_height) + 1;
+    // }
+
+    for (y = 0; y < height; y += patch_height)
+    {
+        for (x = 0; x < width; x += patch_width)
+        {
+            sum = 0.0;
+            // sizer = 0;
+            for (bh = 0; bh < patch_height; ++bh)
+            {
+                for (bw = 0; bw < patch_width; ++bw)
+                {
+                    sum += data[(y + bh) * width + x + bw];
+                    //++sizer;
+                }
+            }
+            // if(sizer != patch_height * patch_width){
+            //     printf("Whats going on %d\n ", sizer);
+            // }
+            sum /= patch_height * patch_width; // calculating average of the image patch
+            ++numBlocks;
+        }
+    }
+    // printf("Num Blocks %d\n", numBlocks);
+    return numBlocks;
 }
 
 static inline int abs_diff(int a, int b)
@@ -216,64 +223,95 @@ static double get_psnr(uint16_t *m0, uint16_t *m1)
     return (10.0 * log10(cg / mse));
 }
 
-static int open_codec_context(int *stream_idx,
-                              AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, enum AVMediaType type)
+static double get_psnr_10bit(uint16_t *m0, uint16_t *m1)
 {
-    int ret, stream_index;
-    AVStream *st;
-    const AVCodec *dec = NULL;
-
-    ret = av_find_best_stream(fmt_ctx, type, -1, -1, NULL, 0);
-    if (ret < 0)
+    long cg = 1023 * 1023;
+    uint sum_sq = 0;
+    double mse = 0;
+    //#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < H * W; ++i)
     {
-        // fprintf(stderr, "Could not find %s stream in input file '%s'\n",
-        //         av_get_media_type_string(type), src_filename);
-        return ret;
+        int p1 = m0[i];
+        int p2 = m1[i];
+        int err = abs_diff(p2, p1);
+        sum_sq += (err * err);
     }
-    else
+    // res = res / (height * width);
+    mse = (double)sum_sq / (H * W);
+
+    return (10.0 * log10(cg / mse));
+}
+bool does_file_exist(std::string path)
+{
+    FILE *fp = NULL;
+    if ((fp = fopen(path.c_str(), "r")))
     {
-        stream_index = ret;
-        st = fmt_ctx->streams[stream_index];
-
-        /* find decoder for the stream */
-        dec = avcodec_find_decoder(st->codecpar->codec_id);
-        if (!dec)
-        {
-            fprintf(stderr, "Failed to find %s codec\n",
-                    av_get_media_type_string(type));
-            return AVERROR(EINVAL);
-        }
-
-        /* Allocate a codec context for the decoder */
-        *dec_ctx = avcodec_alloc_context3(dec);
-        if (!*dec_ctx)
-        {
-            fprintf(stderr, "Failed to allocate the %s codec context\n",
-                    av_get_media_type_string(type));
-            return AVERROR(ENOMEM);
-        }
-
-        /* Copy codec parameters from input stream to output codec context */
-        if ((ret = avcodec_parameters_to_context(*dec_ctx, st->codecpar)) < 0)
-        {
-            fprintf(stderr, "Failed to copy %s codec parameters to decoder context\n",
-                    av_get_media_type_string(type));
-            return ret;
-        }
-
-        /* Init the decoders */
-        if ((ret = avcodec_open2(*dec_ctx, dec, NULL)) < 0)
-        {
-            fprintf(stderr, "Failed to open %s codec\n",
-                    av_get_media_type_string(type));
-            return ret;
-        }
-        *stream_idx = stream_index;
+        fclose(fp);
+        return true;
     }
+    return false;
+}
+static double get_psnr_6bit(uint16_t *m0, uint16_t *m1)
+{
+    long cg = 63 * 63;
+    uint sum_sq = 0;
+    double mse = 0;
+    //#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < H * W; ++i)
+    {
+        int p1 = m0[i];
+        int p2 = m1[i];
+        int err = abs_diff(p2, p1);
+        sum_sq += (err * err);
+    }
+    // res = res / (height * width);
+    mse = (double)sum_sq / (H * W);
 
-    return 0;
+    return (10.0 * log10(cg / mse));
+}
+static int exec_ffprobe(std::string str_cmd)
+{
+    const char *cmd = str_cmd.c_str();
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe)
+    {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+    {
+        result += buffer.data();
+    }
+    return atoi(result.c_str());
 }
 
+static void lineRead(uint16_t *store_depth_lsb_in)
+{
+    FILE *out_put_diff = NULL;
+    char *output_diff_fl = "Testing_DIR/output_diff_fl.txt";
+    if (!(out_put_diff = fopen(output_diff_fl, "w")))
+    {
+        printf("Could not open file for writing\n");
+        exit(1);
+    }
+    std::vector<int> rand_vec;
+    std::ifstream infile("Testing_DIR/output_vec_ind_file.txt");
+    int a;
+    while (infile >> a)
+    {
+        // printf("%d\n", a);
+        rand_vec.push_back(a);
+    }
+    infile.close();
+    while (rand_vec.size() > 0)
+    {
+
+        fprintf(out_put_diff, "%d\n", store_depth_lsb_in[rand_vec.back()]);
+        rand_vec.pop_back();
+    }
+    fclose(out_put_diff);
+}
 static void read_max_min(int *max, int *min, int *depth_units)
 {
     std::ifstream infile("Testing_DIR/video_head_file.txt");
@@ -287,10 +325,9 @@ static void read_max_min(int *max, int *min, int *depth_units)
     printf("Max %d Min %d Depth_units in micrometers: %d\n", *max, *min, *depth_units);
     infile.close();
 }
-
-static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, int min_d)
+static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb)
 {
-    using namespace buff_global;
+
     int i = 0, y = 0, count = 0;
     // int count2 = 0;
     double psnr_val = 0;
@@ -381,6 +418,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     float alpha = 1.0 / 255;
     // alpha = 0.7f;
 
+
     // cv::convertScaleAbs(dec_img, dec_img_color, alpha);
     // cv::convertScaleAbs(raw_img, raw_img_color, alpha);
     dec_img.convertTo(dec_img_color, CV_8U, alpha);
@@ -393,14 +431,14 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     // raw_img.convertTo(raw_img, CV_8U, 0.7);
     cv::applyColorMap(dec_img_color, dec_img_color, 9);
 
+
     // if (video_frame_count == 30)
     // {
     //     cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
     //     cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
     // }
 
-    if (read_raw != NULL)
-    {
+    if(read_raw != NULL){
         cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
         raw_img_color = 0;
         cv::normalize(raw_img, raw_img, 0, 65535, cv::NORM_MINMAX);
@@ -427,8 +465,20 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
     // fprintf(stderr, "lsb_frame pts_n: %" PRId64 " time_stamp: %" PRId64 " \n", frame_lsb->pts, frame_lsb->best_effort_timestamp);
     // fprintf(stderr, "msb_frame pts_n: %" PRId64 " time_stamp: %" PRId64 " \n", frame_msb->pts, frame_msb->best_effort_timestamp);
-
+    
     return 0;
+}
+
+static void extract_yuv_plane(AVFrame *frame, int width, int height)
+{
+    int x = 0, y = 0, i = 0;
+    for (y = 0; y < height; ++y)
+    {
+        for (x = 0; x < width; ++x)
+        {
+            store_buf[i++] = frame->data[0][y * frame->linesize[0] + x];
+        }
+    }
 }
 
 static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
@@ -463,7 +513,7 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
         {
             if (typ == 0)
             {
-                //data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height);
+                data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height);
 
                 memcpy(data[*count], frame->data[0], frame->linesize[0] * frame->height);
 
@@ -474,7 +524,7 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             }
             else if (typ == 1)
             {
-                //data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height); // 2 is the red channel
+                data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height); // 2 is the red channel
 
                 memcpy(data[*count], frame->data[2], frame->linesize[0] * frame->height);
 
@@ -495,60 +545,152 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
     return 0;
 }
 
-static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb, int num_frames_msb,
-                      std::string output_dir, std::string input_file_lsb, std::string input_file_msb, std::string input_raw_file_dir)
+static int open_codec_context(int *stream_idx,
+                              AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, enum AVMediaType type)
 {
+    int ret, stream_index;
+    AVStream *st;
+    const AVCodec *dec = NULL;
 
+    ret = av_find_best_stream(fmt_ctx, type, -1, -1, NULL, 0);
+    if (ret < 0)
+    {
+        fprintf(stderr, "Could not find %s stream in input file '%s'\n",
+                av_get_media_type_string(type), src_filename);
+        return ret;
+    }
+    else
+    {
+        stream_index = ret;
+        st = fmt_ctx->streams[stream_index];
+
+        /* find decoder for the stream */
+        dec = avcodec_find_decoder(st->codecpar->codec_id);
+        if (!dec)
+        {
+            fprintf(stderr, "Failed to find %s codec\n",
+                    av_get_media_type_string(type));
+            return AVERROR(EINVAL);
+        }
+
+        /* Allocate a codec context for the decoder */
+        *dec_ctx = avcodec_alloc_context3(dec);
+        if (!*dec_ctx)
+        {
+            fprintf(stderr, "Failed to allocate the %s codec context\n",
+                    av_get_media_type_string(type));
+            return AVERROR(ENOMEM);
+        }
+
+        /* Copy codec parameters from input stream to output codec context */
+        if ((ret = avcodec_parameters_to_context(*dec_ctx, st->codecpar)) < 0)
+        {
+            fprintf(stderr, "Failed to copy %s codec parameters to decoder context\n",
+                    av_get_media_type_string(type));
+            return ret;
+        }
+
+        /* Init the decoders */
+        if ((ret = avcodec_open2(*dec_ctx, dec, NULL)) < 0)
+        {
+            fprintf(stderr, "Failed to open %s codec\n",
+                    av_get_media_type_string(type));
+            return ret;
+        }
+        *stream_idx = stream_index;
+    }
+
+    return 0;
+}
+
+static int get_format_from_sample_fmt(const char **fmt,
+                                      enum AVSampleFormat sample_fmt)
+{
+    int i;
+    struct sample_fmt_entry
+    {
+        enum AVSampleFormat sample_fmt;
+        const char *fmt_be, *fmt_le;
+    } sample_fmt_entries[] = {
+        {AV_SAMPLE_FMT_U8, "u8", "u8"},
+        {AV_SAMPLE_FMT_S16, "s16be", "s16le"},
+        {AV_SAMPLE_FMT_S32, "s32be", "s32le"},
+        {AV_SAMPLE_FMT_FLT, "f32be", "f32le"},
+        {AV_SAMPLE_FMT_DBL, "f64be", "f64le"},
+    };
+    *fmt = NULL;
+
+    for (i = 0; i < FF_ARRAY_ELEMS(sample_fmt_entries); i++)
+    {
+        struct sample_fmt_entry *entry = &sample_fmt_entries[i];
+        if (sample_fmt == entry->sample_fmt)
+        {
+            *fmt = AV_NE(entry->fmt_be, entry->fmt_le);
+            return 0;
+        }
+    }
+
+    fprintf(stderr,
+            "sample format %s is not supported as output format\n",
+            av_get_sample_fmt_name(sample_fmt));
+    return -1;
+}
+
+int main(int argc, char **argv)
+{
     int ret = 0;
-    int i = 0, j = 0, y = 0, x = 0, frm_count_lsb = 0, frm_count_msb = 0;
     int *pt_y = NULL, *pt_x = NULL;
     int *pt_lsb_frm_count = NULL, *pt_msb_frm_count = NULL;
-    const char *src_filename = input_file_lsb.c_str();
-    char *src_filename_msb = NULL;
-    bool take_msb = true;
-    AVFormatContext *fmt_ctx = NULL;
-    AVFormatContext *fmt_ctx_msb = NULL;
-    int video_stream_idx = -1;
-    int video_stream_idx_msb = -1;
-    AVCodecContext *video_dec_ctx = NULL;
-    AVCodecContext *video_dec_ctx_msb = NULL;
-    int width_msb, height_msb;
-    int width, height;
-    enum AVPixelFormat pix_fmt_msb, pix_fmt;
-    AVStream *video_stream = NULL;
-    AVStream *video_stream_msb = NULL;
-
-    uint8_t *video_dst_data[4] = {NULL};
-    uint8_t *video_dst_data_msb[4] = {NULL};
-
-    int video_dst_linesize[4];
-    int video_dst_linesize_msb[4] = {0};
-
-    int video_dst_bufsize = 0;
-    int video_dst_bufsize_msb = 0;
-
-    AVPacket *pkt = NULL;
-    AVPacket *pkt_msb = NULL;
-    AVFrame *frame = NULL;
-    AVFrame *frame_msb = NULL;
+    int i = 0, j = 0, y = 0, x = 0, frm_count_lsb = 0, frm_count_msb = 0;
+    int num_frames_lsb = 0, num_frames_msb = 0;
+    std::string ffprobe_cmd, ffprobe_cmd2;
+    uint8_t *lsb_frame_buf[FRM_GROUP_SIZE] = {NULL};
+    uint8_t *msb_frame_buf[FRM_GROUP_SIZE] = {NULL};
+    AVFrame *frame_in = NULL;
     pt_x = &x;
     pt_y = &y;
     pt_lsb_frm_count = &frm_count_lsb;
     pt_msb_frm_count = &frm_count_msb;
-    namespace buff = buff_global;
-
-    buff::input_raw_dir_gl = input_raw_file_dir;
-    buff::output_dir_gl = output_dir;
-    if (input_file_msb != "")
+    int iop_max = 0, iop_min = 0, iop_dep = 0;
+    int *ptr_max = &iop_max;
+    int *ptr_min = &iop_min;
+    int *ptr_depth_unit = &iop_dep;
+    bool take_msb = true;
+    if (argc != 3)
     {
-        src_filename_msb = (char *)malloc(input_file_msb.size() + 1);
-        strcpy(src_filename_msb, input_file_msb.c_str());
+        fprintf(stderr, "usage: %s  lsb_file msb_file \n"
+                        "API example program to show how to read frames from an input file.\n"
+                        "This program reads frames from a file, decodes them, and compares them\n",
+                argv[0]);
+        exit(1);
     }
+    src_filename = argv[1];
+    src_filename_msb = argv[2];
+    // video_dst_filename = argv[3];
+    read_max_min(ptr_max, ptr_min, ptr_depth_unit);
+    max_d = *ptr_max;
+    min_d = *ptr_min;
+
     if (max_d - min_d <= 1023)
     {
         printf("max_d - min_d <= 1023\n");
         take_msb = false;
     }
+    ffprobe_cmd = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + std::string(src_filename);
+    if (does_file_exist(src_filename_msb))
+    {
+        ffprobe_cmd2 = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + std::string(src_filename_msb);
+        num_frames_msb = exec_ffprobe(ffprobe_cmd2);
+    }
+    else
+    {
+        num_frames_msb = 0;
+    }
+    num_frames_lsb = exec_ffprobe(ffprobe_cmd);
+
+    printf("num_frames_lsb: %d, num_frames_msb: %d\n", num_frames_lsb, num_frames_msb);
+    // video_dst_filename = argv[2];
+    // audio_dst_filename = argv[3];
 
     /* open input file, and allocate format context */
     if (avformat_open_input(&fmt_ctx, src_filename, NULL, NULL) < 0)
@@ -619,7 +761,6 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             width_msb = video_dec_ctx_msb->width;
             height_msb = video_dec_ctx_msb->height;
             pix_fmt_msb = video_dec_ctx_msb->pix_fmt;
-
             ret = av_image_alloc(video_dst_data_msb, video_dst_linesize_msb,
                                  width_msb, height_msb, pix_fmt_msb, 1);
             if (ret < 0)
@@ -630,8 +771,31 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             video_dst_bufsize_msb = ret;
         }
     }
-    frame = av_frame_alloc();
-    if (!frame)
+
+    // if (open_codec_context(&audio_stream_idx, &audio_dec_ctx, fmt_ctx, AVMEDIA_TYPE_AUDIO) >= 0)
+    // {
+    //     audio_stream = fmt_ctx->streams[audio_stream_idx];
+    //     audio_dst_file = fopen(audio_dst_filename, "wb");
+    //     if (!audio_dst_file)
+    //     {
+    //         fprintf(stderr, "Could not open destination file %s\n", audio_dst_filename);
+    //         ret = 1;
+    //         goto end;
+    //     }
+    // }
+
+    /* dump input information to stderr */
+    // av_dump_format(fmt_ctx, 0, src_filename, 0);
+
+    // if (!audio_stream && !video_stream)
+    // {
+    //     fprintf(stderr, "Could not find audio or video stream in the input, aborting\n");
+    //     ret = 1;
+    //     goto end;
+    // }
+
+    frame_in = av_frame_alloc();
+    if (!frame_in)
     {
         fprintf(stderr, "Could not allocate frame\n");
         ret = AVERROR(ENOMEM);
@@ -667,13 +831,17 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         }
     }
 
-    uint8_t *lsb_frame_buf[FRM_GROUP_SIZE];
-    uint8_t *msb_frame_buf[FRM_GROUP_SIZE];
-    for (i = 0; i < FRM_GROUP_SIZE; ++i)
-    {
-        lsb_frame_buf[i] = (uint8_t *)malloc(video_dst_bufsize);
-        msb_frame_buf[i] = (uint8_t *)malloc(video_dst_bufsize_msb);
-    }
+    // if (video_stream)
+    // {
+    //     printf("Demuxing video from file '%s' into '%s'\n", src_filename, video_dst_filename);
+    // }
+
+    // if (video_stream_msb)
+    // {
+    //     printf("Demuxing msb video from file '%s' into '%s'\n", src_filename_msb, video_dst_filename);
+    // }
+    /* read frames from the file */
+    // int k = 0;
 
     if (take_msb)
     {
@@ -688,7 +856,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                     if (pkt->stream_index == video_stream_idx)
                     {
 
-                        ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
+                        ret = decode_packet(video_dec_ctx, pkt, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
                     }
 
                     av_packet_unref(pkt);
@@ -738,7 +906,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             {
                 if (lsb_frame_buf[i] != NULL && msb_frame_buf[i] != NULL)
                 {
-                    output_both_buffs(lsb_frame_buf[i], msb_frame_buf[i], max_d, min_d);
+                    output_both_buffs(lsb_frame_buf[i], msb_frame_buf[i]);
                 }
                 if (lsb_frame_buf[i] != NULL)
                 {
@@ -785,7 +953,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                     if (pkt->stream_index == video_stream_idx)
                     {
 
-                        ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
+                        ret = decode_packet(video_dec_ctx, pkt, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
                     }
 
                     av_packet_unref(pkt);
@@ -809,7 +977,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                 if (lsb_frame_buf[i] != NULL)
                 {
 
-                    output_both_buffs(lsb_frame_buf[i], NULL, max_d, min_d);
+                    output_both_buffs(lsb_frame_buf[i], NULL);
                     free(lsb_frame_buf[i]);
                     lsb_frame_buf[i] = NULL;
                 }
@@ -819,20 +987,82 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         *pt_y = 0;
     }
 
-end:
-    if (src_filename_msb != NULL)
+    // decode_packet(video_dec_ctx_msb, NULL, frame_msb);
+
+    /*
+    if(video_stream_msb){
+        printf("Demuxing msb video from file '%s' into '%s'\n", src_filename_msb, video_dst_filename);
+
+    }
+    while (av_read_frame(fmt_ctx_msb, pkt_msb) >= 0)
     {
-        free(src_filename_msb);
+        // check if the packet belongs to a stream we are interested in, otherwise
+        // skip it
+        if (pkt_msb->stream_index == video_stream_idx_msb)
+            ret = decode_packet(video_dec_ctx_msb, pkt_msb, frame_msb);
+
+        av_packet_unref(pkt_msb);
+        if (ret < 0)
+            break;
+        // printf("%d\n", ++k);
+    }
+    */
+
+    // if (audio_dec_ctx)
+    //     decode_packet(audio_dec_ctx, NULL, frame_in);
+
+    /*
+    if (audio_stream)
+    {
+        enum AVSampleFormat sfmt = audio_dec_ctx->sample_fmt;
+        int n_channels = audio_dec_ctx->channels;
+        const char *fmt;
+
+        if (av_sample_fmt_is_planar(sfmt))
+        {
+            const char *packed = av_get_sample_fmt_name(sfmt);
+            printf("Warning: the sample format the decoder produced is planar "
+                   "(%s). This example will output the first channel only.\n",
+                   packed ? packed : "?");
+            sfmt = av_get_packed_sample_fmt(sfmt);
+            n_channels = 1;
+        }
+
+        if ((ret = get_format_from_sample_fmt(&fmt, sfmt)) < 0)
+            goto end;
+
+        printf("Play the output audio file with the command:\n"
+               "ffplay -f %s -ac %d -ar %d %s\n",
+               fmt, n_channels, audio_dec_ctx->sample_rate,
+               audio_dst_filename);
+    }
+    */
+end:
+    if (video_dec_ctx)
+    {
+        decode_packet(video_dec_ctx, NULL, frame_in, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
+    }
+    printf("Demuxing succeeded.\n");
+    printf("Number_ frames video_frm_count: %d\n", *pt_lsb_frm_count);
+    std::cout << "Average PSNR: " << getAverage(psnr_vector) << std::endl;
+    if (video_stream)
+    {
+        printf("Play the output video file with the command:\n"
+               "ffplay -f rawvideo -pix_fmt %s -video_size %dx%d\n",
+               av_get_pix_fmt_name(pix_fmt), width, height);
     }
     avcodec_free_context(&video_dec_ctx);
     avcodec_free_context(&video_dec_ctx_msb);
+    avcodec_free_context(&audio_dec_ctx);
     avformat_close_input(&fmt_ctx);
     avformat_close_input(&fmt_ctx_msb);
+    if (video_dst_file)
+        fclose(video_dst_file);
     // if (audio_dst_file)
     //     fclose(audio_dst_file);
     av_packet_free(&pkt);
     av_packet_free(&pkt_msb);
-    av_frame_free(&frame);
+    av_frame_free(&frame_in);
     av_frame_free(&frame_msb);
     av_free(video_dst_data[0]);
     av_free(video_dst_data_msb[0]);
@@ -840,104 +1070,4 @@ end:
     cv::destroyAllWindows();
 #endif
     return ret < 0;
-}
-
-
-int main(int argc, char *argv[])
-{
-    int deref1 = 0, deref2 = 0, deref3 = 0; // deref4 = 0, deref5 = 0, deref6 = 0;
-    if (argc > 7 || argc < 2)
-    {
-        // std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-
-    InputParser input(argc, argv);
-    if (input.cmdOptionExists("-h"))
-    {
-        std::cout << "Command line utility for compressing depth data and rgb data and infared from a camera." << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-
-    if (!input.cmdOptionExists("-ilsb"))
-    {
-        std::cout << "Input lsb file is required" << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-    if (!input.cmdOptionExists("-hd"))
-    {
-        std::cout << "Input header file and output directory are required" << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-
-    if (!input.cmdOptionExists("-o"))
-    {
-        std::cout << "Output directory is required" << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-    std::string input_lsb_file = input.getCmdOption("-ilsb");
-
-    if (!does_file_exist(input_lsb_file))
-    {
-        std::cout << "Input lsb file does not exist" << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-    std::string ffprobe_cmd = ffprobe_cmd = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + input_lsb_file;
-
-    std::string header_file = input.getCmdOption("-hd");
-    int *ptr_max = &deref1, *ptr_min = &deref2, *ptr_depth_units = &deref3;
-    if (!does_file_exist(header_file))
-    {
-        std::cout << "Input header file does not exist" << std::endl;
-        print_usage();
-        return EXIT_FAILURE;
-    }
-    else
-    {
-        read_max_min(ptr_max, ptr_min, ptr_depth_units);
-    }
-
-    std::string output_dir = input.getCmdOption("-o");
-    std::string input_msb_file;
-    std::string input_raw_file_dir;
-    int num_frames_lsb = 0;
-    int num_frames_msb = 0;
-    num_frames_lsb = exec_ffprobe(ffprobe_cmd);
-    if (input.cmdOptionExists("-imsb"))
-    {
-        if (!does_file_exist(input.getCmdOption("-imsb")))
-        {
-            std::cout << "Input msb file does not exist" << std::endl;
-            print_usage();
-            return EXIT_FAILURE;
-        }
-        input_msb_file = input.getCmdOption("-imsb");
-        std::string ffprobe_cmd2 = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + input_msb_file;
-        num_frames_msb = exec_ffprobe(ffprobe_cmd2);
-    }
-
-    if (input.cmdOptionExists("-cmp"))
-    {
-        if (!does_dir_exist(input.getCmdOption("-cmp")))
-        {
-            std::cout << "Input raw file directory does not exist" << std::endl;
-            print_usage();
-            return EXIT_FAILURE;
-        }
-        input_raw_file_dir = input.getCmdOption("-cmp");
-    }
-
-    if (!decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir))
-    {
-        std::cout << "Decompression failed" << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
 }
