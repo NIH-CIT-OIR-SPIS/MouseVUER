@@ -101,24 +101,28 @@ bool write_txt_to_file(std::string filename, std::string txt)
         return false;
     }
 }
+
 /**
- * @brief Builds a FFmpeg Command String
- *
- * @param pix_fmt
- * @param encoder
- * @param path_name
- * @param time_run
- * @param count_threads
- * @param width
- * @param height
- * @param fps
- * @param crf
- * @param ffmpeg_verbose
- * @param depth_lossless
- * @param typ
- * @return std::string
+ * @brief BParses a command for ffmpeg
+ * 
+ * 
+ * @param pix_fmt  The pixel format of the input frames i.e. YUV420P, RGB24, YUV420P10LE, etc.
+ * @param pix_fmt_out  The pixel format of the output frames format i.e. YUV420P, RGB24, YUV420P10LE, etc.
+ * @param encoder   The encoder to use i.e. libx264, libx265.
+ * @param path_out  The path_out is either specifically a file path or could be a server and port name, 
+ *                  i.e. path_out = " -f -flv rtmp:://server:port/ " 
+ * @param time_run  The time_run is the time in seconds that the video will be recorded for.
+ * @param count_threads  The count_threads is the number of threads to use for the recording.
+ * @param width     The width of the input frames.
+ * @param height    The height of the input frames.
+ * @param fps       The frames per second of the input frames.
+ * @param crf       The crf is the constant rate factor for the encoder.
+ * @param ffmpeg_verbose  The ffmpeg_verbose is the verbosity of the ffmpeg command line.
+ * @param depth_lossless    The depth_lossless is the lossless flag for the encoder.
+ * @param typ   The typ is the the type of frames to expect whether LSB or MSB.
+ * @return std::string  The ffmpeg command to be executed by th.
  */
-std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::string encoder, std::string path_name, long time_run,
+std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::string encoder, std::string path_out, long time_run,
                              int count_threads, int width, int height, int fps, int crf,
                              bool ffmpeg_verbose, bool depth_lossless, int typ)
 {
@@ -129,7 +133,11 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     std::string thread_counter = (count_threads > 0 && count_threads < 8) ? " -threads " + std::to_string(count_threads) : "";
     std::string banner = (ffmpeg_verbose) ? " -loglevel repeat+level+debug " : " -loglevel error -nostats "; //" -loglevel trace";
     std::string ffmpeg_command;
+
+    std::string re_flag = (path_out.find("rtmp:") != std::string::npos) ? " -re " : "";
+    std::string flv_flag = (path_out.find("rtmp:") != std::string::npos) ? " -f flv " : "";
     int num_bframes = 0;
+    
     if (depth_lossless)
     {
         std::cout << "depth_lossless is a depricated feature" << std::endl;
@@ -140,8 +148,8 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
         //typ 0 is LSB frames which ares stored in luma component of yuv420p10le format
         //note how we have to set bframes to 0 in order to align the lossless RGB frames with the lossy LSB frames.
         //This may however come at cost of quality.
-        //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + path_name;
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart -f flv rtmp://127.0.0.1:5000/ ";
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + flv_flag +  " " + path_out;
+        //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart -f flv rtmp://127.0.0.1:5000/ ";
         
         return ffmpeg_command;
     }
@@ -149,14 +157,14 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     {
         //typ 1 is MSB RGB frames lossless stored in red channel 
         //By default B-frames are turned off for lossless encoding. Lossless encoding for libx264rgb encoder is crf of 0
-        //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart " + path_name; //
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart -movflags +faststart -f flv rtmp://127.0.0.1:5001/"; //
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " +  path_out; //
+        //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart -movflags +faststart -f flv rtmp://127.0.0.1:5001/"; //
         
         return ffmpeg_command;
     }
     else if (typ == 2)
     {
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast " + " -crf " + std::to_string(crf) + " -movflags +faststart " + path_name;
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast " + " -crf " + std::to_string(crf) + " -movflags +faststart " +  flv_flag +  " " + path_out;
         return ffmpeg_command;
     }
 
@@ -191,9 +199,9 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
 int startRecording(std::string dirname, long time_run, std::string bag_file_dir, uint16_t max_d = 65535, uint16_t min_d = 0, int depth_u = 1000, unsigned int width = 1280U,
                    unsigned int height = 720U, unsigned int fps = 30U, int crf_lsb = 25, int count_threads = 2,
                    bool ffmpeg_verbose = false, bool collect_raw = false, int num_frm_collect = 0, bool show_preview = false,
-                   std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false)
+                   std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false, std::string server_address = "", unsigned short port = 1000)
 {
-    const auto processor_count = std::thread::hardware_concurrency();
+    
     if (time_run > 2147483646)
     {
         std::cout << "You're running a recording for 60+ years. You better know what you're doing." << std::endl;
@@ -219,6 +227,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "Numbec_cpp_propertiesr frames collect greater than 1800 at: " << num_frm_collect << std::endl;
         return 0;
     }
+
+    const auto processor_count = std::thread::hardware_concurrency();
     int width_color = width;   // width / 2;
     int height_color = height; // height / 2;
     int ret = 0;
@@ -228,11 +238,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int num_bytes = width * height;
 
     long counter = 0;
+    
+    //std::string path_raw = dirname + "test_raw.mp4"; //(server_address == "" || port <= -1) ? (dirname + "test_raw.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
 
-    std::string path_raw = dirname + "test_raw";
-    std::string path_msb = dirname + "test_msb.mp4";
-    std::string path_lsb = dirname + "test_lsb.mp4";
-    std::string color_lsb_path = dirname + "test_color.mp4";
+    std::string path_lsb = (server_address == "" || port <= 1024 ) ? (dirname + "test_lsb.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
+    std::string path_msb = (server_address == "" || port <= 1024  ) ? (dirname + "test_msb.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port + 1) + "/ ");
+    std::string color_lsb_path = (server_address == "" || port <= 1024) ? (dirname + "test_color_lsb.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port + 2) + "/ ");
+    // std::string path_msb = (server_address == "" || port <= -1) ? (dirname + "test_msb.mp4") : (server_address + ":" + port);
+    // std::string path_lsb = (server_address == "" || port <= -1) ? (dirname + "test_lsb.mp4") : (server_address + ":" + port);
+    // std::string color_lsb_path = (server_address == "" || port <= -1) ? (dirname + "test_color_lsb.mp4") : (server_address + ":" + port);
+    // std::string path_msb = dirname + "test_msb.mp4";
+    // std::string path_lsb = dirname + "test_lsb.mp4";
+    // std::string color_lsb_path = dirname + "test_color.mp4";
     // std::cout << ffmpeg_verbose << std::endl;
 
     std::string str_lsb = build_ffmpeg_cmd("yuv420p10le", "yuv420p10le", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
@@ -257,7 +274,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::cout << str_msb << std::endl;
     FILE *pipe_lsb = NULL;
     FILE *pipe_msb = NULL;
-    FILE *p_pipe_raw = NULL;
+    
     FILE *color_pipe = NULL;
     int diff = (int)max_d - (int)min_d;
     bool only_10_bits = false;
@@ -266,14 +283,15 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     {
         only_10_bits = true;
     }
+    //FILE *p_pipe_raw = NULL;
 #ifdef _WIN32
-    p_pipe_raw = fopen(path_raw.c_str(), "w");
+    // p_pipe_raw = fopen(path_raw.c_str(), "w");
 
-    if (p_pipe_raw == NULL)
-    {
-        std::cerr << "fopen error" << std::endl;
-        return 0;
-    }
+    // if (p_pipe_raw == NULL)
+    // {
+    //     std::cerr << "fopen error" << std::endl;
+    //     return 0;
+    // }
 
     if (!(pipe_lsb = _popen(str_lsb.c_str(), "wb")))
     {
@@ -298,14 +316,14 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         }
     }
 #else
-
-    p_pipe_raw = fopen(path_raw.c_str(), "w");
-    if (p_pipe_raw == NULL)
-    {
-        std::cerr << "fopen error" << std::endl;
-        return 0;
-    }
-
+    // if(num_frm_collect){
+    //     p_pipe_raw = fopen(path_raw.c_str(), "w");
+    //     if (p_pipe_raw == NULL)
+    //     {
+    //         std::cerr << "fopen error" << std::endl;
+    //         return 0;
+    //     }
+    // }
     if (!(pipe_lsb = popen(str_lsb.c_str(), "w")))
     {
         std::cerr << "popen error" << std::endl;
@@ -795,12 +813,12 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             pipe_msb = NULL;
         }
         // }
-        if (p_pipe_raw)
-        {
-            fflush(p_pipe_raw);
-            _pclose(p_pipe_raw);
-            p_pipe_raw = NULL;
-        }
+        // if (p_pipe_raw)
+        // {
+        //     fflush(p_pipe_raw);
+        //     _pclose(p_pipe_raw);
+        //     p_pipe_raw = NULL;
+        // }
 
         if (color)
         {
@@ -823,12 +841,12 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             pipe_msb = NULL;
         }
         // }
-        if (p_pipe_raw)
-        {
-            fflush(p_pipe_raw);
-            pclose(p_pipe_raw);
-            p_pipe_raw = NULL;
-        }
+        // if (p_pipe_raw)
+        // {
+        //     fflush(p_pipe_raw);
+        //     pclose(p_pipe_raw);
+        //     p_pipe_raw = NULL;
+        // }
 
         if (color)
         {
@@ -848,6 +866,64 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::cout << "Time run for in seconds: " << (milliseconds_ellapsed / 1000.0) << std::endl;
     return 1;
 }
+
+bool isNumber(const std::string &str)
+{
+
+    // `std::find_first_not_of` searches the string for the first character
+    // that does not match any of the characters specified in its arguments
+    return !str.empty() &&
+        (str.find_first_not_of("[0123456789]") == std::string::npos);
+}
+ 
+// Function to split string `str` using a given delimiter
+std::vector<std::string> split(const std::string &str, char delim)
+
+{
+    using namespace std;
+
+    auto i = 0;
+    vector<string> list;
+ 
+    auto pos = str.find(delim);
+ 
+    while (pos != string::npos)
+    {
+        list.push_back(str.substr(i, pos - i));
+        i = ++pos;
+        pos = str.find(delim, pos);
+    }
+ 
+    list.push_back(str.substr(i, str.length()));
+ 
+    return list;
+}
+ 
+// Function to validate an IP address
+bool validateIP(std::string ip)
+{
+    using namespace std;
+    // split the string into tokens
+    vector<string> list = split(ip, '.');
+ 
+    // if the token size is not equal to four
+    if (list.size() != 4) {
+        return false;
+    }
+ 
+    // validate each token
+    for (string str: list)
+    {
+        // verify that the string is a number or not, and the numbers
+        // are in the valid range
+        if (!isNumber(str) || stoi(str) > 255 || stoi(str) < 0) {
+            return false;
+        }
+    }
+ 
+    return true;
+}
+
 int main(int argc, char *argv[])
 try
 {
@@ -884,6 +960,7 @@ try
     int color = 0;
     int crf_color = 30;
     int depth_lossless = 0;
+    int port = 1000;
     // int rosbag = 0;
     // int opt;
     // po::options_description desc("Allowed options");
@@ -898,6 +975,7 @@ try
 
     std::string bagfile = "";
     std::string jsonfile = "";
+    std::string server_address = "";
     if (!input.cmdOptionExists("-dir"))
     {
         std::cout << "ERROR: " << std::endl;
@@ -946,6 +1024,17 @@ try
             return EXIT_FAILURE;
         }
     }
+
+    if (input.cmdOptionExists("-sv_addr"))
+    {
+        server_address = input.getCmdOption("-sv_addr");
+        if(!validateIP(server_address))
+        {
+            std::cout << "Error server_address" << std::endl;
+            print_usage("-sv_addr");
+            return EXIT_FAILURE;
+        }
+    }
     width = parse_integer_cmd(input, "-wd", width);
     height = parse_integer_cmd(input, "-ht", height);
     fps = parse_integer_cmd(input, "-fps", fps);
@@ -960,6 +1049,7 @@ try
     max_depth = parse_integer_cmd(input, "-max_depth", max_depth);
     min_depth = parse_integer_cmd(input, "-min_depth", min_depth);
     depth_unit = parse_integer_cmd(input, "-depth_unit", depth_unit);
+    port = parse_integer_cmd(input, "-port", port);
     // rosbag = parse_integer_cmd(input, "-rosbag", rosbag);
     if (width == -5 || width < 200 || width > 1920)
     {
@@ -1033,7 +1123,11 @@ try
         print_usage("-depth_unit");
         return EXIT_FAILURE;
     }
-
+    if (port < 0 || port > 65535)
+    {
+        print_usage("-port");
+        return EXIT_FAILURE;
+    }
     // if(rosbag < 0 || rosbag > 1){
     //     print_usage("-rosbag");
     //     return EXIT_FAILURE;
@@ -1056,8 +1150,9 @@ try
     std::cout << "max_depth: " << max_depth << std::endl;
     std::cout << "min_depth: " << min_depth << std::endl;
     std::cout << "depth_unit: " << depth_unit << std::endl;
+    std::cout << "port " << port << std::endl;
     // std::cout << "rosbag: " << bool(rosbag) << std::endl;
-    int retval = startRecording(dir, sec, bagfile, (uint16_t)max_depth, (uint16_t)min_depth, (uint16_t)depth_unit, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless));
+    int retval = startRecording(dir, sec, bagfile, (uint16_t)max_depth, (uint16_t)min_depth, (uint16_t)depth_unit, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless), server_address, (unsigned short)port);
     if (!retval)
     {
         std::cout << "FAILURE WHILE RECORDING" << std::endl;

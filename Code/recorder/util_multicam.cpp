@@ -354,7 +354,12 @@ bool InputParser::cmdOptionExists(const std::string &option) const
  */
 void print_usage(std::string choice)
 {
-    if (choice == "-depth_unit")
+    if(choice == "-sv_addr"){
+        std::cout << "Usage:  -sv_addr <server_address> valid ip address " << std::endl;
+    }else if(choice == "-port"){
+        std::cout << "Usage: -port <port number> between 1024 and 65535" << std::endl;
+    }
+    else if (choice == "-depth_unit")
     {
         std::cout << "Usage: ./depth_unit -depth_unit <int>  Depth units represent the measurement length of a single depth step. A Depth step is difference between each discrete depth value in a depth image." << std::endl;
         std::cout << "For example if my depth unit is 1000 then each difference in 1 mm in the image will result in one value difference in the actual depth values." << std::endl;
