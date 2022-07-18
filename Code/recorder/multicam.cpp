@@ -140,7 +140,9 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
         //typ 0 is LSB frames which ares stored in luma component of yuv420p10le format
         //note how we have to set bframes to 0 in order to align the lossless RGB frames with the lossy LSB frames.
         //This may however come at cost of quality.
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + path_name;
+        //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + path_name;
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart -f flv rtmp://127.0.0.1:5000/ ";
+        
         return ffmpeg_command;
     }
     else if (typ == 1)
@@ -247,10 +249,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "FFmpeg command for color stream too " << std::endl;
         std::cout << color_lsb << std::endl;
     }
-    // std::cout << "FFmpeg command for str_lsb LSB frames:" << std::endl;
-    // std::cout << str_lsb << std::endl;
+    std::cout << "FFmpeg command for str_lsb LSB frames:" << std::endl;
+    std::cout << str_lsb << std::endl;
     std::cout << "FFmpeg command for str_msb MSB frames:" << std::endl;
-    // std::cout << str_msb << std::endl;
+    std::cout << str_msb << std::endl;
     FILE *pipe_lsb = NULL;
     FILE *pipe_msb = NULL;
     FILE *p_pipe_raw = NULL;
