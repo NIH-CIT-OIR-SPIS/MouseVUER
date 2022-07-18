@@ -1,6 +1,8 @@
-## Command for server side for one will fix later
+## Command for server side for one will fix later will have in local server
 
-ffmpeg -listen 1 -timeout 10000 -f flv -loglevel debug -i rtmp://127.0.0.1:5000/ -c:v copy -pix_fmt yuv420p10le test_out.mp4
+ffmpeg -listen 1 -timeout 10000 -f flv -loglevel debug -an -i rtmp://127.0.0.1:5000/ -c:v copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb.mp4
+
+ffmpeg -listen 1 -timeout 10000 -f flv -loglevel debug -an -i rtmp://127.0.0.1:5001/ -c:v copy -pix_fmt rgb24 -y Testing_DIR/test_msb.mp4
 
 
 ## Code on listening side

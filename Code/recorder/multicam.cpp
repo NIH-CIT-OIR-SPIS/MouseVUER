@@ -141,7 +141,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
         //note how we have to set bframes to 0 in order to align the lossless RGB frames with the lossy LSB frames.
         //This may however come at cost of quality.
         //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + path_name;
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart -f flv rtmp://127.0.0.1:5000/ ";
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart -f flv rtmp://127.0.0.1:5000/ ";
         
         return ffmpeg_command;
     }
@@ -149,7 +149,9 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     {
         //typ 1 is MSB RGB frames lossless stored in red channel 
         //By default B-frames are turned off for lossless encoding. Lossless encoding for libx264rgb encoder is crf of 0
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart " + path_name; //
+        //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart " + path_name; //
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart -movflags +faststart -f flv rtmp://127.0.0.1:5001/"; //
+        
         return ffmpeg_command;
     }
     else if (typ == 2)
