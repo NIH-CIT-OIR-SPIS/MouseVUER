@@ -567,9 +567,9 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             else if (typ == 1)
             {
 
-                data[*count] = (uint8_t *)malloc(frame->linesize[2] * frame->height); // 2 is the red channel
+                data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height); // 2 is the red channel
                 // printf("frame->linesize[2]: %d\n", frame->linesize[2]);
-                memcpy(data[*count], frame->data[2], frame->linesize[2] * frame->height);
+                memcpy(data[*count], frame->data[0], frame->linesize[0] * frame->height);
 
                 // std::copy(frame->data[0], frame->data[0] + frame->linesize[0] * frame->height, std::back_inserter(msb_buf[*count]));
                 ++(*count);
