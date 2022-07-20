@@ -10,6 +10,12 @@ Ghadi Salem
 Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
 
 
+### Install scapy
+```
+python3 -m pip install scapy
+```
+
+
 ### Install librealsense with Ubuntu 20.04 (as of 7/1/2022)
 
 This is a guide on how to run the program 
