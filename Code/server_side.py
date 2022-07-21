@@ -45,7 +45,7 @@ STARTING UP FFMPEG LISTENER WITH THREADED COMMAND LINE CALL
 """
   
 NO_FORCE_EXIT = True
-PORT_CLIENT_LISTEN = 1026
+PORT_CLIENT_LISTEN = 1027
 COMMON_NAME = "SCHORE_SYSTEM"
 ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
@@ -196,6 +196,10 @@ class Server:
 
         self.print_lock = threading.Lock()
 
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind(('', PORT_CLIENT_LISTEN))
+
         
         
         # for key, value in kwargs.items():
@@ -222,37 +226,87 @@ class Server:
 
         for ip_addr in self.client_ip_lst:
             self.host_port.update({ip_addr: PORT_CLIENT_LISTEN})
+            
+    # def start_conn_send_data(self, host: str, port: int):
+    #     bindsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     bindsocket.bind((host, port))
+    #     bindsocket.listen(5)
+    #     while True:
+    #         clientsocket, addr = bindsocket.accept()
+    #         print("Connected to {}".format(addr))
+    #         #th = threading.Thread(target=self.conn_send_data, args=(clientsocket, addr)).start()
+    #         conn = self.context.wrap_socket(clientsocket, server_side=True)
+    #         buf = b''
+    #         try:
+    #             while True:
+    #                 data = conn.recv(1024)
+    #                 if data:
+    #                     buf += data
+    #                     print("Received: {}".format(data))
+    #                     conn.send(b'OK')
+    #                 else:
+    #                     print("Recieved: {}".format(buf))
+    #                     break
+    #         finally:
+    #             conn.shutdown(socket.SHUT_RDWR)
+    #             conn.close()
+    #             print("Connection closed")
 
+    # def start_conn_send_data(self, host: str, port: int):
+    #     """
+    #     Start a connection to a host and send data
+    #     :param host:
+    #     :param port:
+    #     :return:
+    #     """
+    #     ssocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     ssocket.bind((host, port))
+    #     ssocket.listen(5)
+    #     while NO_FORCE_EXIT:
+    #         client, addr = ssocket.accept()
+    #         self.print_lock.acquire()
+    #         print("Connected to {}:{}".format(addr[0], addr[1]))
+    #         threading.thread
+    #     ssocket.close()
 
-    def start_conn_send_data(self, host: str, port: int):
-        """
-        Start a connection to a host and send data
-        :param host:
-        :param port:
-        :return:
-        """
-        ssocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ssocket.bind((host, port))
-        ssocket.listen(5)
-        while NO_FORCE_EXIT:
-            c, addr = ssocket.accept()
-            self.print_lock.acquire()
-            print("Connected to {}:{}".format(addr[0], addr[1]))
-            start_new_thread(self.threaded_get_info, (c, addr,))
-        ssocket.close()
+    def listen(self):
+        try:
+            self.sock.listen(5)
+            while True:
+                clientsocket, addr = self.sock.accept()
+                self.print_lock.acquire()
+                print("Connected to {}".format(addr))
+                
+                clientsocket.settimeout(60)
+                threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr)).start()
+        except KeyboardInterrupt:
+            print("Keyboard Interrupt")
+            self.sock.close()
+            sys.exit(0)
 
+    def threaded_get_info(self, clientsocket, addr):
+        conn = self.context.wrap_socket(clientsocket, server_side=True)
+        try:
+            while True:
+                data = conn.recv(1024)
+                if data:
+                    #buf += data
+                    print("Received: {}".format(data.decode('utf-8')))
+                    #conn.send("ADDRESS: {}".format(self.server_ip))
+                    message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
+                    conn.send(message.encode('utf-8'))
+                else:
+                    #print("Recieved: {}".format(data))
+                    
+                    self.print_lock.release()
+                    break
 
-    def threaded_get_info(self, connsocket, addr):
-        while True:
-            data = connsocket.recv(1024)
-            if not data:
-                print("Bye")
-                self.print_lock.release()
-                break
-            boh = data.decode('utf-8')
-            print("Received: {}".format(boh))
-            connsocket.send(b'Address: {}'.format(addr[0]).encode('utf-8'))
-        connsocket.close()
+        finally:
+            # if self.print_lock.
+            # self.print_lock.release()
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+            print("Connection closed")
 
             
 
@@ -296,7 +350,7 @@ def server_side_command_line_parser():
     parser.add_argument('-max_depth', '--max_depth', type=int, default=65535, help='The max depth of for the depth camera to use. Must be greater than min_depth. Valid range is [1, 65535]. Default is 65535')
     parser.add_argument('-min_depth', '--min_depth', type=int, default=0, help='The min depth for the depth camera to use. Must be less than max_depth. Valid range is [0, 65534]. Default is 0')
     parser.add_argument('-depth_unit', '--depth_unit', type=int, default=1000, help='The units of the depth camera to use valid range, [40, 25000]. Default value is 1000')
-
+    parser.add_argument('-num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -305,8 +359,9 @@ if __name__ == '__main__':
     print("Done getting IP addresses")
     args = server_side_command_line_parser()
     server = Server(ip_lst, **vars(args))
-    server.start_conn_send_data(host="", port=12345)
-    
+    server.listen()
+    #server.start_conn_send_data(host="127.0.0.1", port=12345)
+
     #lst.remove()
     #print(lst)
 
