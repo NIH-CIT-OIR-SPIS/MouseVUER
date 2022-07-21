@@ -305,6 +305,7 @@ if __name__ == '__main__':
     print("Done getting IP addresses")
     args = server_side_command_line_parser()
     server = Server(ip_lst, **vars(args))
+    server.start_conn_send_data(host="", port=12345)
     
     #lst.remove()
     #print(lst)
