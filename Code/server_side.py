@@ -15,7 +15,7 @@ import logging
 import selectors
 import types
 import sys
-
+import ssl
 """
 This is the server side of the application.
 GET LIST OF ALL IP ADDRESSES
@@ -45,6 +45,10 @@ STARTING UP FFMPEG LISTENER WITH THREADED COMMAND LINE CALL
 """
   
 NO_FORCE_EXIT = True
+PORT_CLIENT_LISTEN = 1026
+COMMON_NAME = "SCHORE_SYSTEM"
+ORGANIZATION = "NIH"
+COUNTRY_ORGIN = "US"
 
 
 
@@ -127,7 +131,7 @@ def map_network(pool_size=255):
 
 def port_type(port: int):
     port = int(port)
-    if port <= 1024 or port > 65535:
+    if port <= 1027 or port > 65535:
         raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(port))
     return port
 
@@ -166,35 +170,58 @@ class Server:
     
     """
     def __init__(self, ip_lst_in, **kwargs):
+        
+        
+        self.server_sni_hostname = COMMON_NAME
+        if not (os.path.exists("keys/") and os.path.isfile("keys/server.key") and os.path.isfile("keys/client.crt") and os.path.isfile("keys/server.crt")):
+            raise Exception("Server keys not found. Please run the make_ssl_keys_cert.py script, and copy files to each client and server.")
+        self.server_cert = 'keys/server.crt'
+        self.server_key = 'keys/server.key'
+        self.client_crt = 'keys/client.crt'
+        
+        self.context  = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        self.context.verify_mode = ssl.CERT_REQUIRED
+        self.context.load_cert_chain(certfile=self.server_cert, keyfile=self.server_key)
+        self.context.load_verify_locations(cafile=self.client_crt)
+
+
         self.client_ip_lst = ip_lst_in
         self.argdict = kwargs
         self.port = self.argdict['port']
         self.ffmpeg_port_map = {} # maps ip address to two distinct ports
         self.host_port = {}
         self.server_ip = get_my_ip()
+
+        self.__initialize_maps()
+
+        self.print_lock = threading.Lock()
+
+        
+        
+        # for key, value in kwargs.items():
+        #     self.argdict[key] = value
+        # self.logger = logging.getLogger(__name__)
+        # self.logger.setLevel(logging.DEBUG)
+        # self.logger.addHandler(logging.StreamHandler())
+        # self.logger.info("Server started with ip address {} ".format(self.server_ip))
+        # self.logger.info("Client IP List: {}".format(self.client_ip_lst))
+        # self.logger.info("Arguments: {}".format(self.argdict))
+        # self.logger.info("Platform: {}".format(platform.platform()))
+        # self.logger.info("OS: {}".format(platform.system()))
+        # self.logger.info("OS Version: {}".format(platform.version()))
+
+
+
+
+    def __initialize_maps(self):
         i = 0
         port_store = self.port
         for ip_addr in self.client_ip_lst:
-            
             self.ffmpeg_port_map.update({ip_addr: (port_store + i, port_store + i + 1)})
             i += 2
 
         for ip_addr in self.client_ip_lst:
-            self.host_port.update({ip_addr: port_store + i})
-            i += 1
-        i = 0
-        self.print_lock = threading.Lock()
-        # for key, value in kwargs.items():
-        #     self.argdict[key] = value
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
-        self.logger.addHandler(logging.StreamHandler())
-        self.logger.info("Server started with ip address {} ".format(self.server_ip))
-        self.logger.info("Client IP List: {}".format(self.client_ip_lst))
-        self.logger.info("Arguments: {}".format(self.argdict))
-        self.logger.info("Platform: {}".format(platform.platform()))
-        self.logger.info("OS: {}".format(platform.system()))
-        self.logger.info("OS Version: {}".format(platform.version()))
+            self.host_port.update({ip_addr: PORT_CLIENT_LISTEN})
 
 
     def start_conn_send_data(self, host: str, port: int):
@@ -211,16 +238,22 @@ class Server:
             c, addr = ssocket.accept()
             self.print_lock.acquire()
             print("Connected to {}:{}".format(addr[0], addr[1]))
-            start_new_thread(self.get_info, (self, c, addr))
+            start_new_thread(self.threaded_get_info, (c, addr,))
+        ssocket.close()
 
-    def get_info(self, connsocket, addr):
+
+    def threaded_get_info(self, connsocket, addr):
         while True:
             data = connsocket.recv(1024)
             if not data:
+                print("Bye")
+                self.print_lock.release()
+                break
+            boh = data.decode('utf-8')
+            print("Received: {}".format(boh))
+            connsocket.send(b'Address: {}'.format(addr[0]).encode('utf-8'))
+        connsocket.close()
 
-                
-                print("Received: {}".format(data))
-                return data.decode('utf-8')
             
 
 
@@ -251,7 +284,7 @@ def server_side_command_line_parser():
     -depth_unit <int> The units of the depth camera to use valid range, [40, 25000]. Default value is 1000
     """
     parser = argparse.ArgumentParser(description='Server for the video streaming application')
-    parser.add_argument('--port', type=int, default=5000, help='Port to listen on.  Must be between values [1025, 65000]')
+    parser.add_argument('--port', type=port_type, default=port_type(5000), help='Port to listen on.  Must be between values [1027, 65000]')
     parser.add_argument('--verbose', type=str, default='info', help='Verbosity level of the logging')
     parser.add_argument('--dimensions', type=str, default='1280x720', help='Dimensions of the video stream, (widthxheight) valid dimensions are: (640x480, 1280x720, 1920x1080). Default is 1280x720')
     parser.add_argument('--fps', type=int, default=30, help='Framerate of recordings.Valid framerates are: (15, 30, 60, 90). Default is 30. 60 fps and 90 fps are only available for 640x480. 30 fps and 15 fps are available for all dimensions.')

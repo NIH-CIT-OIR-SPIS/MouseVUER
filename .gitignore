@@ -2,6 +2,10 @@ Code/Testing_DIR/*
 Code/bin/*
 *.pyc
 *.obj
+# Ignore key files
+*.key
+*.crt
+
 
 # Prerequisites
 *.d
