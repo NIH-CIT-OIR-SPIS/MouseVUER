@@ -51,6 +51,64 @@ ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
 
 
+def run_processes_parallel(cmd_lst):
+    """
+    Start up two server processes in parallel. Send them both signals to terminate.
+    """
+    try:
+        p_list = []
+        for cmd in cmd_lst:
+            p_list.append(sp.Popen(cmd, shell=True))
+        
+        # Wait for the processes to terminate
+        for p in p_list:
+            p.wait()
+    
+    # Send the processes a signal to terminate
+    finally:
+        if p_list is not []:
+            for p in p_list:
+                p.send_signal(signal.SIGQUIT)
+
+def port_type(port: int):
+    port = int(port)
+    if port <= 1024 or port > 65535:
+        raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(port))
+    return port
+
+def validate_ip(addr):
+    try:
+        ip = ipaddress.ip_address(addr)
+        print("Valid IP: {}".format(ip))
+        return addr
+    except ValueError:
+        #print("IP address {} is not valid".format(addr))
+        raise argparse.ArgumentTypeError("IP address {} is not valid".format(addr))
+        return None
+
+def parse_options():
+    parser = argparse.ArgumentParser(description = 'Pass commands to read files from')
+    parser.add_argument('--addr', type=str, help='IP address to use')
+    parser.add_argument('--loglevel', type=str, default='error', help='logging level: ie error, verbose, debug, [error default]')  
+    parser.add_argument('--port', type=int, default=5000, help="Port number must in the ranges [1025, 65535], default is 5000")
+    return parser.parse_args()
+
+def make_commands(addr, loglevel, port):
+    addr1 = validate_ip(addr)
+    port = port_type(port)
+    #print("Address: {}, loglevel {}, port {}".format(addr, loglevel, port))
+    #loglevel = "error"
+    #addr1 = "169.254.255.255"
+    port_num_lsb = port
+    cmd_lst = []
+    cmd1 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel " + loglevel + " -an -i rtmp://" + addr1 + ":" + str(port_num_lsb) + "/ -c:v copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb.mp4"
+    cmd2 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel " + loglevel + " -an -i rtmp://" + addr1 + ":" + str(port_num_lsb + 1) + "/ -c:v copy -pix_fmt rgb24 -y Testing_DIR/test_msb.mp4"
+    cmd_lst.append(cmd1)
+    cmd_lst.append(cmd2)
+    run_processes_parallel(cmd_lst)
+    if platform.system() == "Linux":
+        os.system("stty echo")
+
 
 def pinger(job_q, results_q):
     """
@@ -200,19 +258,6 @@ class Server:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', PORT_CLIENT_LISTEN))
 
-        
-        
-        # for key, value in kwargs.items():
-        #     self.argdict[key] = value
-        # self.logger = logging.getLogger(__name__)
-        # self.logger.setLevel(logging.DEBUG)
-        # self.logger.addHandler(logging.StreamHandler())
-        # self.logger.info("Server started with ip address {} ".format(self.server_ip))
-        # self.logger.info("Client IP List: {}".format(self.client_ip_lst))
-        # self.logger.info("Arguments: {}".format(self.argdict))
-        # self.logger.info("Platform: {}".format(platform.platform()))
-        # self.logger.info("OS: {}".format(platform.system()))
-        # self.logger.info("OS Version: {}".format(platform.version()))
 
 
 
@@ -227,47 +272,7 @@ class Server:
         for ip_addr in self.client_ip_lst:
             self.host_port.update({ip_addr: PORT_CLIENT_LISTEN})
             
-    # def start_conn_send_data(self, host: str, port: int):
-    #     bindsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #     bindsocket.bind((host, port))
-    #     bindsocket.listen(5)
-    #     while True:
-    #         clientsocket, addr = bindsocket.accept()
-    #         print("Connected to {}".format(addr))
-    #         #th = threading.Thread(target=self.conn_send_data, args=(clientsocket, addr)).start()
-    #         conn = self.context.wrap_socket(clientsocket, server_side=True)
-    #         buf = b''
-    #         try:
-    #             while True:
-    #                 data = conn.recv(1024)
-    #                 if data:
-    #                     buf += data
-    #                     print("Received: {}".format(data))
-    #                     conn.send(b'OK')
-    #                 else:
-    #                     print("Recieved: {}".format(buf))
-    #                     break
-    #         finally:
-    #             conn.shutdown(socket.SHUT_RDWR)
-    #             conn.close()
-    #             print("Connection closed")
 
-    # def start_conn_send_data(self, host: str, port: int):
-    #     """
-    #     Start a connection to a host and send data
-    #     :param host:
-    #     :param port:
-    #     :return:
-    #     """
-    #     ssocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #     ssocket.bind((host, port))
-    #     ssocket.listen(5)
-    #     while NO_FORCE_EXIT:
-    #         client, addr = ssocket.accept()
-    #         self.print_lock.acquire()
-    #         print("Connected to {}:{}".format(addr[0], addr[1]))
-    #         threading.thread
-    #     ssocket.close()
 
     def listen(self):
         try:
@@ -295,6 +300,7 @@ class Server:
                     #conn.send("ADDRESS: {}".format(self.server_ip))
                     message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
                     conn.send(message.encode('utf-8'))
+                    
                 else:
                     #print("Recieved: {}".format(data))
                     
