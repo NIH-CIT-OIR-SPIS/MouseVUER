@@ -49,7 +49,7 @@ PORT_CLIENT_LISTEN = 1027
 COMMON_NAME = "SCHORE_SYSTEM"
 ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
-
+BYTES_SIZE = 4096
 
 def run_processes_parallel(cmd_lst):
     """
@@ -105,9 +105,10 @@ def make_commands(addr, loglevel, port):
     cmd2 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel " + loglevel + " -an -i rtmp://" + addr1 + ":" + str(port_num_lsb + 1) + "/ -c:v copy -pix_fmt rgb24 -y Testing_DIR/test_msb.mp4"
     cmd_lst.append(cmd1)
     cmd_lst.append(cmd2)
-    run_processes_parallel(cmd_lst)
-    if platform.system() == "Linux":
-        os.system("stty echo")
+    return cmd1, cmd2
+    # run_processes_parallel(cmd_lst)
+    # if platform.system() == "Linux":
+    #     os.system("stty echo")
 
 
 def pinger(job_q, results_q):
@@ -241,7 +242,7 @@ class Server:
         self.context.verify_mode = ssl.CERT_REQUIRED
         self.context.load_cert_chain(certfile=self.server_cert, keyfile=self.server_key)
         self.context.load_verify_locations(cafile=self.client_crt)
-
+        
 
         self.client_ip_lst = ip_lst_in
         self.argdict = kwargs
@@ -293,12 +294,14 @@ class Server:
         conn = self.context.wrap_socket(clientsocket, server_side=True)
         try:
             while True:
-                data = conn.recv(1024)
+                data = conn.recv(BYTES_SIZE)
                 if data:
                     #buf += data
                     print("Received: {}".format(data.decode('utf-8')))
                     #conn.send("ADDRESS: {}".format(self.server_ip))
-                    message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
+                    message = f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
+
+                    #message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
                     conn.send(message.encode('utf-8'))
                     
                 else:

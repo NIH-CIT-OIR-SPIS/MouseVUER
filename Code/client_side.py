@@ -54,7 +54,7 @@ class Client:
             time.sleep(1)
 
         conn = self.context.wrap_socket(s, server_side=False, server_hostname=self.server_sni_hostname)
-        message = "Address: {} Port: {} My_ip: {}".format(host, port, get_my_ip())
+        message = "Host: {} Port: {} My_ip: {}".format(host, port, get_my_ip())
         conn.send(message.encode('utf-8'))
         data = conn.recv(BYTES_SIZE)
         print(f'Received: {data.decode("utf-8")}')
