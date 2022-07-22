@@ -136,6 +136,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
 
     std::string re_flag = (path_out.find("rtmp:") != std::string::npos) ? " -re " : "";
     std::string flv_flag = (path_out.find("rtmp:") != std::string::npos) ? " -f flv " : "";
+    std::string tune_latency = "";//" -tune zerolatency ";
     int num_bframes = 0;
     
     if (depth_lossless)
@@ -148,19 +149,26 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
         //typ 0 is LSB frames which ares stored in luma component of yuv420p10le format
         //note how we have to set bframes to 0 in order to align the lossless RGB frames with the lossy LSB frames.
         //This may however come at cost of quality.
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + flv_flag +  " " + path_out;
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i -  -c:v " + encoder + " -preset veryfast " + tune_latency + " -pix_fmt "  + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart " + flv_flag +  " " + path_out;
         //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i -  -c:v " + encoder + " -preset veryfast -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -x264-params bframes=" + std::to_string(num_bframes) + " -movflags +faststart -f flv rtmp://127.0.0.1:5000/ ";
         
         return ffmpeg_command;
     }
-    else if (typ == 1)
+    else if (typ == 1 && encoder == "libx264rgb")
     {
         //typ 1 is MSB RGB frames lossless stored in red channel 
         //By default B-frames are turned off for lossless encoding. Lossless encoding for libx264rgb encoder is crf of 0
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i - -c:v " + encoder + " -preset veryfast  -qp " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " +  path_out; //
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i - -c:v " + encoder + " -preset veryfast " + tune_latency + " -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " +  path_out; //
         //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart -movflags +faststart -f flv rtmp://127.0.0.1:5001/"; //
         
         return ffmpeg_command;
+    }
+    else if (typ == 1 && encoder == "libx264")
+    {
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i - -c:v " + encoder + " -preset veryfast " + tune_latency + " -pix_fmt "  + pix_fmt_out + " -qp " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " +  path_out; //
+        //ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart -movflags +faststart -f flv rtmp://127.0.0.1:5001/"; //
+        
+        return ffmpeg_command;       
     }
     else if (typ == 2)
     {
@@ -241,6 +249,14 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     
     //std::string path_raw = dirname + "test_raw.mp4"; //(server_address == "" || port <= -1) ? (dirname + "test_raw.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
 
+    int y_comp_8_bit = height * width;
+    int u_comp_8_bit = y_comp_8_bit / 4;
+    int v_comp_8_bit = u_comp_8_bit;
+    int channel_size = 1;
+    std::string type_str_msb = "yuv420p";
+    std::string encoder_msb = "libx264";
+    int total_sz_8_bit = y_comp_8_bit + u_comp_8_bit + v_comp_8_bit;
+
     std::string path_lsb = (server_address == "" || port <= 1024 ) ? (dirname + "test_lsb.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
     std::string path_msb = (server_address == "" || port <= 1024  ) ? (dirname + "test_msb.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port + 1) + "/ ");
     std::string color_lsb_path = (server_address == "" || port <= 1024) ? (dirname + "test_color_lsb.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port + 2) + "/ ");
@@ -254,7 +270,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     std::string str_lsb = build_ffmpeg_cmd("yuv420p10le", "yuv420p10le", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
     // std::string str_msb = build_ffmpeg_cmd("gray", "yuvj420p", "libx264", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
-    std::string str_msb = build_ffmpeg_cmd("yuv420p", "yuv420p", "libx264", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
+    std::string str_msb = build_ffmpeg_cmd(type_str_msb, type_str_msb, encoder_msb, path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
 
     std::string color_lsb = build_ffmpeg_cmd("rgb24", "yuv420p", "libx264", color_lsb_path, time_run, count_threads, width_color, height_color, fps, crf_color, ffmpeg_verbose, depth_lossless, 2);
     // std::string raw_cmd = build_ffmpeg_cmd("gray16le", "gray16le", "rawvideo", path_raw, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 4);
@@ -500,10 +516,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int v_comp_10_bit = y_comp_10_bit / 4;
     int total_sz_10_bit = y_comp_10_bit + u_comp_10_bit + v_comp_10_bit;
 
-    int y_comp_8_bit = height * width;
-    int u_comp_8_bit = y_comp_8_bit / 4;
-    int v_comp_8_bit = u_comp_8_bit;
-    int total_sz_8_bit = y_comp_8_bit + u_comp_8_bit + v_comp_8_bit;
+
     uint8_t *store_frame_lsb = (uint8_t *)malloc(total_sz_10_bit * sizeof(uint8_t));
     uint8_t *store_frame_msb = (uint8_t *)malloc( total_sz_8_bit * sizeof(uint8_t));
     uint8_t *store_frame_test = (uint8_t *)malloc(height * width * 1 * sizeof(uint8_t));
@@ -640,7 +653,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 // Remember all data after width * height *2 is 0 so we don't have to put total_sz_10_bit here
                 std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
 
-                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k++)
+                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k+=channel_size)
                 {
 
                     store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
@@ -738,7 +751,27 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
             if (collect_raw)
             {
-                if (counter < (long)num_frm_collect)
+                // if (counter < (long)num_frm_collect)
+                // {
+                //     std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
+                //     FILE *p_file;
+                //     if ((p_file = fopen(bin_out.c_str(), "wb")))
+                //     {
+                //         // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
+                //         fwrite((uint8_t *)depth_frame_in.get_data(), 1, num_bytes * 2, p_file);
+                //         fclose(p_file);
+                //     }
+                //     else
+                //     {
+                //         std::cout << "Problem writing raw file " << bin_out << std::endl;
+                //     }
+                //     // if (!fwrite((uint8_t*)depth_frame_in.get_data(), 1, num_bytes*2, p_pipe_raw))
+                //     // {
+                //     //     std::cout << "Error with fwrite frames raw" << std::endl;
+                //     //     break;
+                //     // }
+                // }
+                if ((long)time_run * fps  - counter <= (long)num_frm_collect)
                 {
                     std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
                     FILE *p_file;
@@ -882,7 +915,6 @@ bool isNumber(const std::string &str)
  
 // Function to split string `str` using a given delimiter
 std::vector<std::string> split(const std::string &str, char delim)
-
 {
     using namespace std;
 

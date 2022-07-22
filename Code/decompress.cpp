@@ -62,6 +62,23 @@ namespace buff_global
     std::string output_dir_gl = "";
 }
 
+struct timer
+{
+    void reset()
+    {
+        start = std::chrono::steady_clock::now();
+    }
+
+    unsigned long long milliseconds_elapsed() const
+    {
+        const auto now = clock::now();
+        using namespace std::chrono;
+        return duration_cast<milliseconds>(now - start).count();
+    }
+
+    using clock = std::chrono::steady_clock;
+    clock::time_point start = clock::now();
+};
 class InputParser
 {
 public:
@@ -517,6 +534,7 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
                          int *ptr_frm_count, int debug_flag)
 {
     int ret = 0;
+    int channel = 0;
     // submit the packet to the decoder
     // dec->frame_skip_threshold =
     ret = avcodec_send_packet(dec, pkt);
@@ -566,10 +584,10 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             }
             else if (typ == 1)
             {
-
-                data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height); // 2 is the red channel
+                
+                data[*count] = (uint8_t *)malloc(frame->linesize[channel] * frame->height); // 2 is the red channel
                 // printf("frame->linesize[2]: %d\n", frame->linesize[2]);
-                memcpy(data[*count], frame->data[0], frame->linesize[0] * frame->height);
+                memcpy(data[*count], frame->data[channel], frame->linesize[channel] * frame->height);
 
                 // std::copy(frame->data[0], frame->data[0] + frame->linesize[0] * frame->height, std::back_inserter(msb_buf[*count]));
                 ++(*count);
@@ -1071,6 +1089,7 @@ long double getCompressionRatio(std::uintmax_t sz, int num_frames)
 int main(int argc, char *argv[])
 {
     int deref1 = 0, deref2 = 0, deref3 = 0; // deref4 = 0, deref5 = 0, deref6 = 0;
+    int ret = 0;
     if (argc > 13 || argc < 2)
     {
         std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
@@ -1184,7 +1203,7 @@ int main(int argc, char *argv[])
     //         break;
     //     }
     // }
-    frm_group_size = 10;
+    frm_group_size = 50;
     printf("frm_group_size: %d\n", frm_group_size);
 
     std::uintmax_t total_compressed_sz = 0;
@@ -1200,13 +1219,19 @@ int main(int argc, char *argv[])
     {
         std::cout << e.what() << '\n';
     }
+    
 
-    if (!decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir))
+    timer tStart;
+    ret = !decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir);
+    unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();
+    std::cout << "Time decompress run for in seconds: " << (milliseconds_ellapsed / 1000.0) << std::endl;
+    if (ret)
     {
 
         std::cout << "Decompression failed" << std::endl;
         return EXIT_FAILURE;
     }
+    
     std::cout << "Compression ratio is: " << getCompressionRatio(total_compressed_sz, num_frames_lsb) << std::endl;
     std::cout << buff_global::video_frame_count << " frames were compressed" << std::endl;
     return EXIT_SUCCESS;

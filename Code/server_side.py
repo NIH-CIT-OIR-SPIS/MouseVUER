@@ -52,7 +52,6 @@ COMMON_NAME = "SCHORE_SYSTEM"
 ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
 BYTES_SIZE = 4096
-
 def run_processes_parallel(cmd_lst):
     """
     Start up two server processes in parallel. Send them both signals to terminate.
@@ -93,7 +92,7 @@ def validate_loglevel(loglevel):
         raise argparse.ArgumentTypeError("Error: Log level must be one of the following: error, verbose, debug")
     return loglevel
 
-def make_commands(addr: str, loglevel: str, port: int, split_size: int):
+def make_commands(addr: str, loglevel: str, port: int, split_size = 20): 
     addr1 = validate_ip(addr)
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
@@ -103,12 +102,12 @@ def make_commands(addr: str, loglevel: str, port: int, split_size: int):
     #print("Address: {}, loglevel {}, port {}".format(addr, loglevel, port))
     #loglevel = "error"
     #addr1 = "169.254.255.255"
-    port_num_lsb = port
+    #port_num_lsb = port
     cmd_lst = []
-    cmd1 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -c:v copy -pix_fmt yuv420p10le -map 0 -segment_time {} -y Testing_DIR/test_lsb_{}.mp4".format(loglevel, addr1, port_num_lsb, str(datetime.timedelta(seconds=split_size)), port)
-    cmd2 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -c:v copy -pix_fmt rgb24 -map 0 -segment_time {} -y Testing_DIR/test_msb_{}.mp4".format(loglevel, addr1, port_num_lsb, str(datetime.timedelta(seconds=split_size)), port)
-    # shlex.quote(cmd1)
-    # shlex.quote(cmd2)
+    cmd1 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -c:v copy -pix_fmt yuv420p10le -map 0 -segment_time {} -f segment -reset_timestamps 1 -y Testing_DIR/test_lsb_{}_out%03d.mp4".format(loglevel, addr1, port, str(datetime.timedelta(seconds=split_size)), port)
+    cmd2 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -c:v copy -pix_fmt rgb24 -map 0 -segment_time {} -f segment -reset_timestamps 1 -y Testing_DIR/test_msb_{}_out%03d.mp4".format(loglevel, addr1, port + 1, str(datetime.timedelta(seconds=split_size)), port + 1)
+    #shlex.quote(cmd1)
+    #shlex.quote(cmd2)
     cmd_lst.append(cmd1)
     cmd_lst.append(cmd2)
     return cmd1, cmd2
