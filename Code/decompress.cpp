@@ -1046,6 +1046,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         decode_packet(video_dec_ctx, NULL, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 0);
     }
 
+
 end:
     std::cout << "Average PSNR: " << getAverage(buff_global::psnr_vector) << std::endl;
     // if (src_filename_msb != NULL)
@@ -1236,3 +1237,23 @@ int main(int argc, char *argv[])
     std::cout << buff_global::video_frame_count << " frames were compressed" << std::endl;
     return EXIT_SUCCESS;
 }
+// make: Nothing to be done for 'all'.
+// Max 65535 Min 0 Depth_units in micrometers: 1000
+// num_frames_lsb: 27000 num_frames_msb 27000
+// frm_group_size: 50
+// type: 0 *count: 1
+// wq *count: 1 ret -11 
+// type: 0 *count: 2
+// wq *count: 2 ret -11 
+// type: 0 *count: 3
+// wq *count: 3 ret -11 
+// type: 0 *count: 4
+// wq *count: 4 ret -11 
+// type: 0 *count: 5
+// wq *count: 5 ret -11 
+// lsb_frames_dec: 27000
+// msb_frames_dec: 27000
+// Average PSNR: 71.6306
+// Time decompress run for in seconds: 440.141
+// Compression ratio is: 21.7228
+// 27000 frames were compressed

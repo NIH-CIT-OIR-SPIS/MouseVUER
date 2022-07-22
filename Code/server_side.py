@@ -104,10 +104,12 @@ def make_commands(addr: str, loglevel: str, port: int, split_size = 20):
     #addr1 = "169.254.255.255"
     #port_num_lsb = port
     cmd_lst = []
-    cmd1 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -c:v copy -pix_fmt yuv420p10le -map 0 -segment_time {} -f segment -reset_timestamps 1 -y Testing_DIR/test_lsb_{}_out%03d.mp4".format(loglevel, addr1, port, str(datetime.timedelta(seconds=split_size)), port)
-    cmd2 = "ffmpeg -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -c:v copy -pix_fmt rgb24 -map 0 -segment_time {} -f segment -reset_timestamps 1 -y Testing_DIR/test_msb_{}_out%03d.mp4".format(loglevel, addr1, port + 1, str(datetime.timedelta(seconds=split_size)), port + 1)
+    cmd1 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb_{}_out.mp4".format(loglevel, addr1, port, port)
+    cmd2 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y Testing_DIR/test_msb_{}_out.mp4".format(loglevel, addr1, port + 1, port + 1)
     #shlex.quote(cmd1)
     #shlex.quote(cmd2)
+    print("Command 1: {}".format(cmd1))
+    print("Command 2: {}".format(cmd2))
     cmd_lst.append(cmd1)
     cmd_lst.append(cmd2)
     return cmd1, cmd2
