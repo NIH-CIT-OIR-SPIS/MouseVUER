@@ -40,6 +40,22 @@ def get_my_ip():
     s.close()
     return ip
 
+def run_rtmp_command(recieved: str):
+    arr = recieved.split(",")
+    for i in range(len(arr)):
+        arr[i] = arr[i].strip()
+        arr[i] = arr[i].split(":")[1]
+    
+    time_run = int(arr[0])
+    crf = int(arr[1])
+    server_ip = str(arr[2])
+    port = int(arr[3])
+    max_depth = int(arr[4])
+    min_depth = int(arr[5])
+    depth_unit = int(arr[6])
+    cmd = "./bin/multicam -dir Testing_DIR/ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit)
+    print(cmd)
+
 class Client:
     def __init__(self, server_sni_hostname: str, host: str, port: int, server_cert_file: str, client_cert_file: str, client_key_file: str):
         self.server_addr = host
@@ -59,12 +75,16 @@ class Client:
         message = "Host: {}, Port: {}, My_ip: {}".format(host, port, get_my_ip())
         conn.send(message.encode('ascii'))
         data = conn.recv(BYTES_SIZE)
-        recieved = f'{data.decode("ascii")}' # decode the data
-        print("{}, {}".format(os.path.basename(__file__),recieved))
-        print("Closing connection")
+        recieved = "{}".format(data.decode("ascii")) # decode the data
+        #print("{},{}".format(os.path.basename(__file__),recieved))
+        #print("Closing connection")
         #print("Recieved data: {}".format(data))
+        
         conn.close()
         s.close()
+        run_rtmp_command(recieved)
+        
+
 
 
 

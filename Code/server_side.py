@@ -414,7 +414,7 @@ class Server:
                     #     print("Received: {}".format(data.decode('ascii')))
                     #     print("Address: {}".format(addr))
                     #conn.send("ADDRESS: {}".format(self.server_ip))
-                    message = "curr_time:{},time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d}".format(time.time(),self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
+                    message = "time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
                     
                     #message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
                     conn.send(message.encode('ascii'))
