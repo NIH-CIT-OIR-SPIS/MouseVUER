@@ -47,7 +47,7 @@ STARTING UP FFMPEG LISTENER WITH THREADED COMMAND LINE CALL
 """
   
 NO_FORCE_EXIT = True
-PORT_CLIENT_LISTEN = 1027
+PORT_CLIENT_LISTEN = 1026
 COMMON_NAME = "SCHORE_SYSTEM"
 ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
@@ -257,8 +257,9 @@ class Server:
         self.ffmpeg_port_map = {} # maps ip address to two distinct ports
         self.host_port = {}
         self.server_ip = get_my_ip()
-
+        print("Mapping to all ports {}".format(self.client_ip_lst))
         self.__initialize_maps()
+        print("Mapping : {}".format(self.ffmpeg_port_map))
 
         self.print_lock = threading.Lock()
 
@@ -287,9 +288,11 @@ class Server:
             self.sock.listen(5)
             while True:
                 clientsocket, addr = self.sock.accept()
-                self.print_lock.acquire()
+                #self.print_lock.acquire()
                 print("Connected to {}".format(addr))
-                
+                addr = (self.ffmpeg_port_map[str(addr[0])], addr)
+                ## START UP FFMPEG SERVER HERE
+                make_commands(addr, "debug", addr[1])
                 clientsocket.settimeout(60)
                 threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr)).start()
         except KeyboardInterrupt:
@@ -304,17 +307,19 @@ class Server:
                 data = conn.recv(BYTES_SIZE)
                 if data:
                     #buf += data
+                    
                     print("Received: {}".format(data.decode('utf-8')))
+                    print("Address: {}".format(addr))
                     #conn.send("ADDRESS: {}".format(self.server_ip))
-                    message = f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
-
+                    message = "{},{},{},{}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, addr[1])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
+                    
                     #message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
                     conn.send(message.encode('utf-8'))
                     
                 else:
                     #print("Recieved: {}".format(data))
                     
-                    self.print_lock.release()
+                    #self.print_lock.release()
                     break
 
         finally:
@@ -358,10 +363,10 @@ def server_side_command_line_parser():
     parser.add_argument('--verbose', type=str, default='info', help='Verbosity level of the logging')
     parser.add_argument('--dimensions', type=str, default='1280x720', help='Dimensions of the video stream, (widthxheight) valid dimensions are: (640x480, 1280x720, 1920x1080). Default is 1280x720')
     parser.add_argument('--fps', type=int, default=30, help='Framerate of recordings.Valid framerates are: (15, 30, 60, 90). Default is 30. 60 fps and 90 fps are only available for 640x480. 30 fps and 15 fps are available for all dimensions.')
-    parser.add_argument('-time', type=int, default=30, help='Amount of time to record in seconds. Default 30 seconds')
+    parser.add_argument('--time_run', type=int, default=30, help='Amount of time to record in seconds. Default 30 seconds')
     parser.add_argument('--json', type=str, default='', help='Json file to be sent to the client and used for the video recordings')
     parser.add_argument('--split_time', type=int, default=120, help='Length in to split each recording into. Default is 120 seconds')
-
+    parser.add_argument('--crf', type=int, default=22, help='The quality of the video. Valid range is [0, 51]. Default is 22')
     parser.add_argument('-basename', '--basename', type=str, default='test_', help='The base name of the video files')
     parser.add_argument('-max_depth', '--max_depth', type=int, default=65535, help='The max depth of for the depth camera to use. Must be greater than min_depth. Valid range is [1, 65535]. Default is 65535')
     parser.add_argument('-min_depth', '--min_depth', type=int, default=0, help='The min depth for the depth camera to use. Must be less than max_depth. Valid range is [0, 65534]. Default is 0')

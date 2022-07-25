@@ -48,20 +48,26 @@ class Client:
         #self.connect_to_server('127.0.0.1', 12345)
 
     def connect_to_server(self, host, port):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        while s.connect_ex((host, port)) != 0:
-            print("Connection failed. Retrying 1...")
-            time.sleep(1)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            while s.connect_ex((host, port)) != 0:
+                print("Connection failed. Retrying 1...")
+                time.sleep(1)
 
-        conn = self.context.wrap_socket(s, server_side=False, server_hostname=self.server_sni_hostname)
-        message = "Host: {}, Port: {}, My_ip: {}".format(host, port, get_my_ip())
-        conn.send(message.encode('utf-8'))
-        data = conn.recv(BYTES_SIZE)
-        recieved = f'{data.decode("utf-8")}' # decode the data
-        print(recieved)
-        print("Closing connection")
-        #print("Recieved data: {}".format(data))
-        conn.close()
+            conn = self.context.wrap_socket(s, server_side=False, server_hostname=self.server_sni_hostname)
+            message = "Host: {}, Port: {}, My_ip: {}".format(host, port, get_my_ip())
+            conn.send(message.encode('utf-8'))
+            data = conn.recv(BYTES_SIZE)
+            recieved = f'{data.decode("utf-8")}' # decode the data
+            print(recieved)
+            print("Closing connection")
+            #print("Recieved data: {}".format(data))
+            conn.close()
+            s.close()
+        except KeyboardInterrupt:
+            print("Closing connection")
+            s.close()
+            sys.exit(0)
 
 
 
