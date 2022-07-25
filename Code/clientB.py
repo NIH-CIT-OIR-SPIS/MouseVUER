@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from _thread import start_new_thread
+# from _thread import start_new_thread
 import os
 import socket    
 import multiprocessing
@@ -16,11 +16,12 @@ import types
 import sys
 # Secure Sockets Layer (SSL)
 import hashlib
-from Crypto import Random
-import Crypto.Cipher.AES as AES
-from Crypto.PublicKey import RSA
+# from Crypto import Random
+# import Crypto.Cipher.AES as AES
+# from Crypto.PublicKey import RSA
 import signal
 import ssl
+
 COMMON_NAME = "."
 ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
@@ -55,6 +56,7 @@ def run_rtmp_command(recieved: str):
     depth_unit = int(arr[6])
     cmd = "./bin/multicam -dir Testing_DIR/ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit)
     print(cmd)
+    #os.system(cmd)
 
 class Client:
     def __init__(self, server_sni_hostname: str, host: str, port: int, server_cert_file: str, client_cert_file: str, client_key_file: str):
@@ -79,7 +81,6 @@ class Client:
         #print("{},{}".format(os.path.basename(__file__),recieved))
         #print("Closing connection")
         #print("Recieved data: {}".format(data))
-        
         conn.close()
         s.close()
         run_rtmp_command(recieved)
@@ -109,6 +110,4 @@ def main():
     
 if __name__ == "__main__":
     main()
-    
-    sys.exit(0)
     

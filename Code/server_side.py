@@ -1,11 +1,10 @@
 #!/usr/bin/python3
-from _thread import start_new_thread
+#from _thread import start_new_thread
 import os
 import socket    
 import multiprocessing
 import subprocess as sp
 import json
-from telnetlib import EC
 import time
 import threading
 import argparse
@@ -20,6 +19,7 @@ import ssl
 import shlex
 import datetime
 import traceback
+from client_side import PORT_CLIENT_LISTEN, COMMON_NAME, ORGANIZATION, COUNTRY_ORGIN, BYTES_SIZE
 """
 This is the server side of the application.
 GET LIST OF ALL IP ADDRESSES
@@ -49,11 +49,11 @@ STARTING UP FFMPEG LISTENER WITH THREADED COMMAND LINE CALL
 """
   
 NO_FORCE_EXIT = True
-PORT_CLIENT_LISTEN = 1026
-COMMON_NAME = "SCHORE_SYSTEM"
-ORGANIZATION = "NIH"
-COUNTRY_ORGIN = "US"
-BYTES_SIZE = 4096
+# PORT_CLIENT_LISTEN = 1026
+# COMMON_NAME = "SCHORE_SYSTEM"
+# ORGANIZATION = "NIH"
+# COUNTRY_ORGIN = "US"
+# BYTES_SIZE = 4096
 def run_processes_parallel(cmd_lst):
     """
     Start up two server processes in parallel. Send them both signals to terminate.
@@ -156,7 +156,7 @@ def validate_loglevel(loglevel):
 #             self._exception = self._pconn.recv()
 #         return self._exception
 
-def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int):
+def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str):
     """
     Build the ffmpeg command string
     :param server_addr:
@@ -167,11 +167,11 @@ def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int):
     addr = validate_ip(server_addr)
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
-    cmd_lsb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb_{}_out.mp4".format(loglevel, addr, port, port)
-    cmd_msb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y Testing_DIR/test_msb_{}_out.mp4".format(loglevel, addr, port + 1, port + 1)
+    cmd_lsb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y {}/test_lsb_{}_out.mp4".format(loglevel, addr, port, dir, port)
+    cmd_msb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y {}/test_msb_{}_out.mp4".format(loglevel, addr, port + 1, dir,  port + 1)
     return cmd_lsb, cmd_msb
 
-def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str):
+def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, dir: str):
     """
     Build the ffmpeg command string
     :param map_dict:
@@ -179,7 +179,7 @@ def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str):
     """
     cmd_list = []
     for _, port in map_dict.items():
-        cmd_lsb, cmd_msb = build_ffmpeg_cmd_pair(server_addr, loglevel, port)
+        cmd_lsb, cmd_msb = build_ffmpeg_cmd_pair(server_addr, loglevel, port, dir)
         cmd_list.append(cmd_lsb)
         cmd_list.append(cmd_msb)
     return cmd_list
@@ -329,7 +329,11 @@ class Server:
         self.thread_list = []
         #self.__start_ffmpeg(cmd_list)
         self.print_lock = threading.Lock()
-
+        if os.path.isdir(self.argdict['dir']):
+            with open(os.path.join(self.argdict['dir'], "video_head_file.txt"), "w") as f:
+                f.write(str(self.argdict['max_depth']) + " " + str(self.argdict['min_depth']) + " " + str(self.argdict['depth_unit']))
+        else:
+            raise Exception("Directory {} does not exist".format(self.argdict['dir']))
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', PORT_CLIENT_LISTEN))
@@ -477,18 +481,16 @@ def server_side_command_line_parser():
     parser.add_argument('--min_depth', '--min_depth', type=int, default=0, help='The min depth for the depth camera to use. Must be less than max_depth. Valid range is [0, 65534]. Default is 0')
     parser.add_argument('--depth_unit', '--depth_unit', type=int, default=1000, help='The units of the depth camera to use valid range, [40, 25000]. Default value is 1000')
     parser.add_argument('--num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
+    parser.add_argument('--dir', '--dir', type=str, default='Testing_DIR', help='The directory to save the video files to. Default is the current directory')
     return parser.parse_args()
 
-if __name__ == '__main__':
-
-    
-    
+def main():
     args = server_side_command_line_parser()
     print("Getting IP addresses...")
     ip_lst = map_network()
     print("Done getting IP addresses")
     server = Server(ip_lst, **vars(args))
-    cmd_list = build_ffmpeg_cmd_pair_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip)
+    cmd_list = build_ffmpeg_cmd_pair_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'])
     p1 = multiprocessing.Process(target=run_processes_parallel, args=(cmd_list,))
     p1.start()
     server.listen()
@@ -504,6 +506,12 @@ if __name__ == '__main__':
         #pass
 
     os.system("stty echo")
+
+if __name__ == '__main__':
+    main()
+    
+    
+
 
     #server.start_conn_send_data(host="127.0.0.1", port=12345)
 
