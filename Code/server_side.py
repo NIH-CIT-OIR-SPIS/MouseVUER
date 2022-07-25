@@ -5,6 +5,7 @@ import socket
 import multiprocessing
 import subprocess as sp
 import json
+from telnetlib import EC
 import time
 import threading
 import argparse
@@ -18,6 +19,7 @@ import sys
 import ssl
 import shlex
 import datetime
+import traceback
 """
 This is the server side of the application.
 GET LIST OF ALL IP ADDRESSES
@@ -56,26 +58,43 @@ def run_processes_parallel(cmd_lst):
     """
     Start up two server processes in parallel. Send them both signals to terminate.
     """
+    
     try:
         p_list = []
         for cmd in cmd_lst:
-            p_list.append(sp.Popen(cmd, shell=True))
+            
+            p = sp.Popen(shlex.split(cmd),  shell=False)
+            p_list.append(p)
+            #p_list.append(sp.Popen(cmd, shell=False))
         
         # Wait for the processes to terminate
-        for p in p_list:
-            p.wait()
+        i = True
+        while i:
+            for p in p_list:
+                if p.poll() is None:
+                    time.sleep(0.1)
+                else:
+                    i = False
+            #p.wait()
+            #p.wait()
     
     # Send the processes a signal to terminate
+    except KeyboardInterrupt:
+        for p in p_list:
+            p.send_signal(signal.SIGINT)
+            p.wait()
+        sys.exit(0)
     finally:
         if p_list is not []:
             for p in p_list:
-                p.send_signal(signal.SIGQUIT)
+                if p is not None:
+                    p.send_signal(signal.SIGQUIT)
 
-def port_type(port: int):
-    port = int(port)
-    if port <= 1024 or port > 65535:
-        raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(port))
-    return port
+# def port_type(port: int):
+#     port = int(port)
+#     if port <= 1024 or port > 65000:
+#         raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(port))
+#     return port
 
 def validate_ip(addr):
     try:
@@ -92,31 +111,79 @@ def validate_loglevel(loglevel):
         raise argparse.ArgumentTypeError("Error: Log level must be one of the following: error, verbose, debug")
     return loglevel
 
-def make_commands(addr: str, loglevel: str, port: int, split_size = 20): 
-    addr1 = validate_ip(addr)
+# def make_commands(addr: str, loglevel: str, port: int): 
+#     addr1 = validate_ip(addr)
+#     port = port_type(port)
+#     loglevel = validate_loglevel(loglevel)
+#     # split_size = int(split_size)
+#     # if split_size < 1:
+#     #     raise argparse.ArgumentTypeError("Error: Split size must be greater than 0")
+#     #print("Address: {}, loglevel {}, port {}".format(addr, loglevel, port))
+#     #loglevel = "error"
+#     #addr1 = "169.254.255.255"
+#     #port_num_lsb = port
+#     cmd_lst = []
+#     cmd1 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb_{}_out.mp4".format(loglevel, addr1, port, port)
+#     cmd2 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y Testing_DIR/test_msb_{}_out.mp4".format(loglevel, addr1, port + 1, port + 1)
+#     #shlex.quote(cmd1)
+#     #shlex.quote(cmd2)
+#     print("Command 1: {}".format(cmd1))
+#     print("Command 2: {}".format(cmd2))
+#     cmd_lst.append(cmd1)
+#     cmd_lst.append(cmd2)
+#     return cmd1, cmd2
+#     # run_processes_parallel(cmd_lst)
+#     # if platform.system() == "Linux":
+#     #     os.system("stty echo")
+# class Process(multiprocessing.Process):
+#     def __init__(self, *args, **kwargs):
+#         multiprocessing.Process.__init__(self, *args, **kwargs)
+#         self._pconn, self._cconn = multiprocessing.Pipe()
+#         self._exception = None
+
+#     def run(self):
+#         try:
+#             multiprocessing.Process.run(self)
+#             self._cconn.send(None)
+#         except Exception as e:
+#             tb = traceback.format_exc()
+#             self._cconn.send((e, tb))
+#             # raise e  # You can still rise this exception if you need to
+
+#     @property
+#     def exception(self):
+#         if self._pconn.poll():
+#             self._exception = self._pconn.recv()
+#         return self._exception
+
+def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int):
+    """
+    Build the ffmpeg command string
+    :param server_addr:
+    :param loglevel:
+    :param port:
+    :return:
+    """
+    addr = validate_ip(server_addr)
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
-    split_size = int(split_size)
-    if split_size < 1:
-        raise argparse.ArgumentTypeError("Error: Split size must be greater than 0")
-    #print("Address: {}, loglevel {}, port {}".format(addr, loglevel, port))
-    #loglevel = "error"
-    #addr1 = "169.254.255.255"
-    #port_num_lsb = port
-    cmd_lst = []
-    cmd1 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb_{}_out.mp4".format(loglevel, addr1, port, port)
-    cmd2 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y Testing_DIR/test_msb_{}_out.mp4".format(loglevel, addr1, port + 1, port + 1)
-    #shlex.quote(cmd1)
-    #shlex.quote(cmd2)
-    print("Command 1: {}".format(cmd1))
-    print("Command 2: {}".format(cmd2))
-    cmd_lst.append(cmd1)
-    cmd_lst.append(cmd2)
-    return cmd1, cmd2
-    # run_processes_parallel(cmd_lst)
-    # if platform.system() == "Linux":
-    #     os.system("stty echo")
+    cmd_lsb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb_{}_out.mp4".format(loglevel, addr, port, port)
+    cmd_msb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y Testing_DIR/test_msb_{}_out.mp4".format(loglevel, addr, port + 1, port + 1)
+    return cmd_lsb, cmd_msb
 
+def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str):
+    """
+    Build the ffmpeg command string
+    :param map_dict:
+    :return:
+    """
+    cmd_list = []
+    for _, port in map_dict.items():
+        cmd_lsb, cmd_msb = build_ffmpeg_cmd_pair(server_addr, loglevel, port)
+        cmd_list.append(cmd_lsb)
+        cmd_list.append(cmd_msb)
+    return cmd_list
+    
 
 def pinger(job_q, results_q):
     """
@@ -176,7 +243,6 @@ def map_network(pool_size=255):
     for p in pool:
         p.start()
     
-    # cue hte ping processes
     for i in range(1, 255):
         place_in = base_ip + '{0}'.format(i)
         if place_in != get_my_ip():
@@ -188,7 +254,6 @@ def map_network(pool_size=255):
     for p in pool:
         p.join()
     
-    # collect he results
     while not results.empty():
         ip = results.get()
         ip_list.append(ip)
@@ -197,8 +262,8 @@ def map_network(pool_size=255):
 
 def port_type(port: int):
     port = int(port)
-    if port <= 1027 or port > 65535:
-        raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(port))
+    if port <= 1027 or port > 65000:
+        raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65000]. Port number given: {}".format(port))
     return port
 
 def validate_ip(addr):
@@ -226,7 +291,7 @@ def validate_ip(addr):
 #             data = connsocket.recv(1024)
 #             if data:
 #                 print("Received: {}".format(data))
-#                 self.clientinfo['request'] = data.decode('utf-8')
+#                 self.clientinfo['request'] = data.decode('ascii')
 #                 break
 
 
@@ -253,6 +318,7 @@ class Server:
 
         self.client_ip_lst = ip_lst_in
         self.argdict = kwargs
+        self.__validate_args()
         self.port = self.argdict['port']
         self.ffmpeg_port_map = {} # maps ip address to two distinct ports
         self.host_port = {}
@@ -260,7 +326,8 @@ class Server:
         print("Mapping to all ports {}".format(self.client_ip_lst))
         self.__initialize_maps()
         print("Mapping : {}".format(self.ffmpeg_port_map))
-
+        self.thread_list = []
+        #self.__start_ffmpeg(cmd_list)
         self.print_lock = threading.Lock()
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -269,13 +336,41 @@ class Server:
 
 
 
+    def __validate_args(self):
+        if self.argdict['port'] < 1025 or self.argdict['port'] > 65000:
+            raise Exception("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(self.argdict['port']))
+        if self.argdict['time_run'] < 1:
+            raise Exception("Error: Time to run must be greater than 0. Time to run given: {}".format(self.argdict['time_run']))
+        if self.argdict['max_depth'] < 1:
+            raise Exception("Error: Max depth must be greater than 0. Max depth given: {}".format(self.argdict['max_depth']))
+        if self.argdict['max_depth'] > 65535:
+            raise Exception("Error: Max depth must be less than 65535. Max depth given: {}".format(self.argdict['max_depth']))
+        if self.argdict['max_depth'] <= self.argdict['min_depth']:
+            raise Exception("Error: Max depth must be greater than min depth. Max depth given: {}, Min depth given: {}".format(self.argdict['max_depth'], self.argdict['min_depth']))
+        if self.argdict['min_depth'] < 0:
+            raise Exception("Error: Min depth must be greater than 0. Min depth given: {}".format(self.argdict['min_depth']))
+        if self.argdict['min_depth'] >= 65535:
+            raise Exception("Error: Min depth must be less than 65535. Min depth given: {}".format(self.argdict['min_depth']))
+        if self.argdict['crf'] < -1:
+            raise Exception("Error: CRF must be greater than -1. CRF given: {}".format(self.argdict['crf']))
+        if self.argdict['crf'] > 51:
+            raise Exception("Error: CRF must be less than 51. CRF given: {}".format(self.argdict['crf']))
+        if not self.argdict['fps'] in [30, 60, 120]:
+            raise Exception("Error: FPS must be 30, 60, or 120. FPS given: {}".format(self.argdict['fps']))
+        if self.argdict['dimensions'] not in ['640x480', '1280x720', '1920x1080']:
+            raise Exception("Error: Dimensions must be 640x480, 1280x720, or 1920x1080. Dimensions given: {}".format(self.argdict['dimensions']))
+        if self.argdict['fps'] > 30 and self.argdict['dimensions'] in ['1280x720', '1920x1080']:
+            raise Exception("Error: FPS must be less than 30 if dimensions are 1280x720 or 1920x1080. FPS given: {}, Dimensions given: {}".format(self.argdict['fps'], self.argdict['dimensions']))
+        if self.argdict['depth_unit'] < 40 or self.argdict['depth_unit'] >= 65535:
+            raise Exception("Error: Depth unit must be greater than 40 and less than 65535. Depth unit given: {}".format(self.argdict['depth_unit']))
+        
 
 
     def __initialize_maps(self):
         i = 0
         port_store = self.port
         for ip_addr in self.client_ip_lst:
-            self.ffmpeg_port_map.update({ip_addr: (port_store + i, port_store + i + 1)})
+            self.ffmpeg_port_map.update({ip_addr: port_store + i})
             i += 2
 
         for ip_addr in self.client_ip_lst:
@@ -284,37 +379,45 @@ class Server:
 
 
     def listen(self):
+        print("Listen")
         try:
-            self.sock.listen(5)
+            self.sock.listen(6)
             while True:
                 clientsocket, addr = self.sock.accept()
                 #self.print_lock.acquire()
-                print("Connected to {}".format(addr))
-                addr = (self.ffmpeg_port_map[str(addr[0])], addr)
-                ## START UP FFMPEG SERVER HERE
-                make_commands(addr, "debug", addr[1])
+                with self.print_lock:
+                    print("Connected to {}".format(addr))
+                #addr = (self.ffmpeg_port_map[str(addr[0])], addr)
+                if addr[0] in self.ffmpeg_port_map:
+                    ffmpeg_port = self.ffmpeg_port_map[str(addr[0])]
+                else:
+                    ffmpeg_port = addr[1]
+                #ffmpeg_port = 
+                # ## START UP FFMPEG SERVER HERE
+                # make_commands(addr, "debug", addr[1])
                 clientsocket.settimeout(60)
-                threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr)).start()
+                threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr, ffmpeg_port,)).start()
+                # self.thread_list.append(th)
+                # th.start()
         except KeyboardInterrupt:
-            print("Keyboard Interrupt")
+            print("Keyboard Interrupt, here")
             self.sock.close()
-            sys.exit(0)
 
-    def threaded_get_info(self, clientsocket, addr):
+    def threaded_get_info(self, clientsocket, addr, ffmpeg_port):
         conn = self.context.wrap_socket(clientsocket, server_side=True)
         try:
             while True:
                 data = conn.recv(BYTES_SIZE)
                 if data:
                     #buf += data
-                    
-                    print("Received: {}".format(data.decode('utf-8')))
-                    print("Address: {}".format(addr))
+                    # with self.print_lock:
+                    #     print("Received: {}".format(data.decode('ascii')))
+                    #     print("Address: {}".format(addr))
                     #conn.send("ADDRESS: {}".format(self.server_ip))
-                    message = "{},{},{},{}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, addr[1])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
+                    message = "curr_time:{},time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d}".format(time.time(),self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
                     
                     #message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
-                    conn.send(message.encode('utf-8'))
+                    conn.send(message.encode('ascii'))
                     
                 else:
                     #print("Recieved: {}".format(data))
@@ -327,7 +430,9 @@ class Server:
             # self.print_lock.release()
             conn.shutdown(socket.SHUT_RDWR)
             conn.close()
-            print("Connection closed")
+            with self.print_lock:
+                print("Connection closed\n")
+            #print("Connection closed")
 
             
 
@@ -359,31 +464,47 @@ def server_side_command_line_parser():
     -depth_unit <int> The units of the depth camera to use valid range, [40, 25000]. Default value is 1000
     """
     parser = argparse.ArgumentParser(description='Server for the video streaming application')
-    parser.add_argument('--port', type=port_type, default=port_type(5000), help='Port to listen on.  Must be between values [1027, 65000]')
-    parser.add_argument('--verbose', type=str, default='info', help='Verbosity level of the logging')
+    parser.add_argument('--port', type=int, default=5000, help='Port to listen on.  Must be between values [1027, 65000]')
+    parser.add_argument('--loglevel', type=str, default='info', help='Verbosity level of the logging')
     parser.add_argument('--dimensions', type=str, default='1280x720', help='Dimensions of the video stream, (widthxheight) valid dimensions are: (640x480, 1280x720, 1920x1080). Default is 1280x720')
     parser.add_argument('--fps', type=int, default=30, help='Framerate of recordings.Valid framerates are: (15, 30, 60, 90). Default is 30. 60 fps and 90 fps are only available for 640x480. 30 fps and 15 fps are available for all dimensions.')
     parser.add_argument('--time_run', type=int, default=30, help='Amount of time to record in seconds. Default 30 seconds')
     parser.add_argument('--json', type=str, default='', help='Json file to be sent to the client and used for the video recordings')
     parser.add_argument('--split_time', type=int, default=120, help='Length in to split each recording into. Default is 120 seconds')
     parser.add_argument('--crf', type=int, default=22, help='The quality of the video. Valid range is [0, 51]. Default is 22')
-    parser.add_argument('-basename', '--basename', type=str, default='test_', help='The base name of the video files')
-    parser.add_argument('-max_depth', '--max_depth', type=int, default=65535, help='The max depth of for the depth camera to use. Must be greater than min_depth. Valid range is [1, 65535]. Default is 65535')
-    parser.add_argument('-min_depth', '--min_depth', type=int, default=0, help='The min depth for the depth camera to use. Must be less than max_depth. Valid range is [0, 65534]. Default is 0')
-    parser.add_argument('-depth_unit', '--depth_unit', type=int, default=1000, help='The units of the depth camera to use valid range, [40, 25000]. Default value is 1000')
-    parser.add_argument('-num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
+    parser.add_argument('--basename', '--basename', type=str, default='test_', help='The base name of the video files')
+    parser.add_argument('--max_depth', '--max_depth', type=int, default=65535, help='The max depth of for the depth camera to use. Must be greater than min_depth. Valid range is [1, 65535]. Default is 65535')
+    parser.add_argument('--min_depth', '--min_depth', type=int, default=0, help='The min depth for the depth camera to use. Must be less than max_depth. Valid range is [0, 65534]. Default is 0')
+    parser.add_argument('--depth_unit', '--depth_unit', type=int, default=1000, help='The units of the depth camera to use valid range, [40, 25000]. Default value is 1000')
+    parser.add_argument('--num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
     return parser.parse_args()
 
 if __name__ == '__main__':
 
     
-
+    
     args = server_side_command_line_parser()
     print("Getting IP addresses...")
     ip_lst = map_network()
     print("Done getting IP addresses")
     server = Server(ip_lst, **vars(args))
+    cmd_list = build_ffmpeg_cmd_pair_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip)
+    p1 = multiprocessing.Process(target=run_processes_parallel, args=(cmd_list,))
+    p1.start()
     server.listen()
+    # if p1.is_alive():
+    #     p1.terminate()
+    #     p1.join()
+    try:
+        p1.join()
+    except Exception as e:
+        p1.terminate()
+        p1.join()
+        print("Error here: {}".format(e))
+        #pass
+
+    os.system("stty echo")
+
     #server.start_conn_send_data(host="127.0.0.1", port=12345)
 
     #lst.remove()
