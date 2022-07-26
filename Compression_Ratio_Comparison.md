@@ -4,15 +4,33 @@ All of the following are 1280x720 dimensions
 ## One_Mouse_5_minutes_depth.bag
 5 minutes
 LSB libx264 YUV420P10LE 
+## CRF 7
+Average PSNR 82
+Compression Ratio 9.5
+
+## CRF 10 
+Average PSNR 80 dB
+Compression Ratio 10
+
 
 ## CRF 15
 Average PSNR 76 dB
 Compression Ratio 12
 
+## CRF 17
+Average PSNR 74 dB
+Compression Ratio 13
+
+## CRF 19
+
 
 ## CRF 21
 Average PSNR 70 dB
 Compression Ratio 17
+
+## CRF 25
+Average PSNR 65 dB
+Compression Ratio 21
 
 
 
