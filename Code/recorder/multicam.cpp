@@ -251,9 +251,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     int y_comp_8_bit = height * width;
     int u_comp_8_bit = y_comp_8_bit / 4;
-    int v_comp_8_bit = u_comp_8_bit;
+    int v_comp_8_bit = y_comp_8_bit / 4;
     int channel_size = 1;
-    std::string type_str_msb = "yuv420p";
+    std::string type_str_msb = "yuvj420p";
     std::string encoder_msb = "libx264";
     int total_sz_8_bit = y_comp_8_bit + u_comp_8_bit + v_comp_8_bit;
 
@@ -519,10 +519,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     uint8_t *store_frame_lsb = (uint8_t *)malloc(total_sz_10_bit * sizeof(uint8_t));
     uint8_t *store_frame_msb = (uint8_t *)malloc( total_sz_8_bit * sizeof(uint8_t));
-    uint8_t *store_frame_test = (uint8_t *)malloc(height * width * 1 * sizeof(uint8_t));
+    //uint8_t *store_frame_test = (uint8_t *)malloc(height * width * 1 * sizeof(uint8_t));
 
     memset(store_frame_lsb, 0, total_sz_10_bit);
-    memset(store_frame_msb, 0,  total_sz_8_bit * sizeof(uint8_t));
+    memset(store_frame_msb, 0,  total_sz_8_bit);
     rs2::frameset frameset;
     rs2::colorizer coloriz;
     rs2::frame color_frame;
@@ -594,8 +594,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // std::cout << rand_vec << std::endl;
 
     // uint16_t *color_data = NULL;
-    uint8_t *ptr_depth_frm = NULL;
-    uint16_t *ptr_depth_frm_16 = NULL;
+    // uint8_t *ptr_depth_frm = NULL;
+    // uint16_t *ptr_depth_frm_16 = NULL;
     uint16_t store_val = 0;
     uint8_t store_val_lsb = 0;
 
@@ -622,7 +622,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //     depth_frame_in = thresh_filter.process(depth_frame_in);
             // }
             // Filter frames that are between these two depths
-
+            uint16_t *ptr_depth_frm_16 = NULL;
+            uint8_t * ptr_depth_frm = NULL;
             if (only_10_bits)
             {
                 ptr_depth_frm_16 = (uint16_t *)depth_frame_in.get_data();
@@ -653,7 +654,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 // Remember all data after width * height *2 is 0 so we don't have to put total_sz_10_bit here
                 std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
 
-                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k+=channel_size)
+                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += channel_size)
                 {
 
                     store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
@@ -832,6 +833,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // avformat_free_context(oc);
     // free(store_frame_lsb);
     // free(store_frame_msb);
+    free(store_frame_lsb);
+    free(store_frame_msb);
+
     try
     {
 #ifdef _WIN32

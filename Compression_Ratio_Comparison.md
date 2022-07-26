@@ -1,6 +1,22 @@
 All of the following were captured in real-time, 30 fps from the bag file play back.
 All of the following are 1280x720 dimensions
 
+## One_Mouse_5_minutes_depth.bag
+5 minutes
+LSB libx264 YUV420P10LE 
+
+## CRF 15
+Average PSNR 76 dB
+Compression Ratio 12
+
+
+## CRF 21
+Average PSNR 70 dB
+Compression Ratio 17
+
+
+
+
 ## fishy-fish.bag file
 24 seconds
 

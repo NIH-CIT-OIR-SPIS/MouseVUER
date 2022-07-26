@@ -485,11 +485,11 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
         // raw_img.convertTo(raw_img, CV_8U, 0.7);
         cv::applyColorMap(dec_img_color, dec_img_color, 9);
 
-        // if (video_frame_count == 30)
-        // {
-        //     cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
-        //     cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
-        // }
+        if (video_frame_count == 30)
+        {
+            cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
+            
+        }
 
         if (read_raw != NULL)
         {
@@ -500,6 +500,9 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
             cv::applyColorMap(raw_img_color, raw_img_color, 9);
             cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
             cv::imshow("Raw Image", raw_img_color);
+            if (video_frame_count == 30){
+                cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
+            }
         }
 
         cv::namedWindow("Decompressed Image", cv::WINDOW_AUTOSIZE);
