@@ -20,8 +20,6 @@
 #include <limits>
 #include <numeric>
 #include <bitset>
-
-#include <filesystem> // C++17
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
 #endif
@@ -40,104 +38,61 @@ extern "C"
 #include <libavutil/timestamp.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-
 #include <sys/stat.h>
-//#define frm_group_size 3
+#define FRM_GROUP_SIZE 10
 #define W 1280
 #define H 720
-#define MAXN 100001
 }
-
-static int frm_group_size = 3;
-static int print_psnr = 1;
-const int shift_by = 2;//0;
-static const int shift_back_by = 16 - (8 - shift_by);
 
 namespace buff_global
 {
     int video_frame_count = 0;
     uint16_t store_depth[1280 * 720] = {0};
-    //uint16_t store_depth_lsb[1280 * 720] = {0};
+    uint16_t store_depth_lsb[1280 * 720] = {0};
     uint16_t store_raw_depth[1280 * 720] = {0};
-    //uint16_t store_raw_depth_lsb[1280 * 720] = {0};
+    uint16_t store_raw_depth_lsb[1280 * 720] = {0};
     std::vector<double> psnr_vector;
     std::string input_raw_dir_gl = "";
     std::string output_dir_gl = "";
+
 }
-
-struct timer
-{
-    void reset()
-    {
-        start = std::chrono::steady_clock::now();
-    }
-
-    unsigned long long milliseconds_elapsed() const
-    {
-        const auto now = clock::now();
-        using namespace std::chrono;
-        return duration_cast<milliseconds>(now - start).count();
-    }
-
-    using clock = std::chrono::steady_clock;
-    clock::time_point start = clock::now();
-};
 class InputParser
 {
 public:
-    InputParser(int &argc, char **argv)
-    {
-        for (int i = 1; i < argc; ++i)
-            this->tokens.push_back(std::string(argv[i]));
-    }
+    InputParser(int &argc, char **argv);
 
-    const std::string &getCmdOption(const std::string &option) const
-    {
-        std::vector<std::string>::const_iterator itr;
-        itr = std::find(this->tokens.begin(), this->tokens.end(), option);
-        if (itr != this->tokens.end() && ++itr != this->tokens.end())
-        {
-            return *itr;
-        }
-        static const std::string empty_string("");
-        return empty_string;
-    }
+    const std::string &getCmdOption(const std::string &option) const;
 
-    bool cmdOptionExists(const std::string &option) const
-    {
-        std::vector<std::string>::const_iterator itr;
-        itr = std::find(this->tokens.begin(), this->tokens.end(), option);
-        return itr != this->tokens.end();
-    }
+    bool cmdOptionExists(const std::string &option) const;
 
 private:
     std::vector<std::string> tokens;
 };
 
-// InputParser::InputParser(int &argc, char **argv)
-// {
-//     for (int i = 1; i < argc; ++i)
-//     {
-//         this->tokens.push_back(std::string(argv[i]));
-//     }
-// }
+InputParser::InputParser(int &argc, char **argv)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        this->tokens.push_back(std::string(argv[i]));
+    }
+}
 
-// const std::string &InputParser::getCmdOption(const std::string &option) const
-// {
-//     std::vector<std::string>::const_iterator itr;
-//     itr = std::find(this->tokens.begin(), this->tokens.end(), option);
-//     if (itr != this->tokens.end() && ++itr != this->tokens.end())
-//     {
-//         return *itr;
-//     }
-//     static const std::string empty_string("");
-//     return empty_string;
-// }
+const std::string &InputParser::getCmdOption(const std::string &option) const
+{
+    std::vector<std::string>::const_iterator itr;
+    itr = std::find(this->tokens.begin(), this->tokens.end(), option);
+    if (itr != this->tokens.end() && ++itr != this->tokens.end())
+    {
+        return *itr;
+    }
+    static const std::string empty_string("");
+    return empty_string;
+}
 
-// bool InputParser::cmdOptionExists(const std::string &option) const
-// {
-//     return this->tokens.end() != std::find(this->tokens.begin(), this->tokens.end(), option);
-// }
+bool InputParser::cmdOptionExists(const std::string &option) const
+{
+    return this->tokens.end() != std::find(this->tokens.begin(), this->tokens.end(), option);
+}
 
 int parse_integer_cmd(InputParser &input, std::string cmd, int prev_val)
 {
@@ -170,13 +125,13 @@ bool does_file_exist(std::string path)
 
 bool does_dir_exist(std::string path)
 {
-    struct stat hd;
+    struct stat info;
     const char *pathname = path.c_str();
-    if (stat(pathname, &hd) != 0)
+    if (stat(pathname, &info) != 0)
     {
         return false;
     }
-    else if (hd.st_mode & S_IFDIR)
+    else if (info.st_mode & S_IFDIR)
     {
         return true;
     }
@@ -203,57 +158,16 @@ static int exec_ffprobe(std::string str_cmd)
 }
 void print_usage(std::string choice = "")
 {
-
-    if (choice == "" || choice == "-help")
-    {
-        std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp [options]" << std::endl;
-        std::cout << "Options:" << std::endl;
-        std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
-        std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
-        std::cout << " -hd <header txt file> : required Header file" << std::endl;
-        std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
-        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
-        std::cout << " -help                  : Print this help" << std::endl;
-        std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
-        std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
-    }
-    else if (choice == "-print_psnr")
-    {
-        std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp -print_psnr <input_file>" << std::endl;
-    }
-    else if (choice == "-sz")
-    {
-        std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp -sz <frame_group_size>" << std::endl;
-    }
-    else if (choice == "-hd")
-    {
-        std::cout << " -hd <header txt file> : required Header file" << std::endl;
-    }
-    else if (choice == "-ilsb")
-    {
-        std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
-    }
-    else if (choice == "-imsb")
-    {
-        std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
-    }
-    else if (choice == "-o")
-    {
-        std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
-    }
-    else if (choice == "-cmp")
-    {
-        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
-    }
-    else
-    {
-        std::cout << "Invalid choice" << std::endl;
-    }
+    std::cout << "Usage: " << std::endl;
+    std::cout << "  ./help_decomp [options]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
+    std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
+    std::cout << " -hd <header txt file> : required Header file" << std::endl;
+    std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
+    std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
+    std::cout << " -h                   : Print this help" << std::endl;
 }
-
 template <typename T>
 double getAverage(std::vector<T> const &v)
 {
@@ -363,7 +277,6 @@ static int open_codec_context(int *stream_idx,
 static void read_max_min(int *max, int *min, int *depth_units)
 {
     std::ifstream infile("Testing_DIR/video_head_file.txt");
-    // fprintf(stderr, "Reading header file\n");
     int a, b, c;
     while (infile >> a >> b >> c)
     {
@@ -389,8 +302,8 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     FILE *out_write = NULL;
 
     FILE *read_raw = NULL;
-    std::string raw_str = input_raw_dir_gl + "/frame_num_" + std::to_string(video_frame_count) + "_data.bin";
-    std::string outer = output_dir_gl + "/file_out_comp" + std::to_string(video_frame_count) + ".bin";
+    std::string raw_str = "Testing_DIR/frame_num_" + std::to_string(video_frame_count) + "_data.bin";
+    std::string outer = "Testing_DIR/file_out_comp" + std::to_string(video_frame_count) + ".bin";
 
     if (!(out_write = fopen(outer.c_str(), "wb")))
     {
@@ -400,10 +313,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
     if (!(read_raw = fopen(raw_str.c_str(), "rb")))
     {
-        if (print_psnr)
-        {
-            printf("No raw files to read not compressing\n");
-        }
+        printf("No raw files to read not compressing\n");
     }
     else
     {
@@ -417,7 +327,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
             store_num += min_d;
             store_depth[y] = store_num;
-            //store_depth_lsb[y] = store_num;
+            store_depth_lsb[y] = store_num;
         }
     }
     else
@@ -427,12 +337,12 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
             curr_lsb = ((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
 
-            curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by;//10;
+            curr_msb = ((uint16_t)frame_msb[y]) << 10;
 
             store_num = curr_lsb | curr_msb;
 
             store_depth[y] = store_num;
-            //store_depth_lsb[y] = curr_lsb;
+            store_depth_lsb[y] = curr_lsb;
         }
     }
     // if (video_frame_count == 200)
@@ -444,10 +354,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     if (read_raw != NULL)
     {
         psnr_val = get_psnr(store_depth, store_raw_depth);
-        if (print_psnr)
-        {
-            printf("PSNR: %f\n", psnr_val);
-        }
+        printf("PSNR: %f\n", psnr_val);
         psnr_vector.push_back(psnr_val);
     }
     else
@@ -462,63 +369,57 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     // // printf("PSNR value 6 bit = %f\n", psnr_val_6_bit);
     // printf("PSNR value = %f\n", psnr_val);
     ++video_frame_count;
-    if (print_psnr)
-    {
 #if __has_include(<opencv2/opencv.hpp>)
 
-        cv::Mat dec_img_color(cv::Size(W, H), CV_8UC3);
-        dec_img_color = 0;
-        cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
-        cv::Mat raw_img(cv::Size(W, H), CV_16U, store_raw_depth, cv::Mat::AUTO_STEP);
+    cv::Mat dec_img_color(cv::Size(W, H), CV_8UC3);
+    dec_img_color = 0;
+    cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
+    cv::Mat raw_img(cv::Size(W, H), CV_16U, store_raw_depth, cv::Mat::AUTO_STEP);
 
-        cv::normalize(dec_img, dec_img, 0, 65535, cv::NORM_MINMAX);
+    cv::normalize(dec_img, dec_img, 0, 65535, cv::NORM_MINMAX);
 
-        float alpha = 1.0 / 255;
-        // alpha = 0.7f;
+    float alpha = 1.0 / 255;
+    // alpha = 0.7f;
 
-        // cv::convertScaleAbs(dec_img, dec_img_color, alpha);
-        // cv::convertScaleAbs(raw_img, raw_img_color, alpha);
-        dec_img.convertTo(dec_img_color, CV_8U, alpha);
+    // cv::convertScaleAbs(dec_img, dec_img_color, alpha);
+    // cv::convertScaleAbs(raw_img, raw_img_color, alpha);
+    dec_img.convertTo(dec_img_color, CV_8U, alpha);
 
-        /// dec_img.convertTo()
+    /// dec_img.convertTo()
 
-        // uint8_t *ptr_dec_img_color = dec_img_color.data;
-        // psnr_val = get_psnr(store_depth, store_raw_depth);
-        // printf("Get other PSNR value = %f\n", psnr_val);
-        // raw_img.convertTo(raw_img, CV_8U, 0.7);
-        cv::applyColorMap(dec_img_color, dec_img_color, 9);
+    // uint8_t *ptr_dec_img_color = dec_img_color.data;
+    // psnr_val = get_psnr(store_depth, store_raw_depth);
+    // printf("Get other PSNR value = %f\n", psnr_val);
+    // raw_img.convertTo(raw_img, CV_8U, 0.7);
+    cv::applyColorMap(dec_img_color, dec_img_color, 9);
 
-        if (video_frame_count == 30)
-        {
-            cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
-            
-        }
+    // if (video_frame_count == 30)
+    // {
+    //     cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
+    //     cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
+    // }
 
-        if (read_raw != NULL)
-        {
-            cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
-            raw_img_color = 0;
-            cv::normalize(raw_img, raw_img, 0, 65535, cv::NORM_MINMAX);
-            raw_img.convertTo(raw_img_color, CV_8U, alpha);
-            cv::applyColorMap(raw_img_color, raw_img_color, 9);
-            cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
-            cv::imshow("Raw Image", raw_img_color);
-            if (video_frame_count == 30){
-                cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
-            }
-        }
+    if (read_raw != NULL)
+    {
+        cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
+        raw_img_color = 0;
+        cv::normalize(raw_img, raw_img, 0, 65535, cv::NORM_MINMAX);
+        raw_img.convertTo(raw_img_color, CV_8U, alpha);
+        cv::applyColorMap(raw_img_color, raw_img_color, 9);
+        cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
+        cv::imshow("Raw Image", raw_img_color);
+    }
 
-        cv::namedWindow("Decompressed Image", cv::WINDOW_AUTOSIZE);
-        cv::imshow("Decompressed Image", dec_img_color);
-        if ((char)cv::waitKey(25) == 27) //
-        {
-            cv::destroyAllWindows();
-            return -6;
-        }
-        // 10872 vs 637
+    cv::namedWindow("Decompressed Image", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Decompressed Image", dec_img_color);
+    if ((char)cv::waitKey(25) == 27) //
+    {
+        cv::destroyAllWindows();
+        return -6;
+    }
+    // 10872 vs 637
 
 #endif
-    }
     fwrite(store_depth, sizeof(uint16_t), H * W, out_write);
     fclose(out_write);
     // printf("max: %u\n", max);
@@ -530,19 +431,11 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     return 0;
 }
 
-// static int unpack_bframes(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
-//                           int *ptr_frm_count, int debug_flag)
-// {
-//     /* Decode B-frames regardless of pts */
-
-// }
 static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *frame, int typ, int *count, uint8_t *data[10],
-                         int *ptr_frm_count, int debug_flag)
+                         int *ptr_frm_count)
 {
     int ret = 0;
-    int channel = 0;
     // submit the packet to the decoder
-    // dec->frame_skip_threshold =
     ret = avcodec_send_packet(dec, pkt);
     if (ret < 0)
     {
@@ -560,15 +453,6 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             // frame available, but there were no errors during decoding
             if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
             {
-                if (debug_flag == 1)
-                {
-                    // AVPictureType pict_type = av_frame_get_pict_type(frame);
-                    // AVPictureType pict_type = frame->pict_type;
-                    // printf("Picture frame->pict_type = %d\n", frame->pict_type);
-
-                    printf("wq *count: %d ret %d \n", *count, ret);
-                }
-
                 // fprintf(stderr, "called here ret: %d, count_loop %d, before: %d\n", ret, count_loop, before);
                 return 0;
             }
@@ -579,8 +463,8 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
         {
             if (typ == 0)
             {
-                data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height);
-                // printf("frame->linesize[0] : %d\n", frame->linesize[0]);
+                //data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height);
+
                 memcpy(data[*count], frame->data[0], frame->linesize[0] * frame->height);
 
                 ++(*count);
@@ -590,10 +474,9 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             }
             else if (typ == 1)
             {
-                
-                data[*count] = (uint8_t *)malloc(frame->linesize[channel] * frame->height); // 2 is the red channel
-                // printf("frame->linesize[2]: %d\n", frame->linesize[2]);
-                memcpy(data[*count], frame->data[channel], frame->linesize[channel] * frame->height);
+                //data[*count] = (uint8_t *)malloc(frame->linesize[0] * frame->height); // 2 is the red channel
+
+                memcpy(data[*count], frame->data[2], frame->linesize[0] * frame->height);
 
                 // std::copy(frame->data[0], frame->data[0] + frame->linesize[0] * frame->height, std::back_inserter(msb_buf[*count]));
                 ++(*count);
@@ -602,10 +485,6 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             }
         }
 
-        if (debug_flag == 1)
-        {
-            printf("type: %d *count: %d\n", typ, *count);
-        }
         av_frame_unref(frame);
         if (ret < 0)
         {
@@ -615,62 +494,6 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
 
     return 0;
 }
-
-// void sieve(int spf[MAXN])
-// {
-//     spf[1] = 1;
-//     for (int i=2; i<MAXN; i++){
-
-//         // marking smallest prime factor for every
-//         // number to be itself.
-//         spf[i] = i;
-//     }
-
-//     // separately marking spf for every even
-//     // number as 2
-//     for (int i=4; i<MAXN; i+=2) {
-//         spf[i] = 2;
-//     }
-//     for (int i=3; i*i<MAXN; i++)
-//     {
-//         // checking if i is prime
-//         if (spf[i] == i)
-//         {
-//             // marking SPF for all numbers divisible by i
-//             for (int j=i*i; j<MAXN; j+=i) {
-
-//                 // marking spf[j] if it is not
-//                 // previously marked
-//                 if (spf[j]==j) {
-//                     spf[j] = i;
-//                 }
-//             }
-//         }
-//     }
-// }
-
-// int smallest_prime_factor(int x, int spf[MAXN])
-// {
-//     std::vector<int> ret;
-//     while (x != 1)
-//     {
-//         ret.push_back(spf[x]);
-//         x = x / spf[x];
-//     }
-//     //find minimum value in the vector ret
-
-//     int min = ret[0];
-//     for (int i = 1; i < ret.size(); i++)
-//     {
-//         if (ret[i] < min)
-//         {
-//             min = ret[i];
-//         }
-//     }
-
-//     return min;
-//     //return ret;
-// }
 
 static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb, int num_frames_msb,
                       std::string output_dir, std::string input_file_lsb, std::string input_file_msb, std::string input_raw_file_dir)
@@ -700,15 +523,10 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
 
     int video_dst_linesize[4];
     int video_dst_linesize_msb[4] = {0};
-    uint8_t *lsb_frame_buf[frm_group_size] = {NULL};
-    uint8_t *msb_frame_buf[frm_group_size] = {NULL};
+
     int video_dst_bufsize = 0;
     int video_dst_bufsize_msb = 0;
-    int counte = 0;
 
-    int lsb_frames_dec = 0;
-    int msb_frames_dec = 0;
-    int both = 0;
     AVPacket *pkt = NULL;
     AVPacket *pkt_msb = NULL;
     AVFrame *frame = NULL;
@@ -760,8 +578,6 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         // }
 
         /* allocate image where the decoded image will be put */
-        // video_dec_ctx->
-        // video_dec_ctx->delay = 2;
         width = video_dec_ctx->width;
         height = video_dec_ctx->height;
         pix_fmt = video_dec_ctx->pix_fmt;
@@ -773,9 +589,6 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             goto end;
         }
         video_dst_bufsize = ret;
-        // video_dec_ctx->skip_frame = AVDISCARD_NONE;
-        // video_dec_ctx->b_f
-        // video_dec_ctx->flags |= CODEC_FLAG_GRAY;
     }
     if (take_msb)
     {
@@ -801,7 +614,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             //     ret = 1;
             //     goto end;
             // }
-            // video_dec_ctx_msb->delay = 2;
+
             /* allocate image where the decoded image will be put */
             width_msb = video_dec_ctx_msb->width;
             height_msb = video_dec_ctx_msb->height;
@@ -854,17 +667,19 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         }
     }
 
-    // for (i = 0; i < frm_group_size; ++i)
-    // {
-    //     lsb_frame_buf[i] = (uint8_t *)malloc(2560 *);
-    //     msb_frame_buf[i] = (uint8_t *)malloc(video_dst_bufsize_msb);
-    // }
+    uint8_t *lsb_frame_buf[FRM_GROUP_SIZE];
+    uint8_t *msb_frame_buf[FRM_GROUP_SIZE];
+    for (i = 0; i < FRM_GROUP_SIZE; ++i)
+    {
+        lsb_frame_buf[i] = (uint8_t *)malloc(video_dst_bufsize);
+        msb_frame_buf[i] = (uint8_t *)malloc(video_dst_bufsize_msb);
+    }
 
     if (take_msb)
     {
-        while (*pt_lsb_frm_count < num_frames_lsb || *pt_msb_frm_count < num_frames_msb)
+        while (*pt_lsb_frm_count < num_frames_lsb && *pt_msb_frm_count < num_frames_msb)
         {
-            while (*pt_x < frm_group_size)
+            while (*pt_x < FRM_GROUP_SIZE)
             {
                 // check if the packet belongs to a stream we are interested in, otherwise
                 // skip it
@@ -873,14 +688,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                     if (pkt->stream_index == video_stream_idx)
                     {
 
-                        if (lsb_frames_dec < 5)
-                        {
-                            ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 1);
-                        }
-                        else
-                        {
-                            ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 0);
-                        }
+                        ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
                     }
 
                     av_packet_unref(pkt);
@@ -890,23 +698,17 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                         fprintf(stderr, "Error while called packet\n");
                         break;
                     }
-                    ++lsb_frames_dec;
                 }
                 else
                 {
                     fprintf(stderr, "Error 2 while called packet\n");
-                    ++counte;
                     break;
                 }
             }
 
-            //*pt_x = 0;
-            if (lsb_frames_dec < 5)
-            {
-                printf("ls_b frames dec: %d, *pt_x %d\n", lsb_frames_dec, *pt_x);
-            }
+            *pt_x = 0;
 
-            while (*pt_y < frm_group_size)
+            while (*pt_y < FRM_GROUP_SIZE)
             {
 
                 if (av_read_frame(fmt_ctx_msb, pkt_msb) >= 0)
@@ -914,63 +716,40 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                     // check if the packet belongs to a stream we are interested in, otherwise
                     // skip it
                     if (pkt_msb->stream_index == video_stream_idx_msb)
-                    {
-                        ret = decode_packet(video_dec_ctx_msb, pkt_msb, frame_msb, 1, pt_y, msb_frame_buf, pt_msb_frm_count, 0);
-                    }
+                        ret = decode_packet(video_dec_ctx_msb, pkt_msb, frame_msb, 1, pt_y, msb_frame_buf, pt_msb_frm_count);
+
                     av_packet_unref(pkt_msb);
                     if (ret < 0)
                     {
                         fprintf(stderr, "Error 3 while called packet\n");
                         break;
                     }
-                    ++msb_frames_dec;
                     // printf("%d\n", ++k);
                 }
                 else
                 {
                     fprintf(stderr, "Error 4 while called packet\n");
                     // ret = -1
-                    ++counte;
                     break;
                 }
             }
-
-            if (msb_frames_dec != lsb_frames_dec)
-            {
-                fprintf(stderr, "Something wrong with number of frames on iter, msb_frames_dec = %d, lsb_frames_dec = %d, *pt_x %d *pt_y %d\n", msb_frames_dec, lsb_frames_dec, *pt_x, *pt_y);
-            }
-
-            for (i = 0; i < frm_group_size; ++i)
+            *pt_y = 0;
+            for (i = 0; i < FRM_GROUP_SIZE; ++i)
             {
                 if (lsb_frame_buf[i] != NULL && msb_frame_buf[i] != NULL)
                 {
                     output_both_buffs(lsb_frame_buf[i], msb_frame_buf[i], max_d, min_d);
-                    free(lsb_frame_buf[i]);
-                    free(msb_frame_buf[i]);
-                    lsb_frame_buf[i] = NULL;
-                    msb_frame_buf[i] = NULL;
-                    ++both;
                 }
-
-                if (lsb_frame_buf[i] == NULL && msb_frame_buf[i] != NULL)
+                if (lsb_frame_buf[i] != NULL)
                 {
-                    printf("Why is this happening lsb %d, msb %d, both %d ?\n", lsb_frames_dec, msb_frames_dec, both);
+                    free(lsb_frame_buf[i]);
+                    lsb_frame_buf[i] = NULL;
                 }
-                // if (lsb_frame_buf[i] != NULL)
-                // {
-                //     free(lsb_frame_buf[i]);
-                //     lsb_frame_buf[i] = NULL;
-                // }
-                // if (msb_frame_buf[i] != NULL)
-                // {
-                //     free(msb_frame_buf[i]);
-                //     msb_frame_buf[i] = NULL;
-                // }
-            }
-            *pt_y = 0, *pt_x = 0;
-            if (counte > 10)
-            {
-                break;
+                if (msb_frame_buf[i] != NULL)
+                {
+                    free(msb_frame_buf[i]);
+                    msb_frame_buf[i] = NULL;
+                }
             }
             // fprintf(stderr, "hi\n");
             //  while (i < 10 && lst_lsb[i] != NULL && lst_msb[i] != NULL)
@@ -983,14 +762,13 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             //      ++i;
             //  }
         }
-        printf("lsb_frames_dec: %d\n", lsb_frames_dec);
-        printf("msb_frames_dec: %d\n", msb_frames_dec);
-        *pt_x = -1;
-        *pt_y = -1;
+
+        *pt_x = 0;
+        *pt_y = 0;
 
         if (video_dec_ctx_msb)
         {
-            decode_packet(video_dec_ctx_msb, NULL, frame_msb, 1, pt_x, msb_frame_buf, pt_msb_frm_count, 0);
+            decode_packet(video_dec_ctx_msb, NULL, frame_msb, 1, pt_y, msb_frame_buf, pt_msb_frm_count);
         }
     }
     else
@@ -998,7 +776,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
 
         while (*pt_lsb_frm_count < num_frames_lsb)
         {
-            while (*pt_x < frm_group_size)
+            while (*pt_x < FRM_GROUP_SIZE)
             {
                 // check if the packet belongs to a stream we are interested in, otherwise
                 // skip it
@@ -1007,7 +785,7 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                     if (pkt->stream_index == video_stream_idx)
                     {
 
-                        ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 0);
+                        ret = decode_packet(video_dec_ctx, pkt, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count);
                     }
 
                     av_packet_unref(pkt);
@@ -1021,13 +799,12 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                 else
                 {
                     fprintf(stderr, "Error 2 while called packet\n");
-                    ++counte;
-                    break;
+                    goto end;
                 }
             }
             *pt_x = 0;
 
-            for (i = 0; i < frm_group_size; ++i)
+            for (i = 0; i < FRM_GROUP_SIZE; ++i)
             {
                 if (lsb_frame_buf[i] != NULL)
                 {
@@ -1037,28 +814,16 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
                     lsb_frame_buf[i] = NULL;
                 }
             }
-
-            if (counte > 10)
-            {
-                break;
-            }
         }
-        *pt_x = -1;
-        *pt_y = -1;
+        *pt_x = 0;
+        *pt_y = 0;
     }
-
-    if (video_dec_ctx)
-    {
-        decode_packet(video_dec_ctx, NULL, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 0);
-    }
-
 
 end:
-    std::cout << "Average PSNR: " << getAverage(buff_global::psnr_vector) << std::endl;
-    // if (src_filename_msb != NULL)
-    // {
-    //     free(src_filename_msb);
-    // }
+    if (src_filename_msb != NULL)
+    {
+        free(src_filename_msb);
+    }
     avcodec_free_context(&video_dec_ctx);
     avcodec_free_context(&video_dec_ctx_msb);
     avformat_close_input(&fmt_ctx);
@@ -1071,65 +836,48 @@ end:
     av_frame_free(&frame_msb);
     av_free(video_dst_data[0]);
     av_free(video_dst_data_msb[0]);
-    for (i = 0; i < frm_group_size; i++)
-    {
-        if (lsb_frame_buf[i] != NULL)
-        {
-            free(lsb_frame_buf[i]);
-        }
-        if (msb_frame_buf[i] != NULL)
-        {
-            free(msb_frame_buf[i]);
-        }
-    }
 #if __has_include(<opencv2/opencv.hpp>)
     cv::destroyAllWindows();
 #endif
-    return 1;
+    return ret < 0;
 }
 
-long double getCompressionRatio(std::uintmax_t sz, int num_frames)
-{
-    std::uintmax_t calc_raw_sz = (std::uintmax_t)num_frames * H * W * 2;
-    return (long double)calc_raw_sz / (long double)sz;
-}
+
 int main(int argc, char *argv[])
 {
     int deref1 = 0, deref2 = 0, deref3 = 0; // deref4 = 0, deref5 = 0, deref6 = 0;
-    int ret = 0;
-    if (argc > 13 || argc < 2)
+    if (argc > 7 || argc < 2)
     {
-        std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
+        // std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
         print_usage();
         return EXIT_FAILURE;
     }
 
     InputParser input(argc, argv);
-    if (input.cmdOptionExists("-help"))
+    if (input.cmdOptionExists("-h"))
     {
         std::cout << "Command line utility for compressing depth data and rgb data and infared from a camera." << std::endl;
-        print_usage("-help");
+        print_usage();
         return EXIT_FAILURE;
     }
 
     if (!input.cmdOptionExists("-ilsb"))
     {
         std::cout << "Input lsb file is required" << std::endl;
-        print_usage("-ilsb");
+        print_usage();
         return EXIT_FAILURE;
     }
-
     if (!input.cmdOptionExists("-hd"))
     {
         std::cout << "Input header file and output directory are required" << std::endl;
-        print_usage("-hd");
+        print_usage();
         return EXIT_FAILURE;
     }
 
     if (!input.cmdOptionExists("-o"))
     {
         std::cout << "Output directory is required" << std::endl;
-        print_usage("-o");
+        print_usage();
         return EXIT_FAILURE;
     }
     std::string input_lsb_file = input.getCmdOption("-ilsb");
@@ -1137,19 +885,17 @@ int main(int argc, char *argv[])
     if (!does_file_exist(input_lsb_file))
     {
         std::cout << "Input lsb file does not exist" << std::endl;
-        print_usage("-ilsb");
+        print_usage();
         return EXIT_FAILURE;
     }
-    std::string ffprobe_cmd;
-    ffprobe_cmd = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + input_lsb_file;
-    std::string ffprobe_cmd2;
-    std::string header_file = input.getCmdOption("-hd");
+    std::string ffprobe_cmd = ffprobe_cmd = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + input_lsb_file;
 
+    std::string header_file = input.getCmdOption("-hd");
     int *ptr_max = &deref1, *ptr_min = &deref2, *ptr_depth_units = &deref3;
     if (!does_file_exist(header_file))
     {
         std::cout << "Input header file does not exist" << std::endl;
-        print_usage("-hd");
+        print_usage();
         return EXIT_FAILURE;
     }
     else
@@ -1160,7 +906,6 @@ int main(int argc, char *argv[])
     std::string output_dir = input.getCmdOption("-o");
     std::string input_msb_file;
     std::string input_raw_file_dir;
-
     int num_frames_lsb = 0;
     int num_frames_msb = 0;
     num_frames_lsb = exec_ffprobe(ffprobe_cmd);
@@ -1169,11 +914,11 @@ int main(int argc, char *argv[])
         if (!does_file_exist(input.getCmdOption("-imsb")))
         {
             std::cout << "Input msb file does not exist" << std::endl;
-            print_usage("-imsb");
+            print_usage();
             return EXIT_FAILURE;
         }
         input_msb_file = input.getCmdOption("-imsb");
-        ffprobe_cmd2 = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + input_msb_file;
+        std::string ffprobe_cmd2 = "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 " + input_msb_file;
         num_frames_msb = exec_ffprobe(ffprobe_cmd2);
     }
 
@@ -1182,84 +927,17 @@ int main(int argc, char *argv[])
         if (!does_dir_exist(input.getCmdOption("-cmp")))
         {
             std::cout << "Input raw file directory does not exist" << std::endl;
-            print_usage("-cmp");
+            print_usage();
             return EXIT_FAILURE;
         }
         input_raw_file_dir = input.getCmdOption("-cmp");
     }
-    printf("num_frames_lsb: %d num_frames_msb %d\n", num_frames_lsb, num_frames_msb);
-    // int print_psnr = 1;
-    if (input.cmdOptionExists("-print_psnr"))
+
+    if (!decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir))
     {
-        print_psnr = parse_integer_cmd(input, "-print_psnr", print_psnr);
-        if (print_psnr != 0 && print_psnr != 1)
-        {
-            std::cout << "Invalid value for -print_psnr" << std::endl;
-            print_usage("-print_psnr");
-            return EXIT_FAILURE;
-        }
-    }
-
-    // int i = 100;
-
-    // for (; i > 3; i--)
-    // {
-    //     if (num_frames_lsb % i == 0)
-    //     {
-    //         frm_group_size = i;
-    //         break;
-    //     }
-    // }
-    frm_group_size = 50;
-    printf("frm_group_size: %d\n", frm_group_size);
-
-    std::uintmax_t total_compressed_sz = 0;
-    try
-    {
-        total_compressed_sz = std::filesystem::file_size(input_lsb_file);
-        if (input_msb_file != "")
-        {
-            total_compressed_sz += std::filesystem::file_size(input_msb_file);
-        }
-    }
-    catch (std::filesystem::filesystem_error &e)
-    {
-        std::cout << e.what() << '\n';
-    }
-    
-
-    timer tStart;
-    ret = !decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir);
-    unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();
-    std::cout << "Time decompress run for in seconds: " << (milliseconds_ellapsed / 1000.0) << std::endl;
-    if (ret)
-    {
-
         std::cout << "Decompression failed" << std::endl;
         return EXIT_FAILURE;
     }
-    
-    std::cout << "Compression ratio is: " << getCompressionRatio(total_compressed_sz, num_frames_lsb) << std::endl;
-    std::cout << buff_global::video_frame_count << " frames were compressed" << std::endl;
+
     return EXIT_SUCCESS;
 }
-// make: Nothing to be done for 'all'.
-// Max 65535 Min 0 Depth_units in micrometers: 1000
-// num_frames_lsb: 27000 num_frames_msb 27000
-// frm_group_size: 50
-// type: 0 *count: 1
-// wq *count: 1 ret -11 
-// type: 0 *count: 2
-// wq *count: 2 ret -11 
-// type: 0 *count: 3
-// wq *count: 3 ret -11 
-// type: 0 *count: 4
-// wq *count: 4 ret -11 
-// type: 0 *count: 5
-// wq *count: 5 ret -11 
-// lsb_frames_dec: 27000
-// msb_frames_dec: 27000
-// Average PSNR: 71.6306
-// Time decompress run for in seconds: 440.141
-// Compression ratio is: 21.7228
-// 27000 frames were compressed

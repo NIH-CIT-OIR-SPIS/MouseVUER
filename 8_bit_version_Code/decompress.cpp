@@ -50,7 +50,7 @@ extern "C"
 
 static int frm_group_size = 3;
 static int print_psnr = 1;
-const int shift_by = 2;//0;
+const int shift_by = 0;//2;
 static const int shift_back_by = 16 - (8 - shift_by);
 
 namespace buff_global

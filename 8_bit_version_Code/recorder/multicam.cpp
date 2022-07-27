@@ -249,8 +249,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     
     //std::string path_raw = dirname + "test_raw.mp4"; //(server_address == "" || port <= -1) ? (dirname + "test_raw.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
     /* Bit Shifting Settings */
-    const int shift_by = 2;//2;
-    const int and_val = 0b11;//0b11;
+    const int shift_by = 0;//2;
+    const int and_val = 0b0;//0b11;
 
     int y_comp_8_bit = height * width;
     int u_comp_8_bit = y_comp_8_bit / 4;
