@@ -354,7 +354,10 @@ bool InputParser::cmdOptionExists(const std::string &option) const
  */
 void print_usage(std::string choice)
 {
-    if (choice == "-sv_addr")
+    if (choice == "-disp_shift"){
+        std::cout << "Usage -disp_shift <0-255>  Disparity Shifty larger value for objects closer to camera." << std::endl;
+
+    } else if (choice == "-sv_addr")
     {
         std::cout << "Usage:  -sv_addr <server_address> valid ip address " << std::endl;
     }
@@ -475,6 +478,7 @@ void print_usage(std::string choice)
         std::cout << "Min viable depth unit is 40 micrometers" << std::endl;
         std::cout << "Usage: -port <port number> between 1024 and 65535" << std::endl;
         std::cout << "Usage:  -sv_addr <server_address> valid ip address " << std::endl;
+        std::cout << "Usage -disp_shift <0-255>  Disparity Shifty larger value for objects closer to camera." << std::endl;
         // std::cout << "-rosbag [int: 0 or 1]\tWhether to save color .bag file and not compress" << std::endl;
     }
 }

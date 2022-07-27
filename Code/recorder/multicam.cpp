@@ -207,7 +207,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
 int startRecording(std::string dirname, long time_run, std::string bag_file_dir, uint16_t max_d = 65535, uint16_t min_d = 0, int depth_u = 1000, unsigned int width = 1280U,
                    unsigned int height = 720U, unsigned int fps = 30U, int crf_lsb = 25, int count_threads = 2,
                    bool ffmpeg_verbose = false, bool collect_raw = false, int num_frm_collect = 0, bool show_preview = false,
-                   std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false, std::string server_address = "", unsigned short port = 1000)
+                   std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false, std::string server_address = "", unsigned short port = 1000, uint8_t disparity_shift = 0)
 {
     
     if (time_run > 2147483646)
@@ -400,15 +400,17 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     auto device = ctx.query_devices();
     auto dev = device[0];
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configuration
+    auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
     if (!(json_file.size() > 0))
     {
-        auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
+        
         STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
         // depth_table.depthUnits = 0.001;
         // std::cout << "Depth units"
         depth_table.depthUnits = (int32_t)depth_u;  // in micro meters
         depth_table.depthClampMin = (int32_t)min_d; // 100 mm
         depth_table.depthClampMax = (int32_t)max_d; //(int)pow(2, 16); // pow(2, 16);// 1000 mm
+        depth_table.disparityShift = (int32_t)disparity_shift;
         advanced_mode_dev.set_depth_table(depth_table);
         // if (!advanced_mode_dev.is_enabled())
         // {
@@ -418,6 +420,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         // }
         std::cout << "Depth max: " << advanced_mode_dev.get_depth_table().depthClampMax << "mm Depth unit: " << advanced_mode_dev.get_depth_table().depthUnits << std::endl;
         std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
+        std::cout << "Disparity Shift " << advanced_mode_dev.get_depth_table().disparityMode << std::endl;
     }
 
     if (color)
@@ -1001,6 +1004,7 @@ try
     int crf_color = 30;
     int depth_lossless = 0;
     int port = 1000;
+    uint8_t disp_shift = 0;
     // int rosbag = 0;
     // int opt;
     // po::options_description desc("Allowed options");
@@ -1090,6 +1094,7 @@ try
     min_depth = parse_integer_cmd(input, "-min_depth", min_depth);
     depth_unit = parse_integer_cmd(input, "-depth_unit", depth_unit);
     port = parse_integer_cmd(input, "-port", port);
+    disp_shift = (uint8_t)parse_integer_cmd(input, "-disp_shift", (int)disp_shift);
     // rosbag = parse_integer_cmd(input, "-rosbag", rosbag);
     if (width == -5 || width < 200 || width > 1920)
     {
@@ -1168,6 +1173,7 @@ try
         print_usage("-port");
         return EXIT_FAILURE;
     }
+    
     // if(rosbag < 0 || rosbag > 1){
     //     print_usage("-rosbag");
     //     return EXIT_FAILURE;
@@ -1192,7 +1198,7 @@ try
     std::cout << "depth_unit: " << depth_unit << std::endl;
     std::cout << "port " << port << std::endl;
     // std::cout << "rosbag: " << bool(rosbag) << std::endl;
-    int retval = startRecording(dir, sec, bagfile, (uint16_t)max_depth, (uint16_t)min_depth, (uint16_t)depth_unit, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless), server_address, (unsigned short)port);
+    int retval = startRecording(dir, sec, bagfile, (uint16_t)max_depth, (uint16_t)min_depth, (uint16_t)depth_unit, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless), server_address, (unsigned short)port, disp_shift);
     if (!retval)
     {
         std::cout << "FAILURE WHILE RECORDING" << std::endl;
