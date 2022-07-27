@@ -54,9 +54,9 @@ namespace buff_global
 {
     int video_frame_count = 0;
     uint16_t store_depth[1280 * 720] = {0};
-    uint16_t store_depth_lsb[1280 * 720] = {0};
+    //uint16_t store_depth_lsb[1280 * 720] = {0};
     uint16_t store_raw_depth[1280 * 720] = {0};
-    uint16_t store_raw_depth_lsb[1280 * 720] = {0};
+    //uint16_t store_raw_depth_lsb[1280 * 720] = {0};
     std::vector<double> psnr_vector;
     std::string input_raw_dir_gl = "";
     std::string output_dir_gl = "";
@@ -414,7 +414,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
             store_num += min_d;
             store_depth[y] = store_num;
-            store_depth_lsb[y] = store_num;
+            //store_depth_lsb[y] = store_num;
         }
     }
     else
@@ -429,7 +429,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
             store_num = curr_lsb | curr_msb;
 
             store_depth[y] = store_num;
-            store_depth_lsb[y] = curr_lsb;
+            //store_depth_lsb[y] = curr_lsb;
         }
     }
     // if (video_frame_count == 200)

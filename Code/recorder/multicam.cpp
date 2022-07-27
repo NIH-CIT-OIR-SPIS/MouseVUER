@@ -253,7 +253,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int u_comp_8_bit = y_comp_8_bit / 4;
     int v_comp_8_bit = y_comp_8_bit / 4;
     int channel_size = 1;
-    std::string type_str_msb = "yuvj420p";
+    std::string type_str_msb = "yuv420p";
     std::string encoder_msb = "libx264";
     int total_sz_8_bit = y_comp_8_bit + u_comp_8_bit + v_comp_8_bit;
 
@@ -517,7 +517,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int total_sz_10_bit = y_comp_10_bit + u_comp_10_bit + v_comp_10_bit;
 
 
-    uint8_t *store_frame_lsb = (uint8_t *)malloc(total_sz_10_bit * sizeof(uint8_t));
+    uint8_t *store_frame_lsb =  (uint8_t *)malloc(total_sz_10_bit * sizeof(uint8_t));
     uint8_t *store_frame_msb = (uint8_t *)malloc( total_sz_8_bit * sizeof(uint8_t));
     //uint8_t *store_frame_test = (uint8_t *)malloc(height * width * 1 * sizeof(uint8_t));
 
