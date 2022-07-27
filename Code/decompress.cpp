@@ -50,6 +50,9 @@ extern "C"
 
 static int frm_group_size = 3;
 static int print_psnr = 1;
+const int shift_by = 0;//2;
+static const int shift_back_by = 16 - (8 - shift_by);
+
 namespace buff_global
 {
     int video_frame_count = 0;
@@ -424,7 +427,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
             curr_lsb = ((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
 
-            curr_msb = ((uint16_t)frame_msb[y]) << 10;
+            curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by;//10;
 
             store_num = curr_lsb | curr_msb;
 

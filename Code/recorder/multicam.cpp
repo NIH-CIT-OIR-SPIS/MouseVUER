@@ -248,6 +248,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     long counter = 0;
     
     //std::string path_raw = dirname + "test_raw.mp4"; //(server_address == "" || port <= -1) ? (dirname + "test_raw.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
+    /* Bit Shifting Settings */
+    const int shift_by = 0;//2;
+    const int and_val = 0b0;//0b11;
 
     int y_comp_8_bit = height * width;
     int u_comp_8_bit = y_comp_8_bit / 4;
@@ -418,11 +421,11 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         //     advanced_mode_dev.toggle_advanced_mode(true);
         //     std::cout << "Advanced mode enabled. " << std::endl;
         // }
-        std::cout << "Depth max: " << advanced_mode_dev.get_depth_table().depthClampMax << "mm Depth unit: " << advanced_mode_dev.get_depth_table().depthUnits << std::endl;
-        std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
-        std::cout << "Disparity Shift " << advanced_mode_dev.get_depth_table().disparityMode << std::endl;
-    }
 
+    }
+    std::cout << "Depth max: " << advanced_mode_dev.get_depth_table().depthClampMax << "mm\nDepth unit: " << advanced_mode_dev.get_depth_table().depthUnits << std::endl;
+    std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
+    std::cout << "Disparity Shift " << advanced_mode_dev.get_depth_table().disparityShift << std::endl;
     if (color)
     {
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);
@@ -601,7 +604,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // uint16_t *ptr_depth_frm_16 = NULL;
     uint16_t store_val = 0;
     uint8_t store_val_lsb = 0;
-
+    uint16_t *ptr_depth_frm_16 = NULL;
+    uint8_t * ptr_depth_frm = NULL;
     // encode_video = 0;
     timer tStart;
 
@@ -625,8 +629,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             //     depth_frame_in = thresh_filter.process(depth_frame_in);
             // }
             // Filter frames that are between these two depths
-            uint16_t *ptr_depth_frm_16 = NULL;
-            uint8_t * ptr_depth_frm = NULL;
+
             if (only_10_bits)
             {
                 ptr_depth_frm_16 = (uint16_t *)depth_frame_in.get_data();
@@ -660,9 +663,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += channel_size)
                 {
 
-                    store_frame_msb[k] = ptr_depth_frm[i + 1] >> 2;
+                    store_frame_msb[k] = (ptr_depth_frm[i + 1] >> shift_by); //& (uint8_t)0b00000001;
                     // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
-                    store_frame_lsb[i + 1] &= (uint8_t)0b11;
+                    store_frame_lsb[i + 1] &= (uint8_t)and_val;
                     // store_frame_test[y] = store_frame_lsb[i];
                 }
                 if (pipe_msb == NULL || !fwrite(store_frame_msb, sizeof(uint8_t), total_sz_8_bit, pipe_msb))
@@ -755,27 +758,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
             if (collect_raw)
             {
-                // if (counter < (long)num_frm_collect)
-                // {
-                //     std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
-                //     FILE *p_file;
-                //     if ((p_file = fopen(bin_out.c_str(), "wb")))
-                //     {
-                //         // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
-                //         fwrite((uint8_t *)depth_frame_in.get_data(), 1, num_bytes * 2, p_file);
-                //         fclose(p_file);
-                //     }
-                //     else
-                //     {
-                //         std::cout << "Problem writing raw file " << bin_out << std::endl;
-                //     }
-                //     // if (!fwrite((uint8_t*)depth_frame_in.get_data(), 1, num_bytes*2, p_pipe_raw))
-                //     // {
-                //     //     std::cout << "Error with fwrite frames raw" << std::endl;
-                //     //     break;
-                //     // }
-                // }
-                if ((long)time_run * fps  - counter <= (long)num_frm_collect)
+                if (counter < (long)num_frm_collect)
                 {
                     std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
                     FILE *p_file;
@@ -795,6 +778,26 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     //     break;
                     // }
                 }
+                // if ((long)time_run * fps  - counter <= (long)num_frm_collect)
+                // {
+                //     std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
+                //     FILE *p_file;
+                //     if ((p_file = fopen(bin_out.c_str(), "wb")))
+                //     {
+                //         // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
+                //         fwrite((uint8_t *)depth_frame_in.get_data(), 1, num_bytes * 2, p_file);
+                //         fclose(p_file);
+                //     }
+                //     else
+                //     {
+                //         std::cout << "Problem writing raw file " << bin_out << std::endl;
+                //     }
+                //     // if (!fwrite((uint8_t*)depth_frame_in.get_data(), 1, num_bytes*2, p_pipe_raw))
+                //     // {
+                //     //     std::cout << "Error with fwrite frames raw" << std::endl;
+                //     //     break;
+                //     // }
+                // }
             }
             // if (show_preview)
             // {
