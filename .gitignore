@@ -1,5 +1,11 @@
 Code/Testing_DIR/*
 Code/bin/*
+Code_8_bit/bin/*
+Code_8_bit/Testing_DIR/*
+
+#ignore .bin files 
+*.bin
+
 *.pyc
 *.obj
 # Ignore key files

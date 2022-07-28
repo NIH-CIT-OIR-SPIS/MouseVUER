@@ -206,10 +206,12 @@ int run_alignment_func(rs2::pipeline &pipe, unsigned int fps, long time_run, std
         auto depth = frameset.get_depth_frame();
         auto color = frameset.get_color_frame();
         auto colorized_depth = c.colorize(depth);
+        #if __has_include(<opencv2/opencv.hpp>)
         cv::Mat colorized_depth_img(cv::Size(width, height), CV_8UC3, (void *)colorized_depth.get_data(), cv::Mat::AUTO_STEP);
         cv::Mat color_img(cv::Size(width, height), CV_8UC3, (void *)color.get_data(), cv::Mat::AUTO_STEP);
 
         cv::imwrite(path_out + std::to_string(counter) + ".png", color_img);
+        #endif
         std::string bin_out = path_out_depth + std::to_string(counter) + "_depthy.bin";
         FILE *p_file;
         if ((p_file = fopen(bin_out.c_str(), "wb")))
@@ -309,8 +311,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     // std::string path_raw = dirname + "test_raw.mp4"; //(server_address == "" || port <= -1) ? (dirname + "test_raw.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
     /* Bit Shifting Settings */
-    const int shift_by = 2;   // 2;
-    const int and_val = 0b11; // 0b11;
+    const int shift_by = 0;   // 2;
+    const int and_val = 0b0; // 0b11;
 
     int y_comp_8_bit = height * width;
     int u_comp_8_bit = y_comp_8_bit / 4;

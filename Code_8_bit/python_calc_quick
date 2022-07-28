@@ -1,0 +1,9 @@
+import math
+
+old_min = 0
+x = 3276.75
+depth_u = 50
+
+depth_trans = depth_u/1000.0
+
+v = (65535.0*x + (old_min)(max_d - min_d))/(max_d - min_d + 65535)
