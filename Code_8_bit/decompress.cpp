@@ -282,7 +282,83 @@ static inline int abs_diff(int a, int b)
         return a - b;
     }
 }
+double img_mean(uint16_t *arr, int n)
+{
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+        sum += (double)arr[i];
+    }
+    return sum / (double)n;
+}
 
+double img_variance(uint16_t *arr, int n, double mean = -1.0)
+{
+    if (mean < 0.0)
+    {
+        mean = img_mean(arr, n);
+    }
+    double vari = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+        vari += ((double)arr[i] - mean) * ((double)arr[i] - mean);
+    }
+    return vari / (double)n;
+}
+
+double img_covariance(uint16_t *compressed, uint16_t *raw, int n, double mean_comp = -1.0, double mean_raw = -1.0)
+{
+    double sum_all = 0.0;
+    if (mean_comp < 0.0)
+    {
+        mean_comp = img_mean(compressed, n);
+    }
+    if (mean_raw < 0.0)
+    {
+        mean_raw = img_mean(raw, n);
+    }
+
+    for (int i = 0; i < n; ++i)
+    {
+        sum_all += ((double)compressed[i] - mean_comp) * ((double)raw[i] - mean_raw);
+    }
+    return (sum_all) / (double)(n - 1);
+}
+double get_ssim(uint16_t *compressed, uint16_t *raw, int siz = 0, int pr_lum = 0, int pr_contr = 0, int pr_struct = 0)
+{
+    if (siz <= 0)
+    {
+        siz = H * W;
+    }
+    double k1 = 0.01;
+    double k2 = 0.03;
+    double dyn_range = 65535.0;
+    double c1 = (k1 * dyn_range) * (k1 * dyn_range);
+    double c2 = (k2 * dyn_range) * (k2 * dyn_range);
+    double c3 = c2 / 2;
+    double mean_compr = img_mean(compressed, siz);
+    double mean_raw = img_mean(raw, siz);
+    double var_compr = img_variance(compressed, siz, mean_compr);
+    double var_raw = img_variance(raw, siz, mean_raw);
+    double covar = img_covariance(compressed, raw, siz, mean_compr, mean_raw);
+    if (pr_lum){
+        double lum = (2 * mean_compr * mean_raw + c1) / ( mean_compr * mean_compr + mean_raw * mean_raw + c1);
+    
+        printf("Luminance SSIM: %f\n", lum);
+    }
+    if (pr_contr || pr_struct){
+        double std_var1 = sqrt(var_compr);
+        double std_var_raw = sqrt(var_raw);
+        if(pr_contr){
+            printf("Contrast SSIM: %f\n", ( (2*std_var1*std_var_raw + c2) / (var_compr + var_raw + c2) ));
+        }
+        if(pr_struct){
+            printf("Structure SSIM: %f\n", ( (covar + c3) / (std_var1 * std_var_raw + c3) ));
+        }
+    }
+
+    return ((2 * mean_compr * mean_raw + c1) * (2 * covar + c2)) / ((mean_compr * mean_compr + mean_raw * mean_raw + c1) * (var_compr + var_raw + c2));
+}
 static double get_psnr(uint16_t *m0, uint16_t *m1)
 {
     long cg = 65535U * 65535U;
@@ -381,6 +457,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     int i = 0, y = 0, count = 0;
     // int count2 = 0;
     double psnr_val = 0;
+    double ssim_val = 0;
     // double psnr_val_6_bit = 0;
     uint16_t max = 0;
     uint16_t curr_lsb = 0;
@@ -448,6 +525,8 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
         {
             printf("PSNR: %f\n", psnr_val);
         }
+        // ssim_val = get_ssim(store_depth, store_raw_depth, H*W, 1, 1, 1);
+        // printf("SSIM: %f\n", ssim_val);
         psnr_vector.push_back(psnr_val);
     }
     else

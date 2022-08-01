@@ -50,16 +50,16 @@ extern "C"
 
 static int frm_group_size = 3;
 static int print_psnr = 1;
-const int shift_by = 2;//0;
+const int shift_by = 2; // 0;
 static const int shift_back_by = 16 - (8 - shift_by);
 
 namespace buff_global
 {
     int video_frame_count = 0;
     uint16_t store_depth[1280 * 720] = {0};
-    //uint16_t store_depth_lsb[1280 * 720] = {0};
+    // uint16_t store_depth_lsb[1280 * 720] = {0};
     uint16_t store_raw_depth[1280 * 720] = {0};
-    //uint16_t store_raw_depth_lsb[1280 * 720] = {0};
+    // uint16_t store_raw_depth_lsb[1280 * 720] = {0};
     std::vector<double> psnr_vector;
     std::string input_raw_dir_gl = "";
     std::string output_dir_gl = "";
@@ -204,7 +204,7 @@ static int exec_ffprobe(std::string str_cmd)
 void print_usage(std::string choice = "")
 {
 
-    if (choice == "" || choice == "-help")
+    if (choice == "" || choice == "-help" || choice == "-h")
     {
         std::cout << "Usage: " << std::endl;
         std::cout << "  ./help_decomp [options]" << std::endl;
@@ -283,6 +283,83 @@ static inline int abs_diff(int a, int b)
     }
 }
 
+double img_mean(uint16_t *arr, int n)
+{
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+        sum += (double)arr[i];
+    }
+    return sum / (double)n;
+}
+
+double img_variance(uint16_t *arr, int n, double mean = -1.0)
+{
+    if (mean < 0.0)
+    {
+        mean = img_mean(arr, n);
+    }
+    double vari = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+        vari += ((double)arr[i] - mean) * ((double)arr[i] - mean);
+    }
+    return vari / (double)n;
+}
+
+double img_covariance(uint16_t *compressed, uint16_t *raw, int n, double mean_comp = -1.0, double mean_raw = -1.0)
+{
+    double sum_all = 0.0;
+    if (mean_comp < 0.0)
+    {
+        mean_comp = img_mean(compressed, n);
+    }
+    if (mean_raw < 0.0)
+    {
+        mean_raw = img_mean(raw, n);
+    }
+
+    for (int i = 0; i < n; ++i)
+    {
+        sum_all += ((double)compressed[i] - mean_comp) * ((double)raw[i] - mean_raw);
+    }
+    return (sum_all) / (double)(n - 1);
+}
+double get_ssim(uint16_t *compressed, uint16_t *raw, int siz = 0, int pr_lum = 0, int pr_contr = 0, int pr_struct = 0)
+{
+    if (siz <= 0)
+    {
+        siz = H * W;
+    }
+    double k1 = 0.01;
+    double k2 = 0.03;
+    double dyn_range = 65535.0;
+    double c1 = (k1 * dyn_range) * (k1 * dyn_range);
+    double c2 = (k2 * dyn_range) * (k2 * dyn_range);
+    double c3 = c2 / 2;
+    double mean_compr = img_mean(compressed, siz);
+    double mean_raw = img_mean(raw, siz);
+    double var_compr = img_variance(compressed, siz, mean_compr);
+    double var_raw = img_variance(raw, siz, mean_raw);
+    double covar = img_covariance(compressed, raw, siz, mean_compr, mean_raw);
+    if (pr_lum){
+        double lum = (2 * mean_compr * mean_raw + c1) / ( mean_compr * mean_compr + mean_raw * mean_raw + c1);
+    
+        printf("Luminance SSIM: %f\n", lum);
+    }
+    if (pr_contr || pr_struct){
+        double std_var1 = sqrt(var_compr);
+        double std_var_raw = sqrt(var_raw);
+        if(pr_contr){
+            printf("Contrast SSIM: %f\n", ( (2*std_var1*std_var_raw + c2) / (var_compr + var_raw + c2) ));
+        }
+        if(pr_struct){
+            printf("Structure SSIM: %f\n", ( (covar + c3) / (std_var1 * std_var_raw + c3) ));
+        }
+    }
+
+    return ((2 * mean_compr * mean_raw + c1) * (2 * covar + c2)) / ((mean_compr * mean_compr + mean_raw * mean_raw + c1) * (var_compr + var_raw + c2));
+}
 static double get_psnr(uint16_t *m0, uint16_t *m1)
 {
     long cg = 65535U * 65535U;
@@ -381,6 +458,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     int i = 0, y = 0, count = 0;
     // int count2 = 0;
     double psnr_val = 0;
+    double ssim_val = 0;
     // double psnr_val_6_bit = 0;
     uint16_t max = 0;
     uint16_t curr_lsb = 0;
@@ -417,7 +495,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
             store_num += min_d;
             store_depth[y] = store_num;
-            //store_depth_lsb[y] = store_num;
+            // store_depth_lsb[y] = store_num;
         }
     }
     else
@@ -427,12 +505,12 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
             curr_lsb = ((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
 
-            curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by;//10;
+            curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by; // 10;
 
             store_num = curr_lsb | curr_msb;
 
             store_depth[y] = store_num;
-            //store_depth_lsb[y] = curr_lsb;
+            // store_depth_lsb[y] = curr_lsb;
         }
     }
     // if (video_frame_count == 200)
@@ -448,6 +526,8 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
         {
             printf("PSNR: %f\n", psnr_val);
         }
+        // ssim_val = get_ssim(store_depth, store_raw_depth, H*W, 1, 1, 1);
+        // printf("SSIM: %f\n", ssim_val);
         psnr_vector.push_back(psnr_val);
     }
     else
@@ -491,7 +571,6 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
         if (video_frame_count == 30)
         {
             cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
-            
         }
 
         if (read_raw != NULL)
@@ -503,7 +582,8 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
             cv::applyColorMap(raw_img_color, raw_img_color, 9);
             cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
             cv::imshow("Raw Image", raw_img_color);
-            if (video_frame_count == 30){
+            if (video_frame_count == 30)
+            {
                 cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
             }
         }
@@ -590,7 +670,7 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             }
             else if (typ == 1)
             {
-                
+
                 data[*count] = (uint8_t *)malloc(frame->linesize[channel] * frame->height); // 2 is the red channel
                 // printf("frame->linesize[2]: %d\n", frame->linesize[2]);
                 memcpy(data[*count], frame->data[channel], frame->linesize[channel] * frame->height);
@@ -1052,7 +1132,6 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         decode_packet(video_dec_ctx, NULL, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 0);
     }
 
-
 end:
     std::cout << "Average PSNR: " << getAverage(buff_global::psnr_vector) << std::endl;
     // if (src_filename_msb != NULL)
@@ -1226,7 +1305,6 @@ int main(int argc, char *argv[])
     {
         std::cout << e.what() << '\n';
     }
-    
 
     timer tStart;
     ret = !decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir);
@@ -1238,7 +1316,7 @@ int main(int argc, char *argv[])
         std::cout << "Decompression failed" << std::endl;
         return EXIT_FAILURE;
     }
-    
+
     std::cout << "Compression ratio is: " << getCompressionRatio(total_compressed_sz, num_frames_lsb) << std::endl;
     std::cout << buff_global::video_frame_count << " frames were compressed" << std::endl;
     return EXIT_SUCCESS;
@@ -1248,15 +1326,15 @@ int main(int argc, char *argv[])
 // num_frames_lsb: 27000 num_frames_msb 27000
 // frm_group_size: 50
 // type: 0 *count: 1
-// wq *count: 1 ret -11 
+// wq *count: 1 ret -11
 // type: 0 *count: 2
-// wq *count: 2 ret -11 
+// wq *count: 2 ret -11
 // type: 0 *count: 3
-// wq *count: 3 ret -11 
+// wq *count: 3 ret -11
 // type: 0 *count: 4
-// wq *count: 4 ret -11 
+// wq *count: 4 ret -11
 // type: 0 *count: 5
-// wq *count: 5 ret -11 
+// wq *count: 5 ret -11
 // lsb_frames_dec: 27000
 // msb_frames_dec: 27000
 // Average PSNR: 71.6306
