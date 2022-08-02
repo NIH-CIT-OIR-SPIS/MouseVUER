@@ -26,7 +26,7 @@ COMMON_NAME = "."
 ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
 PORT_CLIENT_LISTEN = 1026
-HOST_ADDR = "127.0.0.1"
+HOST_ADDR = "192.168.1.234"
 BYTES_SIZE = 4096
 WAIT_SEC = 1
 
@@ -54,9 +54,10 @@ def run_rtmp_command(recieved: str):
     max_depth = int(arr[4])
     min_depth = int(arr[5])
     depth_unit = int(arr[6])
+    run_it = int(arr[7])
     cmd = "./bin/multicam -dir Testing_DIR/ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit)
-    print(cmd)
-    #os.system(cmd)
+    #print(cmd)
+    os.system(cmd)
 
 class Client:
     def __init__(self, server_sni_hostname: str, host: str, port: int, server_cert_file: str, client_cert_file: str, client_key_file: str):
