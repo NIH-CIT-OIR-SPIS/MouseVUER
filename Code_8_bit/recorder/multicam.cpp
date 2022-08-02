@@ -729,7 +729,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
                     // Remember all data after width * height *2 is 0 so we don't have to put total_sz_10_bit here
                     std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
-
+                    
                     for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += channel_size)
                     {
 

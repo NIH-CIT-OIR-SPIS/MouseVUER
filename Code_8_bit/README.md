@@ -9,6 +9,11 @@ Ghadi Salem
 
 Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
 
+## Automate GDB
+```
+for i in {1..20}; do gdb -q -ex 'set pagination off' -ex 'set args -dir Testing_DIR/ -sec 15 -numraw 450 -crf 17 -bagfile ~/Downloads/One_Mouse_5_minutes_depth.bag' -ex run  ./bin/multicam -ex quit; done
+```
+
 
 ### Install python3 modules
 ```
