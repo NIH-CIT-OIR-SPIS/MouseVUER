@@ -438,7 +438,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // std::vector<rs2::pipeline
     std::string serial;
     if(!device_with_streams({RS2_STREAM_DEPTH, RS2_STREAM_COLOR}, serial))
-    {Exception
+    {
         std::cerr << " Error No device with depth and color streams" << std::endl;
         return 0;
     }
