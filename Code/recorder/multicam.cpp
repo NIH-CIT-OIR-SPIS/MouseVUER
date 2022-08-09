@@ -173,7 +173,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     }
     else if (typ == 1 && encoder == "libx264")
     {
-        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i - -c:v " + encoder + " -preset veryfast " + tune_latency + " -pix_fmt " + pix_fmt_out + " -qp " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " + path_out; //
+        ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an " + re_flag + " -i - -c:v " + encoder + " -preset veryfast " + tune_latency + " -pix_fmt " + pix_fmt_out + " -crf " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " + path_out; //
         // ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -re -i - -c:v " + encoder + " -preset veryfast  -crf " + std::to_string(crf) + " -movflags +faststart -movflags +faststart -f flv rtmp://127.0.0.1:5001/"; //
 
         return ffmpeg_command;
@@ -438,7 +438,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // std::vector<rs2::pipeline
     std::string serial;
     if(!device_with_streams({RS2_STREAM_DEPTH, RS2_STREAM_COLOR}, serial))
-    {
+    {Exception
         std::cerr << " Error No device with depth and color streams" << std::endl;
         return 0;
     }
@@ -473,10 +473,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     auto dev = device[0];
     
     auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
+    STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
     if (!(json_file.size() > 0))
     {
 
-        STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
+        //STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
+        STDepthControlGroup aeg = advanced_mode_dev.get_depth_control();
+        
         // depth_table.depthUnits = 0.001;
         // std::cout << "Depth units"
         depth_table.depthUnits = (int32_t)depth_u;  // in micro meters
@@ -611,7 +614,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     //  float min_dis = 0.0f;
     //  float max_dis = 16.0f;
 
-    std::string text_out = std::to_string(max_d) + " " + std::to_string(min_d) + " " + std::to_string(depth_u);
+    std::string text_out = std::to_string(depth_table.depthClampMax) + " " + std::to_string(depth_table.depthClampMin) + " " + std::to_string(depth_table.depthUnits);
     write_txt_to_file(dirname + "video_head_file.txt", text_out);
     // thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
     // thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
