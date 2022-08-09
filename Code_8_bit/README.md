@@ -9,10 +9,7 @@ Ghadi Salem
 
 Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
 
-## Automate GDB
-```
-for i in {1..20}; do gdb -q -ex 'set pagination off' -ex 'set args -dir Testing_DIR/ -sec 15 -numraw 450 -crf 17 -bagfile ~/Downloads/One_Mouse_5_minutes_depth.bag' -ex run  ./bin/multicam -ex quit; done
-```
+
 
 
 ### Install python3 modules
@@ -152,6 +149,13 @@ ffprobe -f lavfi movie=Testing_DIR/test_lsb.mp4,signalstats -show_entries frame_
 make -j4 && ./bin/multicam -sec 60 -thr 4 -fps 30 -crf 22 -numraw 450 -max_depth 1000 -dir Testing_DIR/ -bagfile ~/Downloads/fishy-fish.bag && ./bin/decompress Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 
 
 ```
+
+### Decompress
 ```
 ./bin/decompress -ilsb Testing_DIR/test_lsb.mp4  -imsb Testing_DIR/test_msb.mp4 -hd Testing_DIR/video_head_file.txt -cmp Testing_DIR -o Testing_DIR -print_psnr 0
+```
+
+## Automate GDB
+```
+for i in {1..20}; do gdb -q -ex 'set pagination off' -ex 'set args -dir Testing_DIR/ -sec 15 -numraw 450 -crf 17 -bagfile ~/Downloads/One_Mouse_5_minutes_depth.bag' -ex run  ./bin/multicam -ex quit; done
 ```
