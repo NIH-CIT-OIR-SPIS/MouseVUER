@@ -10,10 +10,10 @@ Ghadi Salem
 Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
 
 
-
-
 ### Install python3 modules
 ```
+sudo apt update && \
+sudo apt install python3-pip && \
 python3 -m pip install scapy && \
 python3 -m pip install pycrypto 
 ```
@@ -116,9 +116,10 @@ make clean && make -j4
 
 Then in order to see a list of options do the following
 ```
-/bin/multicam -h
+./bin/multicam -h
 ```
 
+### Examples
 For example here is a simple recording for 30 seconds with files saved to Testing_DIR/
 ```
 ./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 4 -jsonfile Default.json
@@ -135,21 +136,18 @@ To look at frame rates
 ffprobe Testing_DIR/test_lossy.h265 -count_frames -show_entries stream=nb_read_frames,avg_frame_rate,r_frame_rate
 ```
 
-To decompress and visualize, please see subsequent Raw and Compressed Video Recordings, You can also record the PSNR or you recordings here when compared with RAW, should be only for developer use. Takes a long time to run.
-```
-python3 decompress_vids.py --vidmsb Testing_DIR/test_msb.mp4 --vidlsb Testing_DIR/test_lsb.mp4 --path_img decomp_pngs/ --vidraw Testing_DIR/
-```
+
 
 To look at stats of a video please see the following from (https://ffmpeg.org/ffprobe-all.html)
 ```
 ffprobe -f lavfi movie=Testing_DIR/test_lsb.mp4,signalstats -show_entries frame_tags=lavfi.signalstats.YMAX,lavfi.signalstats.YMIN,lavfi.signalstats.YAVG,lavfi.signalstats.YBITDEPTH,lavfi.signalstats.YDIF
 ```
 
+## Run multicam program
 ```
 make -j4 && ./bin/multicam -sec 60 -thr 4 -fps 30 -crf 22 -numraw 450 -max_depth 1000 -dir Testing_DIR/ -bagfile ~/Downloads/fishy-fish.bag && ./bin/decompress Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 
 
 ```
-
 ### Decompress
 ```
 ./bin/decompress -ilsb Testing_DIR/test_lsb.mp4  -imsb Testing_DIR/test_msb.mp4 -hd Testing_DIR/video_head_file.txt -cmp Testing_DIR -o Testing_DIR -print_psnr 0
