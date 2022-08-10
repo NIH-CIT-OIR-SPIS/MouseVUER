@@ -473,9 +473,9 @@ void print_usage(std::string choice)
         std::cout << "-color [int: 0 or 1]\tWhether to save color RGB stream as well" << std::endl;
         std::cout << "-crf_color [int: 0-50]\t Control rate factor for RGB video" << std::endl;
         std::cout << "-depth_lossless [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
-        std::cout << "Usage: -max_depth <int> depth diff of 1023 or lower depth you will only be using one stream " << std::endl;
-        std::cout << "Usage: -max_depth <int> depth diff of 1023 or lower depth you will only be using one stream " << std::endl;
-        std::cout << "Usage: ./depth_unit -depth_unit <int>  Depth units represent the measurement length of a single depth step. A Depth step is difference between each discrete depth value in a depth image." << std::endl;
+        std::cout << "Usage: -max_depth <int> max_depth default is 65535 " << std::endl;
+        std::cout << "Usage: -min_depth <int> min_depth default is 0 " << std::endl;
+        std::cout << "Usage: -depth_unit <int>  Depth units represent the measurement length of a single depth step. A Depth step is difference between each discrete depth value in a depth image." << std::endl;
         std::cout << "For example if my depth unit is 1000 then each difference in 1 mm in the image will result in one value difference in the actual depth values." << std::endl;
         std::cout << "To obtain back the true depth distance one needs to use the following formula: for each i in depth array: dist = depth_unit * depth_value[i] , where the dist is measured in micrometers" << std::endl;
         std::cout << "1 depth_unit is about a micrometer, so 1000 micrometers is the default depth resolution (~ 1 mm). " << std::endl;
