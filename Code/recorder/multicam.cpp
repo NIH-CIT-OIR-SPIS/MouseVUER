@@ -1277,7 +1277,11 @@ try
         print_usage("-align_int");
         return EXIT_FAILURE;
     }
-
+    if (sec <= (long)0){
+        std::cout << "Error -sec" << std::endl;
+        print_usage("-sec");
+        return EXIT_FAILURE;
+    }
     // if(rosbag < 0 || rosbag > 1){
     //     print_usage("-rosbag");
     //     return EXIT_FAILURE;

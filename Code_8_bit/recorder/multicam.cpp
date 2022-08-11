@@ -181,6 +181,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     else if (typ == 2)
     {
         ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast " + " -crf " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " + path_out;
+        
         return ffmpeg_command;
     }
 
@@ -1277,7 +1278,11 @@ try
         print_usage("-align_int");
         return EXIT_FAILURE;
     }
-
+    if (sec <= (long)0){
+        std::cout << "Error -sec" << std::endl;
+        print_usage("-sec");
+        return EXIT_FAILURE;
+    }
     // if(rosbag < 0 || rosbag > 1){
     //     print_usage("-rosbag");
     //     return EXIT_FAILURE;

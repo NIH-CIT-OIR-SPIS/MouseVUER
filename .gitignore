@@ -5,6 +5,11 @@ Code_8_bit/Testing_DIR/*
 
 #ignore .bin files 
 *.bin
+*.bag
+*.mkv
+*.mp4
+*.yuv
+
 
 *.pyc
 *.obj
