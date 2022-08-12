@@ -41,6 +41,8 @@ sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev libswscale-
 sudo apt install intel-media-va-driver-non-free x264 libva-dev libmfx-dev intel-media-va-driver-non-free x264 intel-media-va-driver-non-free i965-va-driver-shaders && \
 export LIBVA_DRIVER_NAME=iHD
 ```
+More info https://trac.ffmpeg.org/wiki/Hardware/VAAPI
+
 
 ### Install OpenCV with the following directions
 
