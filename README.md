@@ -24,6 +24,24 @@ python3 -m pip install pycrypto
 This is a guide on how to run the program 
 To install with linux please follow directions here https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 
+### Install Boost, FFmpeg, GLFW3 and others using the following commands:
+
+Type the following into the command line:
+```
+sudo apt-get -y install libboost-all-dev && \
+sudo apt-get -y install libglfw3 && \
+sudo apt-get -y install libglfw3-dev && \
+sudo apt-get -y install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
+sudo apt-get -y install ffmpeg && \
+sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev libswscale-dev
+```
+
+### OPTIONAL Install Intel QuickSync
+```
+sudo apt install intel-media-va-driver-non-free x264 libva-dev libmfx-dev intel-media-va-driver-non-free x264 intel-media-va-driver-non-free i965-va-driver-shaders && \
+export LIBVA_DRIVER_NAME=iHD
+```
+
 ### Install OpenCV with the following directions
 
 https://linuxize.com/post/how-to-install-opencv-on-ubuntu-20-04/
@@ -89,17 +107,7 @@ sudo ldconfig -v
 
 
 
-### Install Boost, FFmpeg, GLFW3 and others using the following commands:
 
-Type the following into the command line:
-```
-sudo apt-get -y install libboost-all-dev && \
-sudo apt-get -y install libglfw3 && \
-sudo apt-get -y install libglfw3-dev && \
-sudo apt-get -y install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
-sudo apt-get -y install ffmpeg && \
-sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev libswscale-dev
-```
 
 ### Directions for Use
 Then plug in your Intel RealSense Camera into the computer's USB port
