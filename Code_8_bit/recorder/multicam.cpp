@@ -334,7 +334,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // std::string color_lsb_path = dirname + "test_color.mp4";
     // std::cout << ffmpeg_verbose << std::endl;
 
-    std::string str_lsb = build_ffmpeg_cmd("yuv420p10le", "yuv420p10le", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
+    std::string str_lsb = build_ffmpeg_cmd("yuv420p", "yuv420p", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
     // std::string str_msb = build_ffmpeg_cmd("gray", "yuvj420p", "libx264", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
     std::string str_msb = build_ffmpeg_cmd(type_str_msb, type_str_msb, encoder_msb, path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
 
@@ -588,17 +588,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     // std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
     // std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
+    
     // std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
-    int y_comp_10_bit = 2 * height * width; //
-    int u_comp_10_bit = y_comp_10_bit / 4;
-    int v_comp_10_bit = y_comp_10_bit / 4;
-    int total_sz_10_bit = y_comp_10_bit + u_comp_10_bit + v_comp_10_bit;
+    int y_comp = height * width; //
+    int u_comp = y_comp / 4;
+    int v_comp = y_comp / 4;
+    int total_sz_lsb_bit = y_comp + u_comp + v_comp;
 
-    uint8_t *store_frame_lsb = (uint8_t *)malloc(total_sz_10_bit * sizeof(uint8_t));
+    uint8_t *store_frame_lsb = (uint8_t *)malloc(total_sz_lsb_bit * sizeof(uint8_t));
     uint8_t *store_frame_msb = (uint8_t *)malloc(total_sz_8_bit * sizeof(uint8_t));
     // uint8_t *store_frame_test = (uint8_t *)malloc(height * width * 1 * sizeof(uint8_t));
 
-    memset(store_frame_lsb, 0, total_sz_10_bit);
+    memset(store_frame_lsb, 0, total_sz_lsb_bit);
     memset(store_frame_msb, 0, total_sz_8_bit);
     rs2::frameset frameset;
     rs2::colorizer coloriz;
@@ -702,52 +703,28 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 //     depth_frame_in = thresh_filter.process(depth_frame_in);
                 // }
                 // Filter frames that are between these two depths
-                if (only_10_bits)
+
+                ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
+
+                // Remember all data after width * height *2 is 0 so we don't have to put total_sz_lsb_bit here
+                //std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
+                
+                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += channel_size)
                 {
-                    ptr_depth_frm_16 = (uint16_t *)depth_frame_in.get_data();
-                    for (i = 0, y = 0; i < num_bytes * 2; i += 2, ++y)
-                    {
-                        if (ptr_depth_frm_16[y] < min_d)
-                        {
-                            store_val = min_d;
-                        }
-                        else if (ptr_depth_frm_16[y] > max_d)
-                        {
-                            store_val = max_d - min_d;
-                        }
-                        else
-                        {
-                            store_val = ptr_depth_frm_16[y] - (uint16_t)min_d; //(uint16_t)(ptr_depth_frm_16[y]) | (uint16_t)(ptr_depth_frm_16[y]) << 8;
-                        }
-                        store_frame_lsb[i + 1] = ((uint8_t)(store_val >> 8)) & (uint8_t)0b11;
-                        store_frame_lsb[i] = ((uint8_t)(store_val & (uint16_t)255));
-                        // store_val_lsb =
-                    }
-                    // Scale values from range [0,65535] to range [min_d, max_d]
+
+                    store_frame_msb[k] = ptr_depth_frm[i + 1]; //& (uint8_t)0b00000001;
+                    // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
+                    store_frame_lsb[k] = ptr_depth_frm[i];
+                    // store_frame_test[y] = store_frame_lsb[i];
                 }
-                else
+                if (pipe_msb == NULL || !fwrite(store_frame_msb, sizeof(uint8_t), total_sz_8_bit, pipe_msb))
                 {
-                    ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
-
-                    // Remember all data after width * height *2 is 0 so we don't have to put total_sz_10_bit here
-                    std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
-                    
-                    for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += channel_size)
-                    {
-
-                        store_frame_msb[k] = (ptr_depth_frm[i + 1] >> shift_by); //& (uint8_t)0b00000001;
-                        // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
-                        store_frame_lsb[i + 1] &= (uint8_t)and_val;
-                        // store_frame_test[y] = store_frame_lsb[i];
-                    }
-                    if (pipe_msb == NULL || !fwrite(store_frame_msb, sizeof(uint8_t), total_sz_8_bit, pipe_msb))
-                    {
-                        std::cout << "Error with fwrite pipe_msb frames" << std::endl;
-                        break;
-                    }
+                    std::cout << "Error with fwrite pipe_msb frames" << std::endl;
+                    break;
                 }
+                
 
-                if (pipe_lsb == NULL || !fwrite(store_frame_lsb, sizeof(uint8_t), total_sz_10_bit, pipe_lsb))
+                if (pipe_lsb == NULL || !fwrite(store_frame_lsb, sizeof(uint8_t), total_sz_lsb_bit, pipe_lsb))
                 {
                     std::cout << "Error with fwrite frames scaled depth" << std::endl;
                     break;
@@ -774,7 +751,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 // // {
                 // //     fprintf(stderr, "\n\nError encoding video only %ld\n\n", counter);
                 // // }
-                // if (!fwrite(store_frame_lsb, 1, total_sz_10_bit, pipe_lsb))
+                // if (!fwrite(store_frame_lsb, 1, total_sz_lsb_bit, pipe_lsb))
                 // {
                 //     std::cout << "Error with fwrite frames" << std::endl;
                 //     break;

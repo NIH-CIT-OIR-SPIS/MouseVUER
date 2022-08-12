@@ -207,11 +207,11 @@ void print_usage(std::string choice = "")
     if (choice == "" || choice == "-help" || choice == "-h")
     {
         std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp [options]" << std::endl;
+        std::cout << " [options]" << std::endl;
         std::cout << "Options:" << std::endl;
         std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
         std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
-        std::cout << " -hd <header txt file> : required Header file" << std::endl;
+        std::cout << " -hd <header txt file> : required Header file will be named something like video_header.txt" << std::endl;
         std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
         std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
         std::cout << " -help                  : Print this help" << std::endl;
@@ -221,12 +221,12 @@ void print_usage(std::string choice = "")
     else if (choice == "-print_psnr")
     {
         std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp -print_psnr <input_file>" << std::endl;
+        std::cout << " -print_psnr <INT> 0 or 1" << std::endl;
     }
     else if (choice == "-sz")
     {
         std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp -sz <frame_group_size>" << std::endl;
+        std::cout << "  -sz <frame_group_size>" << std::endl;
     }
     else if (choice == "-hd")
     {
@@ -246,11 +246,21 @@ void print_usage(std::string choice = "")
     }
     else if (choice == "-cmp")
     {
-        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
+        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory, IE where all the raw files lie, for developer only" << std::endl;
     }
     else
     {
-        std::cout << "Invalid choice" << std::endl;
+        std::cout << "Usage: " << std::endl;
+        std::cout << " [options]" << std::endl;
+        std::cout << "Options:" << std::endl;
+        std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
+        std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
+        std::cout << " -hd <header txt file> : required Header file" << std::endl;
+        std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
+        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
+        std::cout << " -help                  : Print this help" << std::endl;
+        std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
+        std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
     }
 }
 
@@ -1184,17 +1194,17 @@ int main(int argc, char *argv[])
     }
 
     InputParser input(argc, argv);
-    if (input.cmdOptionExists("-help"))
+    if (input.cmdOptionExists("-help") || input.cmdOptionExists("-h"))
     {
         std::cout << "Command line utility for compressing depth data and rgb data and infared from a camera." << std::endl;
-        print_usage("-help");
+        print_usage("");
         return EXIT_FAILURE;
     }
 
     if (!input.cmdOptionExists("-ilsb"))
     {
         std::cout << "Input lsb file is required" << std::endl;
-        print_usage("-ilsb");
+        print_usage("");
         return EXIT_FAILURE;
     }
 

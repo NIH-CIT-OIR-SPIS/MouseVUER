@@ -50,16 +50,16 @@ extern "C"
 
 static int frm_group_size = 3;
 static int print_psnr = 1;
-const int shift_by = 0;//0;
+const int shift_by = 0; // 0;
 static const int shift_back_by = 16 - (8 - shift_by);
 
 namespace buff_global
 {
     int video_frame_count = 0;
     uint16_t store_depth[1280 * 720] = {0};
-    //uint16_t store_depth_lsb[1280 * 720] = {0};
+    // uint16_t store_depth_lsb[1280 * 720] = {0};
     uint16_t store_raw_depth[1280 * 720] = {0};
-    //uint16_t store_raw_depth_lsb[1280 * 720] = {0};
+    // uint16_t store_raw_depth_lsb[1280 * 720] = {0};
     std::vector<double> psnr_vector;
     std::string input_raw_dir_gl = "";
     std::string output_dir_gl = "";
@@ -204,29 +204,20 @@ static int exec_ffprobe(std::string str_cmd)
 void print_usage(std::string choice = "")
 {
 
-    if (choice == "" || choice == "-help")
+    if (choice == "-num_frm")
     {
-        std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp [options]" << std::endl;
-        std::cout << "Options:" << std::endl;
-        std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
-        std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
-        std::cout << " -hd <header txt file> : required Header file" << std::endl;
-        std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
-        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
-        std::cout << " -help                  : Print this help" << std::endl;
-        std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
-        std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
+
+        std::cout << "Usage: -num_frm  <INT> number of frames to decompress (default: -1), must be valid" << std::endl;
     }
     else if (choice == "-print_psnr")
     {
         std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp -print_psnr <input_file>" << std::endl;
+        std::cout << " -print_psnr <INT> 0 or 1" << std::endl;
     }
     else if (choice == "-sz")
     {
         std::cout << "Usage: " << std::endl;
-        std::cout << "  ./help_decomp -sz <frame_group_size>" << std::endl;
+        std::cout << "  -sz <frame_group_size>" << std::endl;
     }
     else if (choice == "-hd")
     {
@@ -246,12 +237,24 @@ void print_usage(std::string choice = "")
     }
     else if (choice == "-cmp")
     {
-        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
+        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory, IE where all the raw files lie, for developer only" << std::endl;
     }
-    else
-    {
-        std::cout << "Invalid choice" << std::endl;
-    }
+    //{
+
+    std::cout << "\nOTHER OPTIONS: " << std::endl;
+    std::cout << "Usage: " << std::endl;
+    std::cout << " [options]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
+    std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
+    std::cout << " -hd <header txt file> : required Header file" << std::endl;
+    std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
+    std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
+    std::cout << " -help                  : Print this help" << std::endl;
+    std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
+    std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
+    std::cout << "Usage: -num_frm  <INT> number of frames to decompress (default: -1), must be valid" << std::endl;
+    //}
 }
 
 template <typename T>
@@ -341,19 +344,23 @@ double get_ssim(uint16_t *compressed, uint16_t *raw, int siz = 0, int pr_lum = 0
     double var_compr = img_variance(compressed, siz, mean_compr);
     double var_raw = img_variance(raw, siz, mean_raw);
     double covar = img_covariance(compressed, raw, siz, mean_compr, mean_raw);
-    if (pr_lum){
-        double lum = (2 * mean_compr * mean_raw + c1) / ( mean_compr * mean_compr + mean_raw * mean_raw + c1);
-    
+    if (pr_lum)
+    {
+        double lum = (2 * mean_compr * mean_raw + c1) / (mean_compr * mean_compr + mean_raw * mean_raw + c1);
+
         printf("Luminance SSIM: %f\n", lum);
     }
-    if (pr_contr || pr_struct){
+    if (pr_contr || pr_struct)
+    {
         double std_var1 = sqrt(var_compr);
         double std_var_raw = sqrt(var_raw);
-        if(pr_contr){
-            printf("Contrast SSIM: %f\n", ( (2*std_var1*std_var_raw + c2) / (var_compr + var_raw + c2) ));
+        if (pr_contr)
+        {
+            printf("Contrast SSIM: %f\n", ((2 * std_var1 * std_var_raw + c2) / (var_compr + var_raw + c2)));
         }
-        if(pr_struct){
-            printf("Structure SSIM: %f\n", ( (covar + c3) / (std_var1 * std_var_raw + c3) ));
+        if (pr_struct)
+        {
+            printf("Structure SSIM: %f\n", ((covar + c3) / (std_var1 * std_var_raw + c3)));
         }
     }
 
@@ -486,32 +493,20 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     {
         fread(store_raw_depth, sizeof(uint16_t), H * W, read_raw);
     }
-    if (max_d - min_d <= 1023 || frame_msb == NULL)
+
+    for (y = 0; y < H * W; ++y)
     {
-        for (i = 0, y = 0; i < H * W * 2; i += 2, ++y)
-        {
-            store_num = (uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8);
 
-            store_num += min_d;
-            store_depth[y] = store_num;
-            //store_depth_lsb[y] = store_num;
-        }
+        curr_lsb = (uint16_t)frame_lsb[y]; //((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
+
+        curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by; // 10;
+
+        store_num = curr_lsb | curr_msb;
+
+        store_depth[y] = store_num;
+        // store_depth_lsb[y] = curr_lsb;
     }
-    else
-    {
-        for (i = 0, y = 0; i < H * W * 2; i += 2, ++y)
-        {
 
-            curr_lsb = ((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
-
-            curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by;//10;
-
-            store_num = curr_lsb | curr_msb;
-
-            store_depth[y] = store_num;
-            //store_depth_lsb[y] = curr_lsb;
-        }
-    }
     // if (video_frame_count == 200)
     // {
     //     lineRead(store_depth_lsb);
@@ -570,7 +565,6 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
         if (video_frame_count == 30)
         {
             cv::imwrite("Testing_DIR/dec_img_30.png", dec_img_color);
-            
         }
 
         if (read_raw != NULL)
@@ -582,7 +576,8 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
             cv::applyColorMap(raw_img_color, raw_img_color, 9);
             cv::namedWindow("Raw Image", cv::WINDOW_AUTOSIZE);
             cv::imshow("Raw Image", raw_img_color);
-            if (video_frame_count == 30){
+            if (video_frame_count == 30)
+            {
                 cv::imwrite("Testing_DIR/raw_img_30.png", raw_img_color);
             }
         }
@@ -669,7 +664,7 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
             }
             else if (typ == 1)
             {
-                
+
                 data[*count] = (uint8_t *)malloc(frame->linesize[channel] * frame->height); // 2 is the red channel
                 // printf("frame->linesize[2]: %d\n", frame->linesize[2]);
                 memcpy(data[*count], frame->data[channel], frame->linesize[channel] * frame->height);
@@ -752,9 +747,10 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
 // }
 
 static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb, int num_frames_msb,
-                      std::string output_dir, std::string input_file_lsb, std::string input_file_msb, std::string input_raw_file_dir)
+                      std::string output_dir, std::string input_file_lsb, std::string input_file_msb, std::string input_raw_file_dir, int num_frm_dec)
 {
-
+    int grp_trck = -1;
+    int count_grper = 0;
     int ret = 0;
     int i = 0, j = 0, y = 0, x = 0, frm_count_lsb = 0, frm_count_msb = 0;
     int *pt_y = NULL, *pt_x = NULL;
@@ -805,11 +801,11 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         src_filename_msb = (char *)malloc(input_file_msb.size() + 1);
         strcpy(src_filename_msb, input_file_msb.c_str());
     }
-    if (max_d - min_d <= 1023)
-    {
-        printf("max_d - min_d <= 1023\n");
-        take_msb = false;
-    }
+    // if (max_d - min_d <= 1023)
+    // {
+    //     printf("max_d - min_d <= 1023\n");
+    //     take_msb = false;
+    // }
 
     /* open input file, and allocate format context */
     if (avformat_open_input(&fmt_ctx, src_filename, NULL, NULL) < 0)
@@ -938,10 +934,13 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
     //     lsb_frame_buf[i] = (uint8_t *)malloc(2560 *);
     //     msb_frame_buf[i] = (uint8_t *)malloc(video_dst_bufsize_msb);
     // }
-
+    if (num_frm_dec > 0)
+    {
+        grp_trck = num_frm_dec / frm_group_size;
+    }
     if (take_msb)
     {
-        while (*pt_lsb_frm_count < num_frames_lsb || *pt_msb_frm_count < num_frames_msb)
+        while ((*pt_lsb_frm_count < num_frames_lsb || *pt_msb_frm_count < num_frames_msb))
         {
             while (*pt_x < frm_group_size)
             {
@@ -1051,6 +1050,11 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             {
                 break;
             }
+            ++count_grper;
+            if (count_grper >= grp_trck && grp_trck != -1)
+            {
+                break;
+            }
             // fprintf(stderr, "hi\n");
             //  while (i < 10 && lst_lsb[i] != NULL && lst_msb[i] != NULL)
             //  {
@@ -1131,7 +1135,6 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         decode_packet(video_dec_ctx, NULL, frame, 0, pt_x, lsb_frame_buf, pt_lsb_frm_count, 0);
     }
 
-
 end:
     std::cout << "Average PSNR: " << getAverage(buff_global::psnr_vector) << std::endl;
     // if (src_filename_msb != NULL)
@@ -1166,7 +1169,33 @@ end:
 #endif
     return 1;
 }
+/**
+ * @brief
+ * function to find the number closest to n and divisible by m
+ * @param n
+ * @param m
+ * @return int
+ */
+int closestNumber(int n, int m)
+{
+    // find the quotient
+    int q = n / m;
 
+    // 1st possible closest number
+    int n1 = m * q;
+
+    // 2nd possible closest number
+    int n2 = (n * m) > 0 ? (m * (q + 1)) : (m * (q - 1));
+
+    // if true, then n1 is the required closest number
+    if (std::abs(n - n1) < std::abs(n - n2))
+    {
+        return n1;
+    }
+
+    // else n2 is the required closest number
+    return n2;
+}
 long double getCompressionRatio(std::uintmax_t sz, int num_frames)
 {
     std::uintmax_t calc_raw_sz = (std::uintmax_t)num_frames * H * W * 2;
@@ -1176,7 +1205,7 @@ int main(int argc, char *argv[])
 {
     int deref1 = 0, deref2 = 0, deref3 = 0; // deref4 = 0, deref5 = 0, deref6 = 0;
     int ret = 0;
-    if (argc > 13 || argc < 2)
+    if (argc > 15 || argc < 2)
     {
         std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
         print_usage();
@@ -1184,17 +1213,17 @@ int main(int argc, char *argv[])
     }
 
     InputParser input(argc, argv);
-    if (input.cmdOptionExists("-help"))
+    if (input.cmdOptionExists("-help") || input.cmdOptionExists("-h"))
     {
         std::cout << "Command line utility for compressing depth data and rgb data and infared from a camera." << std::endl;
-        print_usage("-help");
+        print_usage("");
         return EXIT_FAILURE;
     }
 
     if (!input.cmdOptionExists("-ilsb"))
     {
         std::cout << "Input lsb file is required" << std::endl;
-        print_usage("-ilsb");
+        print_usage("");
         return EXIT_FAILURE;
     }
 
@@ -1242,6 +1271,7 @@ int main(int argc, char *argv[])
 
     int num_frames_lsb = 0;
     int num_frames_msb = 0;
+    int num_frm_dec = -1;
     num_frames_lsb = exec_ffprobe(ffprobe_cmd);
     if (input.cmdOptionExists("-imsb"))
     {
@@ -1279,6 +1309,17 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (input.cmdOptionExists("-num_frm"))
+    {
+        num_frm_dec = parse_integer_cmd(input, "-num_frm", num_frm_dec);
+        if (num_frm_dec < -1 || num_frm_dec == 0 || num_frm_dec > num_frames_lsb || num_frm_dec > num_frames_msb)
+        {
+            std::cout << "Invalid value for -num_frm must be less than the number of frames in file" << std::endl;
+            print_usage("-num_frm");
+            return EXIT_FAILURE;
+        }
+    }
+
     // int i = 100;
 
     // for (; i > 3; i--)
@@ -1289,7 +1330,13 @@ int main(int argc, char *argv[])
     //         break;
     //     }
     // }
-    frm_group_size = 50;
+    frm_group_size = 10;
+    if (num_frm_dec != -1)
+    {
+        num_frm_dec = closestNumber(num_frm_dec, frm_group_size);
+        printf("num_frm_dec: %d\n", num_frm_dec);
+        printf("group_count %d\n", closestNumber(num_frm_dec, frm_group_size));
+    }
     printf("frm_group_size: %d\n", frm_group_size);
 
     std::uintmax_t total_compressed_sz = 0;
@@ -1305,10 +1352,9 @@ int main(int argc, char *argv[])
     {
         std::cout << e.what() << '\n';
     }
-    
 
     timer tStart;
-    ret = !decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir);
+    ret = !decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir, num_frm_dec);
     unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();
     std::cout << "Time decompress run for in seconds: " << (milliseconds_ellapsed / 1000.0) << std::endl;
     if (ret)
@@ -1317,7 +1363,7 @@ int main(int argc, char *argv[])
         std::cout << "Decompression failed" << std::endl;
         return EXIT_FAILURE;
     }
-    
+
     std::cout << "Compression ratio is: " << getCompressionRatio(total_compressed_sz, num_frames_lsb) << std::endl;
     std::cout << buff_global::video_frame_count << " frames were compressed" << std::endl;
     return EXIT_SUCCESS;
@@ -1327,15 +1373,15 @@ int main(int argc, char *argv[])
 // num_frames_lsb: 27000 num_frames_msb 27000
 // frm_group_size: 50
 // type: 0 *count: 1
-// wq *count: 1 ret -11 
+// wq *count: 1 ret -11
 // type: 0 *count: 2
-// wq *count: 2 ret -11 
+// wq *count: 2 ret -11
 // type: 0 *count: 3
-// wq *count: 3 ret -11 
+// wq *count: 3 ret -11
 // type: 0 *count: 4
-// wq *count: 4 ret -11 
+// wq *count: 4 ret -11
 // type: 0 *count: 5
-// wq *count: 5 ret -11 
+// wq *count: 5 ret -11
 // lsb_frames_dec: 27000
 // msb_frames_dec: 27000
 // Average PSNR: 71.6306
