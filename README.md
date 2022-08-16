@@ -169,3 +169,13 @@ make -j4 && ./bin/multicam -sec 60 -thr 4 -fps 30 -crf 22 -numraw 450 -max_depth
 ```
 for i in {1..20}; do gdb -q -ex 'set pagination off' -ex 'set args -dir Testing_DIR/ -sec 15 -numraw 450 -crf 17 -bagfile ~/Downloads/One_Mouse_5_minutes_depth.bag' -ex run  ./bin/multicam -ex quit; done
 ```
+
+
+### Run collect_raw for 30 seconds using ffv1, with aligned frames
+make -j4 && ./bin/collect_raw -dir Testing_DIR/ -sec 30 -align 1 -jsonfile ../Code/Default.json
+
+### Run decompress frames to tif file in directory
+python3 extract_ffmpeg_frames.py -i Testing_DIR/depth_vid*.mkv -irgb Testing_DIR/color_vid*.mp4 -o Test_out/ -f 0
+
+### Run decompress specific number of frames to a tif file in a directory (in this case decompressing 63 frames)
+python3 extract_ffmpeg_frames.py -i Testing_DIR/depth_vid*.mkv -irgb Testing_DIR/color_vid*.mp4 -o Test_out/ -f 63
