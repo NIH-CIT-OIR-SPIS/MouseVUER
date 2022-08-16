@@ -15,7 +15,9 @@ Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to rec
 sudo apt update && \
 sudo apt install python3-pip && \
 python3 -m pip install scapy && \
-python3 -m pip install pycrypto 
+python3 -m pip install pycrypto && \
+python3 -m pip install ffmpeg-python && \
+python3 -m pip install numpy
 ```
 
 
