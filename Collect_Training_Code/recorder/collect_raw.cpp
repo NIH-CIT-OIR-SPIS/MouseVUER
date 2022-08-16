@@ -138,7 +138,7 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
     // std::string depth_cmd = ffmpeg_cmd + dir + "depth_vid.yuv";
     // ffplay -f rawvideo -pixel_format yuv420p16le -video_size 1280x720 -framerate 30 Testing_DIR/depth_vid.yuv
     std::string color_cmd = ffmpeg_color + dir + "color_vid" + time_str + ".mp4";
-    std::string depth_cmd = ffmpeg_cmd + dir + "depth_vid" + time_str + ".avi";
+    std::string depth_cmd = ffmpeg_cmd + dir + "depth_vid" + time_str + ".mkv";
     uint8_t *ptr_depth_frame = NULL;
     // uint8_t *ptr_color_frame = NULL;
 
