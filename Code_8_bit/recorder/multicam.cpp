@@ -144,6 +144,11 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
 
     std::string re_flag = (path_out.find("rtmp:") != std::string::npos) ? " -re " : "";
     std::string flv_flag = (path_out.find("rtmp:") != std::string::npos) ? " -f flv " : "";
+    std::string apostr = "\'";
+    if (!path_out.find("rtmp:")){
+        apostr += path_out;
+        path_out = apostr + "\'";
+    }
     std::string tune_latency = ""; //" -tune zerolatency ";
     int num_bframes = 0;
 
