@@ -36,12 +36,18 @@ def run_processes_parallel(cmd_lst):
                 p.send_signal(signal.SIGQUIT)
 
 def extract_frame_command(input_vid, frame_num, output_dir):
-    command = 'ffmpeg -loglevel error -nostats -y -threads 2 -i {:s} -vframes {:d} {:s}/depth_frame_%06d.tif'.format(input_vid, frame_num, output_dir)
+    if frame_num <= 0:
+        command = 'ffmpeg -loglevel error -nostats -y -threads 2 -i {:s} {:s}/frame_%06d.tif'.format(input_vid, output_dir)
+    else:
+        command = 'ffmpeg -loglevel error -nostats -y -threads 2 -i {:s} -vframes {:d} {:s}/depth_frame_%06d.tif'.format(input_vid, frame_num, output_dir)
     #sp.call(command, shell=True)
     return command
 
 def extract_rgb_frame_command(input_vid_mp4, frame_num, output_dir):
-    command = 'ffmpeg -loglevel error -nostats -y -threads 2 -i {:s} -vframes {:d} {:s}/rgb_frame_%06d.tif'.format(input_vid_mp4, frame_num, output_dir)
+    if frame_num <= 0:
+        command = 'ffmpeg -loglevel error -nostats -y -threads 2 -i {:s} {:s}/rgb_frame_%06d.tif'.format(input_vid_mp4, output_dir)
+    else:
+        command = 'ffmpeg -loglevel error -nostats -y -threads 2 -i {:s} -vframes {:d} {:s}/rgb_frame_%06d.tif'.format(input_vid_mp4, frame_num, output_dir)
     return command
 
 def options():
@@ -49,7 +55,7 @@ def options():
     parser.add_argument('-i', '--input', help='Input video', required=True)
     parser.add_argument('-irgb', '--input_rgb', help='Input video', required=True)
     parser.add_argument('-o', '--output', help='Output directory', required=True)
-    parser.add_argument('-f', '--frame', help='Number of frames to uncompress', required=True)
+    parser.add_argument('-f', '--frame', help='Number of frames to uncompress, input <=0 to decompress all frames', required=True)
     return parser.parse_args()
 
 def main():
