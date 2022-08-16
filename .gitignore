@@ -9,7 +9,8 @@ Code_8_bit/Testing_DIR/*
 *.mkv
 *.mp4
 *.yuv
-
+*.tif
+*.avi
 
 *.pyc
 *.obj
