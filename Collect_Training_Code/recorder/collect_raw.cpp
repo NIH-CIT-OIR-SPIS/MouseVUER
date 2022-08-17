@@ -132,7 +132,7 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
     FILE *pipe_depth = NULL;
     FILE *pipe_color = NULL;
     std::string pixf = "gray16le";
-    std::string ffmpeg_color = "ffmpeg -loglevel error -nostats -y -f rawvideo -pix_fmt rgb24 -c:v rawvideo -s " + std::to_string(width_rgb) + "x" + std::to_string(height_rgb) + " -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec libx264rgb -preset ultrafast -movflags +faststart ";
+    std::string ffmpeg_color = "ffmpeg -loglevel error -nostats -y -f rawvideo -pix_fmt rgb24 -c:v rawvideo -s " + std::to_string(width_rgb) + "x" + std::to_string(height_rgb) + " -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec libx264rgb -preset ultrafast -tune zerolatency -x264-params \"vbv_maxrate=9984:vbv_bufsize=9984\" -movflags +faststart ";
     std::string ffmpeg_cmd = "ffmpeg -loglevel error -nostats -y -f rawvideo -pix_fmt " + pixf + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec ffv1 -level 3 -threads 4 -coder 1 -context 0 -g 1 -slices 24 -slicecrc 1 -pix_fmt " + pixf + " -movflags +faststart ";
     // std::string ffmpeg_cmd = "ffmpeg -loglevel error -nostats -y -threads 4 -f rawvideo -pix_fmt yuv420p16le -c:v rawvideo -s 1280x720 -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec  -pix_fmt yuv420p16le -movflags +faststart ";
     // std::string depth_cmd = ffmpeg_cmd + dir + "depth_vid.yuv";
