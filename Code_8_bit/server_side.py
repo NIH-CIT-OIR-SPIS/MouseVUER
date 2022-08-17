@@ -167,7 +167,7 @@ def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str):
     addr = validate_ip(server_addr)
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
-    cmd_lsb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y -movflags +faststart {}/test_lsb_{}_out.mp4".format(loglevel, addr, port, dir, port)
+    cmd_lsb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_lsb_{}_out.mp4".format(loglevel, addr, port, dir, port)
     cmd_msb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_msb_{}_out.mp4".format(loglevel, addr, port + 1, dir,  port + 1)
     return cmd_lsb, cmd_msb
 
