@@ -15,8 +15,8 @@ const int width = 1280;
 const int height = 720;
 const int fps = 30;
 
-const int width_rgb = 640;
-const int height_rgb = 360;
+const int width_rgb = width;
+const int height_rgb = height;
 struct timer
 {
     void reset()
@@ -258,7 +258,8 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
                 std::cout << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
                 break;
             }
-            rs2::frame aligned_frame = align_to_color.process(frameset);
+            //rs2::frame aligned_frame = align_to_color.process(frameset);
+            frameset = align_to_color.process(frameset);
             auto depth = frameset.get_depth_frame();
             auto color = frameset.get_color_frame();
 
