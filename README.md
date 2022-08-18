@@ -170,6 +170,10 @@ make -j4 && ./bin/multicam -sec 60 -thr 4 -fps 30 -crf 22 -numraw 450 -max_depth
 for i in {1..20}; do gdb -q -ex 'set pagination off' -ex 'set args -dir Testing_DIR/ -sec 15 -numraw 450 -crf 17 -bagfile ~/Downloads/One_Mouse_5_minutes_depth.bag' -ex run  ./bin/multicam -ex quit; done
 ```
 
+### Decompress each raw file seperately
+```
+ffmpeg -i Testing_DIR/test_lsb_5000_out.mp4 -i Testing_DIR/test_msb_5001_out.mp4 -map 0:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_lsb_5000.mkv -map 1:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_msb_5001.mkv
+```
 
 ### Run collect_raw for 30 seconds using ffv1, with aligned frames
 make -j4 && ./bin/collect_raw -dir Testing_DIR/ -sec 30 -align 1 -jsonfile ../Code/Default.json
