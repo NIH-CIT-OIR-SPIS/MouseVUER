@@ -1320,17 +1320,21 @@ int main(int argc, char *argv[])
         }
     }
 
-    // int i = 100;
-
-    // for (; i > 3; i--)
-    // {
-    //     if (num_frames_lsb % i == 0)
-    //     {
-    //         frm_group_size = i;
-    //         break;
-    //     }
-    // }
-    frm_group_size = 10;
+    if (input.cmdOptionExists("-sz"))
+    {
+        frm_group_size = parse_integer_cmd(input, "-sz", frm_group_size);
+        if (frm_group_size < 1 || frm_group_size > num_frames_lsb)
+        {
+            std::cout << "Invalid value for -sz must be less than the number of frames in file" << std::endl;
+            print_usage("-sz");
+            return EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        frm_group_size = 10;
+    }
+    
     if (num_frm_dec != -1)
     {
         num_frm_dec = closestNumber(num_frm_dec, frm_group_size);

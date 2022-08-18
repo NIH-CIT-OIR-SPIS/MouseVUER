@@ -28,7 +28,7 @@ COUNTRY_ORGIN = "US"
 PORT_CLIENT_LISTEN = 1026
 HOST_ADDR = "192.168.1.234"
 BYTES_SIZE = 4096
-WAIT_SEC = 1
+WAIT_SEC = 0.03
 
 def get_my_ip():
     """
@@ -101,7 +101,18 @@ def main():
     client_cert = "keys/client.crt"
     client_key = "keys/client.key"
     client = Client(server_sni_hostname, HOST_ADDR, PORT_CLIENT_LISTEN, server_cert, client_cert, client_key)
-    client.connect_to_server(HOST_ADDR, PORT_CLIENT_LISTEN)
+    # Keep connecting until keyboard interrupt or shutdown signal
+    while True:
+        try:
+            client.connect_to_server(HOST_ADDR, PORT_CLIENT_LISTEN)
+        except KeyboardInterrupt:
+            print("Keyboard interrupt")
+            break
+        except Exception as e:
+            print("Error: {}".format(e))
+            break
+    # while True:
+    #     client.connect_to_server(HOST_ADDR, PORT_CLIENT_LISTEN)
     #return 0
     # context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=server_cert)
     # context.load_cert_chain(certfile=client_cert, keyfile=client_key)
