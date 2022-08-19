@@ -85,6 +85,7 @@ class Client:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #s.settimeout(WAIT_SEC)
         frt = os.path.basename(__file__)
+        print("strftime: {}".format(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())))
         # Keep polling
         # while True:
         #     try:
@@ -104,7 +105,7 @@ class Client:
             print("Waiting for connection to host: {}, port {}...".format(host, port))
             continue
         conn = self.context.wrap_socket(s, server_side=False, server_hostname=self.server_sni_hostname)
-        message = "Host: {}, Port: {}, My_ip: {}".format(host, port, get_my_ip())
+        message = "Host: {}, Port: {}, My_ip: {}, ".format(host, port, get_my_ip())
         conn.send(message.encode('ascii'))
         data = conn.recv(BYTES_SIZE)
         recieved = "{}".format(data.decode("ascii")) # decode the data
