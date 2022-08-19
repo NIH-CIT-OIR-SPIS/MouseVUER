@@ -60,15 +60,15 @@ def run_rtmp_command(recieved: str):
     #print(cmd)
     os.system(cmd)
 
-def trying_connect(s: socket, host, port):
-    print("Trying to connect to {}:{}".format(host, port))
-    while s.connect_ex((host, port)) != 0:
-        continue
-        # if count > 300000:
-        #     print("Connection failed. Script Waiting {} seconds...".format(WAIT_SEC))
-        #     count = 0
-        # count += 1
-        #time.sleep(WAIT_SEC)
+# def trying_connect(s: socket, host, port):
+#     print("Trying to connect to {}:{}".format(host, port))
+#     while s.connect_ex((host, port)) != 0:
+#         continue
+#         # if count > 300000:
+#         #     print("Connection failed. Script Waiting {} seconds...".format(WAIT_SEC))
+#         #     count = 0
+#         # count += 1
+#         #time.sleep(WAIT_SEC)
 
 class Client:
     def __init__(self, server_sni_hostname: str, host: str, port: int, server_cert_file: str, client_cert_file: str, client_key_file: str):
