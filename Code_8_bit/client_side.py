@@ -23,22 +23,7 @@ import hashlib
 # from Crypto.PublicKey import RSA
 import signal
 import ssl
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
 
-stdout_handler = logging.StreamHandler(sys.stdout)
-stdout_handler.setLevel(logging.DEBUG)
-stdout_handler.setFormatter(formatter)
-
-file_handler = logging.FileHandler('client_side.log')
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
-
-
-logger.addHandler(file_handler)
-logger.addHandler(stdout_handler)
-logger.info("Started client")
 
 COMMON_NAME = "."
 ORGANIZATION = "NIH"
@@ -47,6 +32,23 @@ PORT_CLIENT_LISTEN = 1026
 HOST_ADDR = "192.168.1.234"
 BYTES_SIZE = 4096
 WAIT_SEC = 4
+LOGFILE = "client_side.log"
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setFormatter(formatter)
+
+file_handler = logging.FileHandler(LOGFILE)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+
+logger.addHandler(file_handler)
+logger.addHandler(stdout_handler)
+logger.info("Started client")
 
 def get_my_ip():
     """
@@ -134,13 +136,7 @@ class Client:
         run_rtmp_command(recieved)
         
 
-
-
-
-
 def main():
-
-    
     server_sni_hostname = "SCHORE_SERVER"
     if not (os.path.exists("keys/") and os.path.isfile("keys/client.key") and os.path.isfile("keys/client.crt") and os.path.isfile("keys/server.crt")):
         logger.error("Missing keys/client.key, keys/client.crt, keys/server.crt")
@@ -150,8 +146,10 @@ def main():
     client_key = "keys/client.key"
     client = Client(server_sni_hostname, HOST_ADDR, PORT_CLIENT_LISTEN, server_cert, client_cert, client_key)
     # Keep connecting until keyboard interrupt or shutdown signal
+    len_client_side = os.path.getsize("client_side.py")
     while True:
         try:
+            
             client.connect_to_server(HOST_ADDR, PORT_CLIENT_LISTEN)
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt")
