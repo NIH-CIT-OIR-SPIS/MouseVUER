@@ -2,6 +2,7 @@ Code/Testing_DIR/*
 Code/bin/*
 Code_8_bit/bin/*
 Code_8_bit/Testing_DIR/*
+Collect_Training_Code/Testing_DIR/*
 
 #ignore .bin files 
 *.bin
@@ -17,6 +18,8 @@ Code_8_bit/Testing_DIR/*
 # Ignore key files
 *.key
 *.crt
+*.log
+
 
 
 # Prerequisites
