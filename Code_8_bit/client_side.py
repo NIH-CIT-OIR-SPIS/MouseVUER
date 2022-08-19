@@ -77,8 +77,12 @@ def run_rtmp_command(recieved: str):
     run_it = int(arr[7])
     cmd = "./bin/multicam -dir Testing_DIR/ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit)
     #print(cmd)
-    os.system(cmd)
-
+    # Try to run shell command, timeout on error
+    try:
+        os.system(cmd)
+    except Exception as e:
+        print("No response heard go back to waiting")
+        pass
 # def trying_connect(s: socket, host, port):
 #     print("Trying to connect to {}:{}".format(host, port))
 #     while s.connect_ex((host, port)) != 0:
@@ -120,9 +124,12 @@ class Client:
         #     # except Exception as e:
         #     #     print("Fatal Error: {}".format(e))
         #     #     sys.exit(1)
+        time_trc = time.time()
         while s.connect_ex((host, port)) != 0:
-            logger.info("Waiting for connection to host: {}, port {}...".format(host, port))
-            continue
+            if time.time() - time_trc >= 5.0:
+                logger.info("Waiting for connection to host: {}, port {}...".format(host, port))
+                time_trc = time.time()
+            
         conn = self.context.wrap_socket(s, server_side=False, server_hostname=self.server_sni_hostname)
         message = "Host: {}, Port: {}, My_ip: {}, ".format(host, port, get_my_ip())
         conn.send(message.encode('ascii'))
@@ -146,7 +153,11 @@ def main():
     client_key = "keys/client.key"
     client = Client(server_sni_hostname, HOST_ADDR, PORT_CLIENT_LISTEN, server_cert, client_cert, client_key)
     # Keep connecting until keyboard interrupt or shutdown signal
-    len_client_side = os.path.getsize("client_side.py")
+    len_client_side = os.path.getsize(LOGFILE)
+    if len_client_side > 1000000*50:
+        with open (LOGFILE, "w"):
+            pass
+    
     while True:
         try:
             
@@ -154,8 +165,13 @@ def main():
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt")
             break
+        except ConnectionResetError as con_res_err:
+            logger.error("Error con_res_err: {}".format(con_res_err))
+            pass
+        # except ConnectionRefusedError as ref_err:
+        #     logger.error("Error b: {}".format(ref_err))
         except Exception as e:
-            logger.error("Error: {}".format(e))
+            logger.error("Fatal error: {}".format(e))
             break
     # while True:
     #     client.connect_to_server(HOST_ADDR, PORT_CLIENT_LISTEN)

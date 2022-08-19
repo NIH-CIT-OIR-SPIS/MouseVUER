@@ -167,9 +167,9 @@ def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str):
     addr = validate_ip(server_addr)
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
-    str_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-    cmd_lsb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_lsb_{}_{:H:M:S}_out.mp4".format(loglevel, addr, port, dir, port, str_time)
-    cmd_msb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_msb_{}_{:H:M:S}_out.mp4".format(loglevel, addr, port + 1, dir,  port + 1, str_time)
+    str_time = str(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
+    cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_lsb_{}_{}_out.mp4".format(loglevel, addr, port, dir, port, str_time)
+    cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_msb_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  port + 1, str_time)
     return cmd_lsb, cmd_msb
 
 def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, dir: str):
@@ -325,11 +325,14 @@ class Server:
         self.host_port = {}
         self.server_ip = get_my_ip()
         print("Mapping to all ports {}".format(self.client_ip_lst))
+        if not self.client_ip_lst:
+            raise Exception("No clients seen please try again.")
         self.__initialize_maps()
         print("Mapping : {}".format(self.ffmpeg_port_map))
         self.thread_list = []
         #self.__start_ffmpeg(cmd_list)
         self.print_lock = threading.Lock()
+        
         if os.path.isdir(self.argdict['dir']):
             with open(os.path.join(self.argdict['dir'], "video_head_file.txt"), "w") as f:
                 f.write(str(self.argdict['max_depth']) + " " + str(self.argdict['min_depth']) + " " + str(self.argdict['depth_unit']))
@@ -387,7 +390,8 @@ class Server:
         print("Listen")
         try:
             self.sock.listen(6)
-            while True:
+            count = 0
+            while count < self.argdict['num_clients']:
                 clientsocket, addr = self.sock.accept()
                 #self.print_lock.acquire()
                 with self.print_lock:
@@ -401,11 +405,19 @@ class Server:
                 # ## START UP FFMPEG SERVER HERE
                 # make_commands(addr, "debug", addr[1])
                 clientsocket.settimeout(60)
-                threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr, ffmpeg_port,)).start()
-                # self.thread_list.append(th)
-                # th.start()
+                th = threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr, ffmpeg_port,))
+                self.thread_list.append(th)
+                th.start()
+                count += 1
+
+
+            for ty in self.thread_list:
+                ty.join()
+            self.sock.close()
+                
         except KeyboardInterrupt:
             print("Keyboard Interrupt, here")
+            
             self.sock.close()
 
     def threaded_get_info(self, clientsocket, addr, ffmpeg_port):
@@ -437,6 +449,7 @@ class Server:
             conn.close()
             with self.print_lock:
                 print("Connection closed\n")
+                
             #print("Connection closed")
 
             
