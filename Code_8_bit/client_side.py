@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # from _thread import start_new_thread
+
 import os
 import socket    
 import multiprocessing
@@ -28,7 +29,7 @@ COUNTRY_ORGIN = "US"
 PORT_CLIENT_LISTEN = 1026
 HOST_ADDR = "192.168.1.234"
 BYTES_SIZE = 4096
-WAIT_SEC = 0.03
+WAIT_SEC = 0.
 
 def get_my_ip():
     """
@@ -59,6 +60,16 @@ def run_rtmp_command(recieved: str):
     #print(cmd)
     os.system(cmd)
 
+def trying_connect(s: socket, host, port):
+    print("Trying to connect to {}:{}".format(host, port))
+    while s.connect_ex((host, port)) != 0:
+        continue
+        # if count > 300000:
+        #     print("Connection failed. Script Waiting {} seconds...".format(WAIT_SEC))
+        #     count = 0
+        # count += 1
+        #time.sleep(WAIT_SEC)
+
 class Client:
     def __init__(self, server_sni_hostname: str, host: str, port: int, server_cert_file: str, client_cert_file: str, client_key_file: str):
         self.server_addr = host
@@ -68,12 +79,30 @@ class Client:
         self.context.load_cert_chain(certfile=client_cert_file, keyfile=client_key_file)
         #self.connect_to_server('127.0.0.1', 12345)
 
+
+        
     def connect_to_server(self, host, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #s.settimeout(WAIT_SEC)
+        frt = os.path.basename(__file__)
+        # Keep polling
+        # while True:
+        #     try:
+        #         if not trying_connect(s, host, port):
+        #             continue
+        #         break
+        #     except socket.timeout as e:
+        #         #print("Error: timeout {}".format(e))
+        #         continue
+        #     except socket.error as e:
+        #         print("Fatal Error: {}".format(e))
+        #         sys.exit(1)
+        #     # except Exception as e:
+        #     #     print("Fatal Error: {}".format(e))
+        #     #     sys.exit(1)
         while s.connect_ex((host, port)) != 0:
-            print("Connection failed. Script {} Waiting {} seconds...".format(os.path.basename(__file__), WAIT_SEC))
-            time.sleep(WAIT_SEC)
- 
+            print("Waiting for connection to host: {}, port {}...".format(host, port))
+            continue
         conn = self.context.wrap_socket(s, server_side=False, server_hostname=self.server_sni_hostname)
         message = "Host: {}, Port: {}, My_ip: {}".format(host, port, get_my_ip())
         conn.send(message.encode('ascii'))
