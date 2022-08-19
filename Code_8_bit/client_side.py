@@ -15,6 +15,7 @@ import logging
 import selectors
 import types
 import sys
+import logging
 # Secure Sockets Layer (SSL)
 import hashlib
 # from Crypto import Random
@@ -22,6 +23,22 @@ import hashlib
 # from Crypto.PublicKey import RSA
 import signal
 import ssl
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setFormatter(formatter)
+
+file_handler = logging.FileHandler('client_side.log')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+
+logger.addHandler(file_handler)
+logger.addHandler(stdout_handler)
+logger.info("Started client")
 
 COMMON_NAME = "."
 ORGANIZATION = "NIH"
@@ -29,7 +46,7 @@ COUNTRY_ORGIN = "US"
 PORT_CLIENT_LISTEN = 1026
 HOST_ADDR = "192.168.1.234"
 BYTES_SIZE = 4096
-WAIT_SEC = 0.
+WAIT_SEC = 4
 
 def get_my_ip():
     """
@@ -85,7 +102,7 @@ class Client:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #s.settimeout(WAIT_SEC)
         frt = os.path.basename(__file__)
-        print("strftime: {}".format(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())))
+        logger.info("Start strftime: {}".format(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())))
         # Keep polling
         # while True:
         #     try:
@@ -102,7 +119,7 @@ class Client:
         #     #     print("Fatal Error: {}".format(e))
         #     #     sys.exit(1)
         while s.connect_ex((host, port)) != 0:
-            print("Waiting for connection to host: {}, port {}...".format(host, port))
+            logger.info("Waiting for connection to host: {}, port {}...".format(host, port))
             continue
         conn = self.context.wrap_socket(s, server_side=False, server_hostname=self.server_sni_hostname)
         message = "Host: {}, Port: {}, My_ip: {}, ".format(host, port, get_my_ip())
@@ -126,6 +143,7 @@ def main():
     
     server_sni_hostname = "SCHORE_SERVER"
     if not (os.path.exists("keys/") and os.path.isfile("keys/client.key") and os.path.isfile("keys/client.crt") and os.path.isfile("keys/server.crt")):
+        logger.error("Missing keys/client.key, keys/client.crt, keys/server.crt")
         raise Exception("Error finding ssl files")
     server_cert = "keys/server.crt"
     client_cert = "keys/client.crt"
@@ -136,10 +154,10 @@ def main():
         try:
             client.connect_to_server(HOST_ADDR, PORT_CLIENT_LISTEN)
         except KeyboardInterrupt:
-            print("Keyboard interrupt")
+            logger.info("Keyboard interrupt")
             break
         except Exception as e:
-            print("Error: {}".format(e))
+            logger.error("Error: {}".format(e))
             break
     # while True:
     #     client.connect_to_server(HOST_ADDR, PORT_CLIENT_LISTEN)
