@@ -90,7 +90,7 @@ Then For ***each*** client computer:
 
 ### For each Client 
 ```
-cd ~/DepthRecordingTool/Code_8_bit/ && \
+cd ~/DepthCameraRecordingTool/Code_8_bit/ && \
 make clean && \
 make -j4
 ```
@@ -103,7 +103,7 @@ Then if prompted type in 1 and hit ENTER
 Using the arrow keys go down to the very bottom of the file
 Then add the following text replacing USER with your client username found if you go to settings and users:
 ```
-@reboot sleep 10; export XAUTHORITY=/home/<USER>/.Xauthority; cd /home/<USER>/DepthRecordingTool/Code_8_bit/ && python3 client_side.py &
+@reboot sleep 10; export XAUTHORITY=/home/<USER>/.Xauthority; cd /home/<USER>/DepthCameraRecordingTool/Code_8_bit/ && python3 client_side.py &
 ```
 Then hit the keys CTRL+X then Y then ENTER
 
