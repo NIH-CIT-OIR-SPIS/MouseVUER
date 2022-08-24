@@ -114,6 +114,15 @@ sudo reboot
 
 Repeat for each client
 
+### Running Server
+
+Running a recording for 30 seconds at a crf of 22
+```
+python3 server_side.py --dir Testing_DIR/ --num_clients 4 --json Default.json --time_run 30 --crf 22
+```
+
+
+
 
 
 

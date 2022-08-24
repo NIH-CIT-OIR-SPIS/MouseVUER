@@ -17,7 +17,8 @@ sudo apt install python3-pip && \
 python3 -m pip install scapy && \
 python3 -m pip install pycrypto && \
 python3 -m pip install ffmpeg-python && \
-python3 -m pip install numpy
+python3 -m pip install numpy && \
+sudo apt-get install python3-tk
 ```
 
 
@@ -72,11 +73,13 @@ sudo ldconfig -v
 ```
 
 2) Then 
+
 ```
 sudo nano /usr/local/lib/pkgconfig/opencv4.pc
 ```
 
 3) And if nothing is there then copy the following to the opencv4.pc file:
+
 ```
 # Package Information for pkg-config
 
@@ -111,8 +114,6 @@ sudo ldconfig -v
 
 
 
-
-
 ### Directions for Use
 Then plug in your Intel RealSense Camera into the computer's USB port
 
@@ -133,17 +134,209 @@ Then in order to see a list of options do the following
 
 ### Examples
 For example here is a simple recording for 30 seconds with files saved to Testing_DIR/
+
 ```
 ./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 4 -jsonfile Default.json
 ```
 
 For command help type:
+
 ```
 ./bin/multicam -h
 ```
 
 
+
+## Run multicam program
+
+```
+make -j4 && ./bin/multicam -sec 60 -thr 4 -fps 30 -crf 22 -numraw 450 -max_depth 1000 -dir Testing_DIR/ -bagfile ~/Downloads/fishy-fish.bag && ./bin/decompress Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 
+
+```
+
+
+### Decompress Lossy
+
+Decompressing and comparing against raw files
+
+```
+./bin/decompress -ilsb Testing_DIR/test_lsb.mp4  -imsb Testing_DIR/test_msb.mp4 -hd Testing_DIR/video_head_file.txt -cmp Testing_DIR -o Testing_DIR -print_psnr 0
+```
+
+### Decompress Lossy
+
+Decompressing regular no comparison
+
+```
+./bin/decompress -ilsb Testing_DIR/test_lsb.mp4  -imsb Testing_DIR/test_msb.mp4 -hd Testing_DIR/video_head_file.txt -o Testing_DIR -print_psnr 0
+```
+
+### Decompress each raw file seperately
+
+```
+ffmpeg -i Testing_DIR/test_lsb_5000_out.mp4 -i Testing_DIR/test_msb_5001_out.mp4 -map 0:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_lsb_5000.mkv -map 1:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_msb_5001.mkv
+```
+
+
+
+
+
+# Directions for Configuring Server Client System
+
+# Hardware Requirements.
+Server computer should have more CPU cores for every client (Recommend for 3 or more systems should be at least 6th gen i5 desktop CPU or equivilant)
+
+Client computers can be found for cheap if used (around $150 or less) for example (a used HP EliteDesk 800 G2 Mini Business Desktop with an i5-6500T is sufficiently powerful enough.)
+
+Our configuration:
+    Server (1):
+        HP EliteDesk 800 G2 Mini Business Desktop with 16GB RAM and 5TB external drive
+    
+    Clients (multiple):
+        HP EliteDesk 800 G2 Mini Business Desktop with 8GB RAM, and 128GB SSD     
+
+Depth Cameras:
+    Intel&reg; RealSense&trade; D435 Stereo Depth Cameras
+
+Ubuntu 20.04 LTS is installed on each computer. See more configuration settings in the README.md document
+
+
+## First please configure for static IP addresses:
+
+### On server
+Go to Settings -> Network -> Wired -> [Click on Settings Symbol] -> IPv4 -> Manual:
+
+    Then enter the following into their respective boxes
+    In Addresses section
+        Address: 192.168.1.234
+        Netmask: 255.255.255.0
+        Gateway: 192.168.1.1
+    In DNS section:
+        8.8.4.4,8.8.8.8
+    Then hit apply
+
+**NOTE IF YOU HAVE ANY FIREWALL SETTINGS **
+
+1) Open a terminal
+
+2) Type in 
+
+```
+sudo ufw status verbose
+```
+3) You will see either an active status or inactive status
+
+4) If you have an active status add rules so you can accept your client computer cameras
+
+5) Type the following into a terminal 
+```
+sudo ufw allow proto tcp 192.168.1.201 to any port 5000 && sudo ufw allow proto tcp 192.168.1.201 to any port 5001 && \
+sudo ufw allow proto tcp 192.168.1.202 to any port 5002 && sudo ufw allow proto tcp 192.168.1.202 to any port 5003 && \
+sudo ufw allow proto tcp 192.168.1.203 to any port 5004 && sudo ufw allow proto tcp 192.168.1.202 to any port 5004 && \
+.
+.
+.
+...
+
+```
+If need be you can remove all the firewall rules by doing
+
+```
+sudo ufw status verbose
+```
+
+Looking at the number in the list at which the rule occurs at
+
+```
+sudo ufw delete [x] # Where x is the number in the list at which the rule occurs at which you want to delete
+```
+Key generation
+
+Type the following in to a terminal on your Server
+
+```
+cd ~/DepthCameraRecordingTool/Code_8_bit/ && \
+make clean && make -j4 && \
+python3 make_ssl_keys_cert.py
+```
+
+### On Client computers
+
+Go to Settings -> Network -> Wired -> [Click on Settings Symbol] -> IPv4 -> Manual:
+    Then enter the following into their respective boxes
+    In Addresses section
+        Address: 192.168.1.2xx    (Here xx means any two digit number as long as it is unique and not 34)
+        Netmask: 255.255.255.0
+        Gateway: 192.168.1.1
+    In DNS section:
+        8.8.4.4,8.8.8.8
+    Then hit apply
+    
+
+### Copy Entire directory from Server to each client
+
+Copy entire ~/DepthCameraRecordingTool/  directory to storage medium of your choice.
+Then For ***each*** client computer:
+    Navigate on the client computer to your home directory using the Files application on Ubuntu
+    Paste a copy of the DepthCameraRecordingTool in this folder.
+
+
+### For each Client 
+```
+cd ~/DepthCameraRecordingTool/Code_8_bit/ && \
+make clean && \
+make -j4
+```
+
+```
+crontab -e
+```
+Then if prompted type in 1 and hit ENTER
+
+Using the arrow keys go down to the very bottom of the file
+Then add the following text replacing USER with your client username found if you go to settings and users:
+```
+@reboot sleep 10; export XAUTHORITY=/home/<USER>/.Xauthority; cd /home/<USER>/DepthCameraRecordingTool/Code_8_bit/ && python3 client_side.py &
+```
+Then hit the keys CTRL+X then Y then ENTER
+
+Then reboot the system
+```
+sudo reboot
+```
+
+Repeat for each client
+
+### Running Server
+
+Running a recording for 30 seconds at a crf of 22
+```
+python3 server_side.py --dir Testing_DIR/ --num_clients 4 --json Default.json --time_run 30 --crf 22
+```
+
+
+
+# Directions Collecting_Training_Code/
+
+### Running recording lossless compression with GUI
+
+```
+python3 collect_aligned_depth_training_vids.py
+```
+
+### Decompressing each frame to a TIF file GUI
+
+```
+python3 decompress_training_vids_gui.py
+```
+### Run collect_raw for 30 seconds using ffv1, with aligned frames from directory Collect_Training_Code/
+
+make -j4 && ./bin/collect_raw -dir Testing_DIR/ -sec 30 -align 1 -jsonfile ../Code/Default.json
+
+
+# Other Helpful Commands for Developers
 To look at frame rates
+
 ```
 ffprobe Testing_DIR/test_lossy.h265 -count_frames -show_entries stream=nb_read_frames,avg_frame_rate,r_frame_rate
 ```
@@ -151,35 +344,18 @@ ffprobe Testing_DIR/test_lossy.h265 -count_frames -show_entries stream=nb_read_f
 
 
 To look at stats of a video please see the following from (https://ffmpeg.org/ffprobe-all.html)
+
 ```
 ffprobe -f lavfi movie=Testing_DIR/test_lsb.mp4,signalstats -show_entries frame_tags=lavfi.signalstats.YMAX,lavfi.signalstats.YMIN,lavfi.signalstats.YAVG,lavfi.signalstats.YBITDEPTH,lavfi.signalstats.YDIF
 ```
+Automate GDB
 
-## Run multicam program
-```
-make -j4 && ./bin/multicam -sec 60 -thr 4 -fps 30 -crf 22 -numraw 450 -max_depth 1000 -dir Testing_DIR/ -bagfile ~/Downloads/fishy-fish.bag && ./bin/decompress Testing_DIR/test_lsb.mp4 Testing_DIR/test_msb.mp4 
-
-```
-### Decompress
-```
-./bin/decompress -ilsb Testing_DIR/test_lsb.mp4  -imsb Testing_DIR/test_msb.mp4 -hd Testing_DIR/video_head_file.txt -cmp Testing_DIR -o Testing_DIR -print_psnr 0
-```
-
-## Automate GDB
 ```
 for i in {1..20}; do gdb -q -ex 'set pagination off' -ex 'set args -dir Testing_DIR/ -sec 15 -numraw 450 -crf 17 -bagfile ~/Downloads/One_Mouse_5_minutes_depth.bag' -ex run  ./bin/multicam -ex quit; done
 ```
 
-### Decompress each raw file seperately
+Play videos side by side ffplay
+
 ```
-ffmpeg -i Testing_DIR/test_lsb_5000_out.mp4 -i Testing_DIR/test_msb_5001_out.mp4 -map 0:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_lsb_5000.mkv -map 1:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_msb_5001.mkv
+ffplay -f lavfi "movie=left.mp4,scale=iw/2:ih[v0];movie=right.mp4,scale=iw/2:ih[v1];[v0][v1]hstack"
 ```
-
-### Run collect_raw for 30 seconds using ffv1, with aligned frames
-make -j4 && ./bin/collect_raw -dir Testing_DIR/ -sec 30 -align 1 -jsonfile ../Code/Default.json
-
-### Run decompress frames to tif file in directory
-python3 extract_ffmpeg_frames.py -i Testing_DIR/depth_vid*.mkv -irgb Testing_DIR/color_vid*.mp4 -o Test_out/ -f 0
-
-### Run decompress specific number of frames to a tif file in a directory (in this case decompressing 63 frames)
-python3 extract_ffmpeg_frames.py -i Testing_DIR/depth_vid*.mkv -irgb Testing_DIR/color_vid*.mp4 -o Test_out/ -f 63
