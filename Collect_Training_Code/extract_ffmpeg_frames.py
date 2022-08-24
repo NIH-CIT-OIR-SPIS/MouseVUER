@@ -58,12 +58,8 @@ def options():
     parser.add_argument('-f', '--frame', help='Number of frames to uncompress, input <=0 to decompress all frames', required=True)
     return parser.parse_args()
 
-def main():
-    args = options()
-    input_vid = args.input
-    input_vid_mp4 = args.input_rgb
-    output_dir = args.output
-    frame_num = int(args.frame)
+
+def parallel_call(input_vid, input_vid_mp4, output_dir, frame_num):
     cmd_lst = []
     cmd_lst.append(extract_frame_command(input_vid, frame_num, output_dir))
     cmd_lst.append(extract_rgb_frame_command(input_vid_mp4, frame_num, output_dir))
@@ -75,6 +71,15 @@ def main():
         p1.terminate()
         p1.join()
         print("Error here: {}".format(e))
+
+
+def main():
+    args = options()
+    input_vid = args.input
+    input_vid_mp4 = args.input_rgb
+    output_dir = args.output
+    frame_num = int(args.frame)
+    parallel_call(input_vid, input_vid_mp4, output_dir, frame_num)
         #pass
     #run_processes_parallel(cmd_lst)
     if platform.system() == 'Linux':
