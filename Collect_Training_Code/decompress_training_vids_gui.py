@@ -82,7 +82,7 @@ class GUI(ttk.Frame):
         self.rgb_file = None
         self.dir_out_path = None
         self.label_depth = ttk.Label(self, text="Depth File:")
-        self.label_rgb = ttk.Label(self, text="RGB File:")
+        self.label_rgb = ttk.Label(self, text="Color File:")
         self.label_dir = ttk.Label(self, text="Output Directory:")
         self.num_frames = -1
 
