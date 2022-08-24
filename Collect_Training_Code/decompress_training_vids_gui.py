@@ -12,83 +12,9 @@ import signal
 import sys
 import platform
 from tkinter import filedialog
-from extract_ffmpeg_frames import parallel_call
-import abc
+from extract_ffmpeg_frames_helper import parallel_call
 
-# class TkFileDialogExample(tk.Frame):
-
-#   def __init__(self, root):
-
-#     tk.Frame.__init__(self, root)
-
-#     # options for buttons
-#     button_opt = {'fill': tk.BOTH, 'padx': 5, 'pady': 5}
-
-#     # define buttons
-#     #tk.Button(self, text='askopenfile', command=self.askopenfile).pack(**button_opt)
-#     tk.Button(self, text='Depth video Recording ', command=self.askopenfilename).pack(**button_opt)
-#     #tk.Button(self, text='asksaveasfile', command=self.asksaveasfile).pack(**button_opt)
-#     #tk.Button(self, text='asksaveasfilename', command=self.asksaveasfilename).pack(**button_opt)
-#     tk.Button(self, text='askdirectory', command=self.askdirectory).pack(**button_opt)
-
-#     # define options for opening or saving a file
-#     self.file_opt = options = {}
-#     options['defaultextension'] = '.txt'
-#     options['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
-#     options['initialdir'] = 'C:\\'
-#     options['initialfile'] = 'myfile.txt'
-#     options['parent'] = root
-#     options['title'] = 'This is a title'
-
-
-#     self.dir_opt = options = {}
-#     options['initialdir'] = 'C:\\'
-#     options['mustexist'] = False
-#     options['parent'] = root
-#     options['title'] = 'This is a title'
-
-
-#   def askopenfilename(self):
-
-#     """Returns an opened file in read mode.
-#     This time the dialog just returns a filename and the file is opened by your own code.
-#     """
-
-#     # get filename
-#     filename = filedialog.askopenfilename(**self.file_opt)
-
-#     return filename
-
-# #   def asksaveasfile(self):
-
-# #     """Returns an opened file in write mode."""
-
-# #     return filedialog.asksaveasfile(mode='w', **self.file_opt)
-
-# #   def asksaveasfilename(self):
-
-# #     """Returns an opened file in write mode.
-# #     This time the dialog just returns a filename and the file is opened by your own code.
-# #     """
-
-# #     # get filename
-# #     filename = filedialog.asksaveasfilename(**self.file_opt)
-
-# #     # open file on your own
-# #     if filename:
-# #       return open(filename, 'w')
-
-#   def askdirectory(self):
-
-#     """Returns a selected directoryname."""
-#     dirname = filedialog.askdirectory(**self.dir_opt)
-#     return dirname
-
-# if __name__=='__main__':
-#   root = tk.Tk()
-#   TkFileDialogExample(root).pack()
-#   root.mainloop()
-
+# This is a GUI for decompressing videos using ffmpeg
 class Menubar(ttk.Frame):
     """Builds a menu bar for the top of the main window"""
     def __init__(self, parent, *args, **kwargs):
@@ -99,6 +25,7 @@ class Menubar(ttk.Frame):
 
     def on_exit(self):
         '''Exits program'''
+        print("Exiting program...")
         quit()
 
     def display_help(self):
@@ -133,83 +60,6 @@ class Menubar(ttk.Frame):
 
         self.root.config(menu=self.menubar)
 
-# class Window(ttk.Frame):
-#     """Abstract base class for a popup window"""
-#     __metaclass__ = abc.ABCMeta
-#     def __init__(self, parent):
-#         ''' Constructor '''
-#         ttk.Frame.__init__(self, parent)
-#         self.parent = parent
-#         self.parent.resizable(width=False, height=False) # Disallows window resizing
-#         self.validate_notempty = (self.register(self.notEmpty), '%P') # Creates Tcl wrapper for python function. %P = new contents of field after the edit.
-#         self.init_gui()
-
-#     @abc.abstractmethod # Must be overwriten by subclasses
-#     def init_gui(self):
-#         '''Initiates GUI of any popup window'''
-#         pass
-
-#     @abc.abstractmethod
-#     def do_something(self):
-#         '''Does something that all popup windows need to do'''
-#         pass
-
-#     def notEmpty(self, P):
-#         '''Validates Entry fields to ensure they aren't empty'''
-#         if P.strip():
-#             valid = True
-#         else:
-#             print("Error: Field must not be empty.") # Prints to console
-#             valid = False
-#         return valid
-
-#     def close_win(self):
-#         '''Closes window'''
-#         self.parent.destroy()
-
-# class SomethingWindow(Window):
-#     """ New popup window """
-
-#     def init_gui(self):
-#         self.parent.title("New Window")
-#         self.parent.columnconfigure(0, weight=1)
-#         self.parent.rowconfigure(3, weight=1)
-
-#         # Create Widgets
-
-#         self.label_title = ttk.Label(self.parent, text="This sure is a new window!")
-#         self.contentframe = ttk.Frame(self.parent, relief="sunken")
-
-#         self.label_test = ttk.Label(self.contentframe, text='Enter some text:')
-#         self.input_test = ttk.Entry(self.contentframe, width=30, validate='focusout', validatecommand=(self.validate_notempty))
-
-#         self.btn_do = ttk.Button(self.parent, text='Action', command=self.do_something)
-#         self.btn_cancel = ttk.Button(self.parent, text='Cancel', command=self.close_win)
-
-#         # Layout
-#         self.label_title.grid(row=0, column=0, columnspan=2, sticky='nsew')
-#         self.contentframe.grid(row=1, column=0, columnspan=2, sticky='nsew')
-
-#         self.label_test.grid(row=0, column=0)
-#         self.input_test.grid(row=0, column=1, sticky='w')
-
-#         self.btn_do.grid(row=2, column=0, sticky='e')
-#         self.btn_cancel.grid(row=2, column=1, sticky='e')
-
-#         # Padding
-#         for child in self.parent.winfo_children():
-#             child.grid_configure(padx=10, pady=5)
-#         for child in self.contentframe.winfo_children():
-#             child.grid_configure(padx=5, pady=2)
-
-#     def do_something(self):
-#         '''Does something'''
-#         text = self.input_test.get().strip()
-#         if text:
-#             # Do things with text
-#             self.close_win()
-#         else:
-#             print("Error: But for real though, field must not be empty.")
 
 class GUI(ttk.Frame):
     """Main GUI class"""
@@ -218,17 +68,9 @@ class GUI(ttk.Frame):
         self.root = parent
         self.init_gui()
 
-        
-
-    # def openwindow(self):
-    #     self.new_win = tkinter.Toplevel(self.root) # Set parent
-    #     SomethingWindow(self.new_win)
-
-
-
 
     def init_gui(self):
-        self.root.title('Test GUI')
+        self.root.title('Decompress Training Videos for Depth Camera')
         self.root.geometry("600x400")
         self.grid(column=0, row=0, sticky='nsew')
         self.grid_columnconfigure(0, weight=1) # Allows column to stretch upon resizing
@@ -330,6 +172,10 @@ class GUI(ttk.Frame):
         if filename:
             self.depth_file = filename
             self.label_depth.config(text="Depth file: " + self.depth_file)
+            if not os.path.exists(self.depth_file):
+                print("Error: File does not exist.")
+                self.rgb_file = None
+                return
         else:
             print("Error: File not selected.")
 
@@ -338,6 +184,10 @@ class GUI(ttk.Frame):
         if filename:
             self.rgb_file = filename
             self.label_rgb.config(text="Color file: " + self.rgb_file)
+            if not os.path.exists(self.rgb_file):
+                print("Error: File does not exist.")
+                self.rgb_file = None
+                return
         else:
             print("Error: File not selected.")
 
@@ -346,6 +196,7 @@ class GUI(ttk.Frame):
         if dirname:
             self.dir_out_path = dirname
             self.label_dir.config(text="Output directory: " + self.dir_out_path)
+
         else:
             print("Error: Directory must not be empty.")
 
