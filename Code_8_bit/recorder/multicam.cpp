@@ -304,7 +304,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         return 0;
     }
 
-    const auto processor_count = std::thread::hardware_concurrency();
+    //const auto processor_count = std::thread::hardware_concurrency();
     int width_color = width;   // width / 2;
     int height_color = height; // height / 2;
     int ret = 0;
@@ -503,7 +503,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::cout << "Depth max: " << advanced_mode_dev.get_depth_table().depthClampMax << "mm\nDepth unit: " << advanced_mode_dev.get_depth_table().depthUnits << std::endl;
     std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
     std::cout << "Disparity Shift " << advanced_mode_dev.get_depth_table().disparityShift << std::endl;
-    cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configuration
+    cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configurationst
+    cfg.enable_stream(RS2_STREAM_INFRARED, width, height, RS2_FORMAT_Y8, fps);
+
+    
     if (color || align_depth_to_color)
     {
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);
