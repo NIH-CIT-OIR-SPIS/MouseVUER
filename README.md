@@ -78,7 +78,7 @@ sudo ldconfig -v
 sudo nano /usr/local/lib/pkgconfig/opencv4.pc
 ```
 
-3) And if nothing is there then copy the following to the opencv4.pc file:
+3) And if nothing is there then copy the following to the opencv4.pc file please replace Version field with your specified version number :
 
 ```
 # Package Information for pkg-config
@@ -90,7 +90,7 @@ includedir=${prefix}/include/opencv4
 
 Name: OpenCV
 Description: Open Source Computer Vision Library
-Version: 4.6.0 
+Version: 4.7.0 
 Libs: -L${exec_prefix}/lib -lopencv_gapi -lopencv_highgui -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching -lopencv_video -lopencv_calib3d -lopencv_features2d -lopencv_dnn -lopencv_flann -lopencv_videoio -lopencv_imgcodecs -lopencv_imgproc -lopencv_core
 Libs.private: -ldl -lm -lpthread -lrt
 Cflags: -I${includedir}
