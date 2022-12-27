@@ -445,30 +445,30 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     rs2::config cfg;
     // std::vector<rs2::pipeline
     std::string serial;
-    if(!device_with_streams({RS2_STREAM_DEPTH, RS2_STREAM_COLOR}, serial))
-    {
-        std::cerr << " Error No device with depth and color streams" << std::endl;
-        return 0;
-    }
     
+    // if(!device_with_streams({RS2_STREAM_DEPTH, RS2_STREAM_COLOR}, serial))
+    // {
+    //     std::cerr << " Error No device with depth and color streams" << std::endl;
+    //     return 0;
+    // }
     if (json_file != "" && does_file_exist(json_file))
     {
-        // auto device = ctx.query_devices();
-        // auto dev = device[0];
-        for (rs2::device &&dev : ctx.query_devices())
+        auto device = ctx.query_devices();
+        auto dev = device[0];
+        // for (rs2::device &&dev : ctx.query_devices())
+        // {
+        rs400::advanced_mode advanced_mode_dev = dev.as<rs400::advanced_mode>();
+        if (!advanced_mode_dev.is_enabled())
         {
-            rs400::advanced_mode advanced_mode_dev = dev.as<rs400::advanced_mode>();
-            if (!advanced_mode_dev.is_enabled())
-            {
-                // If not, enable advanced-mode
-                advanced_mode_dev.toggle_advanced_mode(true);
-                std::cout << "Advanced mode enabled. " << std::endl;
-            }
-            std::ifstream fp_file(json_file);
-            std::string preset_json((std::istreambuf_iterator<char>(fp_file)), std::istreambuf_iterator<char>());
-
-            advanced_mode_dev.load_json(preset_json);
+            // If not, enable advanced-mode
+            advanced_mode_dev.toggle_advanced_mode(true);
+            std::cout << "Advanced mode enabled. " << std::endl;
         }
+        std::ifstream fp_file(json_file);
+        std::string preset_json((std::istreambuf_iterator<char>(fp_file)), std::istreambuf_iterator<char>());
+
+        advanced_mode_dev.load_json(preset_json);
+        // }
     }
     // std::cout << "HHHH " << bag_file_dir << std::endl;
     if (bag_file_dir.size() > 1 && does_file_exist(bag_file_dir))
