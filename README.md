@@ -280,6 +280,7 @@ Then For ***each*** client computer:
     Navigate on the client computer to your home directory using the Files application on Ubuntu
     Paste a copy of the DepthCameraRecordingTool in this folder.
 
+Alternativley you could just open up an ssh session to each client and copy the directories over.
 
 ### For each Client 
 ```
