@@ -451,10 +451,11 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     //     std::cerr << " Error No device with depth and color streams" << std::endl;
     //     return 0;
     // }
+    auto device = ctx.query_devices();
+    auto dev = device[0];
     if (json_file != "" && does_file_exist(json_file))
     {
-        auto device = ctx.query_devices();
-        auto dev = device[0];
+
         // for (rs2::device &&dev : ctx.query_devices())
         // {
         rs400::advanced_mode advanced_mode_dev = dev.as<rs400::advanced_mode>();
@@ -477,8 +478,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         // std::cout << "This shoudl happend" << std::endl;
         cfg.enable_device_from_file(bag_file_dir, false);
     }
-    auto device = ctx.query_devices();
-    auto dev = device[0];
     
     auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
     STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
