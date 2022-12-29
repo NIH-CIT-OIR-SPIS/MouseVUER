@@ -301,6 +301,43 @@ Then add the following text replacing USER with your client username found if yo
 ```
 Then hit the keys CTRL+X then Y then ENTER
 
+
+Then create a new bash script:
+```
+sudo nano /etc/NetworkManager/dispatcher.d/70-wifi-wired-exclusive.sh
+```
+
+Then copy and paste (Paste using the shortcut CTRL+SHIFT+V) the following into 70-wifi-wired-exclusive.sh:
+
+```
+#!/bin/bash
+export LC_ALL=C
+
+enable_disable_wifi ()
+{
+    result=$(nmcli dev | grep "ethernet" | grep -w "connected")
+    if [ -n "$result" ]; then
+        nmcli radio wifi off
+    else
+        nmcli radio wifi on
+    fi
+}
+
+if [ "$2" = "up" ]; then
+    enable_disable_wifi
+fi
+
+if [ "$2" = "down" ]; then
+    enable_disable_wifi
+fi
+```
+Then hit the keys CTRL+X then Y then ENTER
+
+Then run the following command:
+```
+sudo chmod a+rx /etc/NetworkManager/dispatcher.d/70-wifi-wired-exclusive.sh
+```
+
 Then reboot the system
 ```
 sudo reboot
