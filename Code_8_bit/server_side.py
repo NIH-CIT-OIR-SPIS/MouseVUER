@@ -90,12 +90,6 @@ def run_processes_parallel(cmd_lst):
                 if p is not None:
                     p.send_signal(signal.SIGQUIT)
 
-# def port_type(port: int):
-#     port = int(port)
-#     if port <= 1024 or port > 65000:
-#         raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(port))
-#     return port
-
 def validate_ip(addr):
     try:
         ip = ipaddress.ip_address(addr)
@@ -110,51 +104,6 @@ def validate_loglevel(loglevel):
     if loglevel not in ['error', 'verbose', 'debug', 'quiet', 'info', 'warning']:
         raise argparse.ArgumentTypeError("Error: Log level must be one of the following: error, verbose, debug")
     return loglevel
-
-# def make_commands(addr: str, loglevel: str, port: int): 
-#     addr1 = validate_ip(addr)
-#     port = port_type(port)
-#     loglevel = validate_loglevel(loglevel)
-#     # split_size = int(split_size)
-#     # if split_size < 1:
-#     #     raise argparse.ArgumentTypeError("Error: Split size must be greater than 0")
-#     #print("Address: {}, loglevel {}, port {}".format(addr, loglevel, port))
-#     #loglevel = "error"
-#     #addr1 = "169.254.255.255"
-#     #port_num_lsb = port
-#     cmd_lst = []
-#     cmd1 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb_{}_out.mp4".format(loglevel, addr1, port, port)
-#     cmd2 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y Testing_DIR/test_msb_{}_out.mp4".format(loglevel, addr1, port + 1, port + 1)
-#     #shlex.quote(cmd1)
-#     #shlex.quote(cmd2)
-#     print("Command 1: {}".format(cmd1))
-#     print("Command 2: {}".format(cmd2))
-#     cmd_lst.append(cmd1)
-#     cmd_lst.append(cmd2)
-#     return cmd1, cmd2
-#     # run_processes_parallel(cmd_lst)
-#     # if platform.system() == "Linux":
-#     #     os.system("stty echo")
-# class Process(multiprocessing.Process):
-#     def __init__(self, *args, **kwargs):
-#         multiprocessing.Process.__init__(self, *args, **kwargs)
-#         self._pconn, self._cconn = multiprocessing.Pipe()
-#         self._exception = None
-
-#     def run(self):
-#         try:
-#             multiprocessing.Process.run(self)
-#             self._cconn.send(None)
-#         except Exception as e:
-#             tb = traceback.format_exc()
-#             self._cconn.send((e, tb))
-#             # raise e  # You can still rise this exception if you need to
-
-#     @property
-#     def exception(self):
-#         if self._pconn.poll():
-#             self._exception = self._pconn.recv()
-#         return self._exception
 
 def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str, ip_str: str):
     """
@@ -278,25 +227,6 @@ def validate_ip(addr):
         raise argparse.ArgumentTypeError("IP address {} is not valid".format(addr))
         return None
 
-# class ServerWorker:
-#     def __init__(self, clientinfo):
-#         self.clientinfo = clientinfo
-
-#     def run(self):
-#         threading.Thread(target=self.requesting).start()
-
-
-#     def requesting(self):
-#         """ Recive Request from client """
-#         connsocket = self.clientinfo['connsocket'][0]
-#         while True:
-#             data = connsocket.recv(1024)
-#             if data:
-#                 print("Received: {}".format(data))
-#                 self.clientinfo['request'] = data.decode('ascii')
-#                 break
-
-
 class Server:
     """
     Server class
@@ -373,8 +303,6 @@ class Server:
         if self.argdict['depth_unit'] < 40 or self.argdict['depth_unit'] >= 65535:
             raise Exception("Error: Depth unit must be greater than 40 and less than 65535. Depth unit given: {}".format(self.argdict['depth_unit']))
         
-
-
     def __initialize_maps(self):
         i = 0
         port_store = self.port
@@ -385,8 +313,6 @@ class Server:
         for ip_addr in self.client_ip_lst:
             self.host_port.update({ip_addr: PORT_CLIENT_LISTEN})
             
-
-
     def listen(self):
         print("Listen")
         try:
@@ -452,15 +378,6 @@ class Server:
                 print("Connection closed\n")
                 
             #print("Connection closed")
-
-            
-
-
-
-
-
-
-
 
 
 def server_side_command_line_parser():
