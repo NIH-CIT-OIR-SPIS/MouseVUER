@@ -347,7 +347,17 @@ Repeat for each client
 
 ### Running Server
 
-Running a recording for 30 seconds at a crf of 22
+Go to Settings -> Network -> Wired -> [Click on Settings Symbol] -> IPv4 -> Manual:
+    Then enter the following into their respective boxes
+    In Addresses section
+        Address: 192.168.1.234
+        Netmask: 255.255.255.0
+        Gateway: 192.168.1.1
+    In DNS section:
+        8.8.4.4,8.8.8.8
+    Then hit apply
+    
+Running a recording for 30 seconds at a crf of 22, with 4 clients connected
 ```
 python3 server_side.py --dir Testing_DIR/ --num_clients 4 --json Default.json --time_run 30 --crf 22
 ```

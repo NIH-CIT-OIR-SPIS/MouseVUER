@@ -156,7 +156,7 @@ def validate_loglevel(loglevel):
 #             self._exception = self._pconn.recv()
 #         return self._exception
 
-def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str):
+def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str, ip_str: str):
     """
     Build the ffmpeg command string
     :param server_addr:
@@ -168,8 +168,8 @@ def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str):
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
     str_time = str(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
-    cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_lsb_{}_{}_out.mp4".format(loglevel, addr, port, dir, port, str_time)
-    cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_msb_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  port + 1, str_time)
+    cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_lsb_ip_{}_port_{}_{}_out.mp4".format(loglevel, addr, port, dir, ip_str, port, str_time)
+    cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_msb_ip_{}_port_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  ip_str, port + 1, str_time)
     return cmd_lsb, cmd_msb
 
 def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, dir: str):
@@ -179,8 +179,9 @@ def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, 
     :return:
     """
     cmd_list = []
-    for _, port in map_dict.items():
-        cmd_lsb, cmd_msb = build_ffmpeg_cmd_pair(server_addr, loglevel, port, dir)
+    for ip, port in map_dict.items():
+        ip_str = str(ip).replace('.','_')
+        cmd_lsb, cmd_msb = build_ffmpeg_cmd_pair(server_addr, loglevel, port, dir, ip_str)
         cmd_list.append(cmd_lsb)
         cmd_list.append(cmd_msb)
     return cmd_list
@@ -518,8 +519,8 @@ def main():
         p1.join()
         print("Error here: {}".format(e))
         #pass
-
-    os.system("stty echo")
+    finally:
+        os.system("stty echo")
 
 if __name__ == '__main__':
     main()
