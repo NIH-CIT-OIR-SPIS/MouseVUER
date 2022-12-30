@@ -131,14 +131,17 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
     std::string serial;
     FILE *pipe_depth = NULL;
     FILE *pipe_color = NULL;
+    FILE *pipe_infar = NULL;
     std::string pixf = "gray16le";
     std::string ffmpeg_color = "ffmpeg -loglevel error -nostats -y -f rawvideo -pix_fmt rgb24 -c:v rawvideo -s " + std::to_string(width_rgb) + "x" + std::to_string(height_rgb) + " -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec libx264rgb -preset ultrafast -tune zerolatency -x264-params \"vbv_maxrate=9984:vbv_bufsize=9984\" -movflags +faststart ";
     std::string ffmpeg_cmd = "ffmpeg -loglevel error -nostats -y -f rawvideo -pix_fmt " + pixf + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec ffv1 -level 3 -threads 4 -coder 1 -context 0 -g 1 -slices 24 -slicecrc 1 -pix_fmt " + pixf + " -movflags +faststart ";
+    std::string ffmpeg_infared = "ffmpeg -loglevel error -nostats -y -f rawvideo -pix_fmt gray -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec libx264 -preset ultrafast -tune zerolatency -x264-params \"vbv_maxrate=9984:vbv_bufsize=9984\" -movflags +faststart ";
     // std::string ffmpeg_cmd = "ffmpeg -loglevel error -nostats -y -threads 4 -f rawvideo -pix_fmt yuv420p16le -c:v rawvideo -s 1280x720 -t " + std::to_string(time_run) + " -r 30 -an -i - -vcodec  -pix_fmt yuv420p16le -movflags +faststart ";
     // std::string depth_cmd = ffmpeg_cmd + dir + "depth_vid.yuv";
     // ffplay -f rawvideo -pixel_format yuv420p16le -video_size 1280x720 -framerate 30 Testing_DIR/depth_vid.yuv
     std::string color_cmd = ffmpeg_color + "'" + dir + "color_vid" + time_str + ".mp4'";
     std::string depth_cmd = ffmpeg_cmd + "'" + dir + "depth_vid" + time_str + ".mkv'";
+    std::string infared_cmd = ffmpeg_infared + "'" + dir + "infared_vid" + time_str + ".mp4'";
     uint8_t *ptr_depth_frame = NULL;
     // uint8_t *ptr_color_frame = NULL;
 
@@ -153,7 +156,7 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
     memset(store_depth, 0, total_size_16_bit * sizeof(uint8_t));
     if (align_int)
     {
-        if (!(pipe_depth = popen(depth_cmd.c_str(), "w")) || !(pipe_color = popen(color_cmd.c_str(), "w")))
+        if (!(pipe_depth = popen(depth_cmd.c_str(), "w")) || !(pipe_color = popen(color_cmd.c_str(), "w")) || !(pipe_infar = popen(infared_cmd.c_str(), "w")))
         {
             std::cout << "Failed to open pipe" << std::endl;
             return 0;
@@ -164,20 +167,21 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
     if (!jsonfile.empty())
     {
 
-        for (rs2::device &&dev : ctx.query_devices())
+        //for (rs2::device &&dev : ctx.query_devices())
+        //{
+        auto dev = ctx.query_devices()[0];
+        rs400::advanced_mode advanced_mode_dev = dev.as<rs400::advanced_mode>();
+        if (!advanced_mode_dev.is_enabled())
         {
-            rs400::advanced_mode advanced_mode_dev = dev.as<rs400::advanced_mode>();
-            if (!advanced_mode_dev.is_enabled())
-            {
-                // If not, enable advanced-mode
-                advanced_mode_dev.toggle_advanced_mode(true);
-                std::cout << "Advanced mode enabled. " << std::endl;
-            }
-            std::ifstream fp_file(jsonfile);
-            std::string preset_json((std::istreambuf_iterator<char>(fp_file)), std::istreambuf_iterator<char>());
-
-            advanced_mode_dev.load_json(preset_json);
+            // If not, enable advanced-mode
+            advanced_mode_dev.toggle_advanced_mode(true);
+            std::cout << "Advanced mode enabled. " << std::endl;
         }
+        std::ifstream fp_file(jsonfile);
+        std::string preset_json((std::istreambuf_iterator<char>(fp_file)), std::istreambuf_iterator<char>());
+
+        advanced_mode_dev.load_json(preset_json);
+        //}
     }
     if (!bagfile.empty())
     {
@@ -186,12 +190,11 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
 
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps);
     cfg.enable_stream(RS2_STREAM_COLOR, width_rgb, height_rgb, RS2_FORMAT_RGB8, fps);
-
+    cfg.enable_stream(RS2_STREAM_INFRARED, width, height, RS2_FORMAT_Y8);
     if (!align_int)
     {
         cfg.enable_record_to_file(path_out);
     }
-
     // rs2::frame depth;
     // rs2::frame color;
     //  rs2::frame depth_frame_in;
@@ -200,6 +203,7 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
     rs2::align align_to_color(RS2_STREAM_COLOR);
     std::string color_file = dir + "color";
     std::string aligned_depth_file = dir + "aligned_depth";
+
     pipe.start(cfg); // Start the pipe with the cfg
     timer tStart;
     if (!align_int)
@@ -219,7 +223,9 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
             //rs2::frame aligned_frame = align_to_color.process(frameset);
             auto depth = frameset.get_depth_frame();
             auto color = frameset.get_color_frame();
-            if (!depth || !color)
+            auto infared = frameset.get_infrared_frame();
+
+            if (!depth || !color || !infared)
             {
                 continue;
             }
@@ -259,11 +265,12 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
                 break;
             }
             //rs2::frame aligned_frame = align_to_color.process(frameset);
+            auto infared = frameset.get_infrared_frame();
             frameset = align_to_color.process(frameset);
             auto depth = frameset.get_depth_frame();
             auto color = frameset.get_color_frame();
-
-            if (!depth || !color)
+            
+            if (!depth || !color || !infared)
             {
                 continue;
             }
@@ -273,12 +280,15 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
                 std::copy(ptr_depth_frame, ptr_depth_frame + (width * height * 2), store_depth);
                 if (!pipe_depth || !fwrite(store_depth, sizeof(uint8_t), total_size_16_bit, pipe_depth))
                 {
-                    std::cout << "Failed to write to pipe" << std::endl;
+                    std::cout << "Failed to write to depth pipe" << std::endl;
                     break;
                 }
                 if(!pipe_color || !fwrite((uint8_t *)color.get_data(), sizeof(uint8_t), width_rgb * height_rgb * 3, pipe_color)){
-                    std::cout << "Failed to write to pipe" << std::endl;
+                    std::cout << "Failed to write to color pipe" << std::endl;
                     break;
+                }
+                if(!pipe_infar || !fwrite((uint8_t *)infared.get_data(), sizeof(uint8_t), width * height, pipe_infar)){
+                    std::cout << "Failed to write to infared pipe " << std::endl;
                 }
                 // ptr_depth_frame = NULL;
                 ++counter;
@@ -305,6 +315,11 @@ int start_bag_recording(long time_run, std::string dir, std::string path_out, st
     {
         pclose(pipe_color);
     }
+    if(pipe_infar != NULL){
+        pclose(pipe_infar);
+    }
+    ptr_depth_frame = NULL;
+    memset(store_depth, 0, total_size_16_bit * sizeof(uint8_t));
     free(store_depth);
     std::cout << "Time run for in seconds: " << (milliseconds_ellapsed / 1000.0) << std::endl;
     std::cout << "Numframes recorded: " << counter << std::endl;
