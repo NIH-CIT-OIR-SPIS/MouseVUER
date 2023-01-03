@@ -407,3 +407,8 @@ Play videos side by side ffplay
 ```
 ffplay -f lavfi "movie=left.mp4,scale=iw/2:ih[v0];movie=right.mp4,scale=iw/2:ih[v1];[v0][v1]hstack"
 ```
+
+See info ffmpeg
+```
+ffmpeg -h encoder=libx264
+```

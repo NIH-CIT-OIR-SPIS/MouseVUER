@@ -80,9 +80,11 @@ class GUI(ttk.Frame):
         self.root.option_add('*tearOff', 'FALSE') # Disables ability to tear menu bar into own window
         self.depth_file = None
         self.rgb_file = None
+        self.infared_file = None
         self.dir_out_path = None
         self.label_depth = ttk.Label(self, text="Depth File:")
         self.label_rgb = ttk.Label(self, text="Color File:")
+        self.label_infared = ttk.Label(self, text="Infared File:")
         self.label_dir = ttk.Label(self, text="Output Directory:")
         self.num_frames = -1
 
@@ -92,6 +94,13 @@ class GUI(ttk.Frame):
         self.file_opt_rgb['filetypes'] = [('mp4 files', '.mp4')]
         self.file_opt_rgb['parent'] = root
         self.file_opt_rgb['title'] = 'Select regular color MP4 file'
+
+
+        self.file_opt_infared = {}
+        self.file_opt_infared['defaultextension'] = '.mp4'
+        self.file_opt_infared['filetypes'] = [('mp4 files', '.mp4')]
+        self.file_opt_infared['parent'] = root
+        self.file_opt_infared['title'] = 'Select regular MP4 file'
 
         self.file_opt_depth = {}
         self.file_opt_depth['defaultextension'] = '.mkv'
@@ -128,6 +137,8 @@ class GUI(ttk.Frame):
         #     self.btn_open_rgb.config(text=self.rgb_file)
         #self.label_out = ttk.Label(self, text='Output Directory:')
 
+        self.btn_open_infared = ttk.Button(self, text="Open .mp4 infared file", command=self.infared_file_dialog)
+
         self.btn_open_dir = ttk.Button(self, text='Open Dir', command=self.dir_dialog)
 
         self.btn_start = ttk.Button(self, text='Start Decompressing', command=self.run_decompress)
@@ -151,13 +162,15 @@ class GUI(ttk.Frame):
         self.btn_open_depth.grid(row=0, column=1, sticky='w')
         self.label_rgb.grid(row=1, column=0, sticky='w')
         self.btn_open_rgb.grid(row=1, column=1, sticky='w')
-        self.label_dir.grid(row=2, column=0, sticky='w')
-        self.btn_open_dir.grid(row=2, column=1, sticky='w')
-        self.label_num_frames.grid(row=3, column=0, sticky='w')
-        self.spin_num_frames.grid(row=3, column=1, sticky='w')
-        self.btn_start.grid(row=4, column=0, sticky='w')
+        self.label_infared.grid(row=2, column=0, sticky='w')
+        self.btn_open_infared.grid(row=2, column=1, sticky='w')
 
-        
+        self.label_dir.grid(row=3, column=0, sticky='w')
+        self.btn_open_dir.grid(row=3, column=1, sticky='w')
+        self.label_num_frames.grid(row=4, column=0, sticky='w')
+        self.spin_num_frames.grid(row=4, column=1, sticky='w')
+        self.btn_start.grid(row=5, column=0, sticky='w')
+
         # Padding
         for child in self.winfo_children():
             child.grid_configure(padx=10, pady=5)
@@ -191,6 +204,19 @@ class GUI(ttk.Frame):
         else:
             print("Error: File not selected.")
 
+    def infared_file_dialog(self):
+        filename = filedialog.askopenfilename(**self.file_opt_infared)
+        if filename:
+            self.infared_file = filename
+            self.label_infared.config(text="Infared file: " + self.infared_file)
+            if not os.path.exists(self.infared_file):
+                print("Error: File does not exist.")
+                self.infared_file = None
+                return
+        else:
+            print("Error File not selected.")
+
+
     def dir_dialog(self):
         dirname = filedialog.askdirectory(**self.dir_opt)
         if dirname:
@@ -212,7 +238,7 @@ class GUI(ttk.Frame):
             # rgb file ends with .mp4
             # dir out is valid
             try:
-                parallel_call(self.depth_file, self.rgb_file, self.dir_out_path, self.num_frames)
+                parallel_call(self.depth_file, self.rgb_file, self.infared_file, self.dir_out_path, self.num_frames)
             except Exception as e:
                 print(e)
                 print("Error: Something went wrong.")
@@ -235,3 +261,5 @@ if __name__ == '__main__':
     root = tkinter.Tk()
     gui = GUI(root)
     gui.run()
+    if platform.system() == 'Linux':
+        os.system("stty echo")

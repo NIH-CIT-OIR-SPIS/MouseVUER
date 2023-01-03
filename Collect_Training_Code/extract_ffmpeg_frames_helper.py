@@ -35,7 +35,7 @@ def run_processes_parallel(cmd_lst):
             for p in p_list:
                 p.send_signal(signal.SIGQUIT)
 
-def extract_frame_command(input_vid, frame_num, output_dir):
+def extract_depth_frame_command(input_vid, frame_num, output_dir):
     if frame_num <= 0:
         command = 'ffmpeg -loglevel error -nostats -y -i {:s} {:s}/frame_%06d.tif'.format(input_vid, output_dir)
     else:
@@ -43,26 +43,31 @@ def extract_frame_command(input_vid, frame_num, output_dir):
     #sp.call(command, shell=True)
     return command
 
-def extract_rgb_frame_command(input_vid_mp4, frame_num, output_dir):
+def extract_reg_frame_command(input_vid_mp4, frame_num, output_dir, frm_type="rgb_frame"):
     if frame_num <= 0:
-        command = 'ffmpeg -loglevel error -nostats -y -i {:s} {:s}/rgb_frame_%06d.tif'.format(input_vid_mp4, output_dir)
+        command = 'ffmpeg -loglevel error -nostats -y -i {:s} {:s}/{}_%06d.tif'.format( input_vid_mp4, output_dir, frm_type)
     else:
-        command = 'ffmpeg -loglevel error -nostats -y -i {:s} -vframes {:d} {:s}/rgb_frame_%06d.tif'.format(input_vid_mp4, frame_num, output_dir)
+        command = 'ffmpeg -loglevel error -nostats -y -i {:s} -vframes {:d} {:s}/{}_%06d.tif'.format(input_vid_mp4, frame_num, output_dir, frm_type)
     return command
+
+
 
 def options():
     parser = argparse.ArgumentParser(description='Extract frames from video')
-    parser.add_argument('-i', '--input', help='Input video', required=True)
-    parser.add_argument('-irgb', '--input_rgb', help='Input video', required=True)
+    parser.add_argument('-i', '--input', help='Input depth video video', required=True)
+    parser.add_argument('-irgb', '--input_rgb', help='Input rgb video', required=True)
+    parser.add_argument('-infar',  '--infared', default="", help="Input infared video", required=False)
     parser.add_argument('-o', '--output', help='Output directory', required=True)
-    parser.add_argument('-f', '--frame', help='Number of frames to uncompress, input <=0 to decompress all frames', required=True)
+    parser.add_argument('-f', '--frame', default=0, type=int, help='Number of frames to uncompress, input <=0 to decompress all frames', required=False)
     return parser.parse_args()
 
 
-def parallel_call(input_vid, input_vid_mp4, output_dir, frame_num):
-    cmd_lst = []
-    cmd_lst.append(extract_frame_command(input_vid, frame_num, output_dir))
-    cmd_lst.append(extract_rgb_frame_command(input_vid_mp4, frame_num, output_dir))
+def parallel_call(input_vid, input_vid_mp4, input_vid_infared, output_dir, frame_num):
+    cmd_lst = [extract_depth_frame_command(input_vid, frame_num, output_dir), 
+                extract_reg_frame_command(input_vid_mp4, frame_num, output_dir)]
+    if input_vid_infared != "":
+        cmd_lst.append(extract_reg_frame_command(input_vid_infared, frame_num, output_dir, frm_type="infared_frame"))
+    
     p1 = multiprocessing.Process(target=run_processes_parallel, args=(cmd_lst,))
     p1.start()
     try:
@@ -78,8 +83,9 @@ def main():
     input_vid = args.input
     input_vid_mp4 = args.input_rgb
     output_dir = args.output
+    input_vid_infared = args.infared
     frame_num = int(args.frame)
-    parallel_call(input_vid, input_vid_mp4, output_dir, frame_num)
+    parallel_call(input_vid, input_vid_mp4, input_vid_infared, output_dir, frame_num)
         #pass
     #run_processes_parallel(cmd_lst)
     if platform.system() == 'Linux':

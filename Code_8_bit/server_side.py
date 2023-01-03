@@ -117,8 +117,8 @@ def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str, 
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
     str_time = str(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
-    cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_lsb_ip_{}_port_{}_{}_out.mp4".format(loglevel, addr, port, dir, ip_str, port, str_time)
-    cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_msb_ip_{}_port_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  ip_str, port + 1, str_time)
+    cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_lsb_port_{}_{}_out.mp4".format(loglevel, addr, port, dir, ip_str, str_time, port )
+    cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_msb_port_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  ip_str, str_time, port + 1)
     return cmd_lsb, cmd_msb
 
 def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, dir: str):

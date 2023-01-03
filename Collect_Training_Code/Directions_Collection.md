@@ -9,3 +9,8 @@ Then run
 ```
 ./run_record.sh
 ```
+
+# For decompressing the frames to images run the following
+```
+./run_decompress.sh
+```
