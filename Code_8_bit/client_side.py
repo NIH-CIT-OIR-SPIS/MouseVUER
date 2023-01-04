@@ -77,7 +77,7 @@ def run_rtmp_command(recieved: str):
     run_it = int(arr[7])
     color = 1 if int(arr[8]) != 0 else 0
     ir = 1 if int(arr[9]) != 0 else 0
-    cmd = "./bin/multicam -dir Testing_DIR/ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d} -color {:d} -ir {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit, )
+    cmd = "./bin/multicam -dir Testing_DIR/ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d} -color {:d} -ir {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit, color, ir)
     #print(cmd)
     # Try to run shell command, timeout on error
     try:
