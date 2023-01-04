@@ -256,10 +256,13 @@ class GUI(ttk.Frame):
            
     def run(self):
         self.root.mainloop()
-        
-if __name__ == '__main__':
+
+def run_gui():
     root = tkinter.Tk()
     gui = GUI(root)
     gui.run()
     if platform.system() == 'Linux':
         os.system("stty echo")
+
+if __name__ == '__main__':
+    run_gui()

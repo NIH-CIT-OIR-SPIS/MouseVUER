@@ -20,6 +20,13 @@ import shlex
 import datetime
 import traceback
 from client_side import PORT_CLIENT_LISTEN, COMMON_NAME, ORGANIZATION, COUNTRY_ORGIN, BYTES_SIZE
+
+
+# For GUI
+
+
+from server_gui import ServerGUI
+
 """
 This is the server side of the application.
 GET LIST OF ALL IP ADDRESSES
@@ -416,11 +423,16 @@ def server_side_command_line_parser():
     parser.add_argument('--dir', '--dir', type=str, default='Testing_DIR', help='The directory to save the video files to. Default is the current directory')
     return parser.parse_args()
 
+
+
 def main():
-    args = server_side_command_line_parser()
     print("Getting IP addresses...")
     ip_lst = map_network()
     print("Done getting IP addresses")
+    print("Starting Graphical User Interface...")
+    # TODO: Start GUI
+    
+    args = server_side_command_line_parser()
     server = Server(ip_lst, **vars(args))
     cmd_list = build_ffmpeg_cmd_pair_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'])
     p1 = multiprocessing.Process(target=run_processes_parallel, args=(cmd_list,))
@@ -439,12 +451,9 @@ def main():
     finally:
         os.system("stty echo")
 
+
 if __name__ == '__main__':
     main()
-    
-    
-
-
     #server.start_conn_send_data(host="127.0.0.1", port=12345)
 
     #lst.remove()
