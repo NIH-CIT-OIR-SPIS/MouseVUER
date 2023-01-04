@@ -1,9 +1,15 @@
 #!/usr/bin/python3
-import tkinter as tk
+import tkinter 
 import platform
 from tkinter import filedialog
+from tkinter import messagebox
 from tkinter import ttk
 import re
+import time
+import datetime
+import os
+import multiprocessing as mp
+
 
 class Menubar(ttk.Frame):
     """Builds a menu bar for the top of the main window"""
@@ -81,77 +87,290 @@ class ServerGUI(ttk.Frame):
         # Set the size of the main window
         self.root.geometry("800x600")
         # Create a menu bar
+        self.root.geometry("600x400")
+        self.grid(column=0, row=0, sticky='nsew')
+        self.grid_columnconfigure(0, weight=1) # Allows column to stretch upon resizing
+        self.grid_rowconfigure(0, weight=1) # Same with row
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.option_add('*tearOff', 'FALSE') # Disables ability to tear menu bar into own window
+
         self.menubar = Menubar(self.root)
+        self.dir_opt = {}
+        #self.dir_opt['initialdir'] = '/home/'
+        self.row_num = 1
+        self.dir_opt['mustexist'] = True
+        self.dir_opt['parent'] = self.root
+        self.dir_opt['title'] = 'Choose a directory to save aligned color MP4, and depth MKV files.'
 
-        # Create a frame for the widgets
-        self.widgets_frame = ttk.Frame(self.root)
-        self.widgets_frame.pack(fill=tk.BOTH, expand=True)
-
-
-        # Create a label for the port number
-        self.port_label = ttk.Label(self.widgets_frame, text="Port number: ")
-        self.port_label.grid(row=0, column=0, padx=5, pady=5)
+        self.json_opt = {}
+        self.json_opt['defaultextension'] = '.json'
+        self.json_opt['parent'] = self.root
+        self.json_opt['title'] = 'Choose a JSON file to use for alignment.'
+        self.json_opt['filetypes'] = [('JSON files', '.json')]
         
-        # Create a text box for the port number
-        self.port_text = tk.IntVar()
-        self.port_text.set(5000)
-        self.port_entry = ttk.Entry(self.widgets_frame, textvariable=self.port_text, command=self.__check_port)
-        self.port_entry.grid(row=0, column=1, padx=5, pady=5)
+        # Create a frame for the widgets
+        # self = ttk.Frame(self.root)
+        # self.pack(fill=tkinter.BOTH, expand=True)
+        self.vid_save_dir = None
+        self.json_file = None
 
-        # Create a label for the video dimensions
-        self.dimensions_label = ttk.Label(self.widgets_frame, text="Video dimensions: ")
-        self.dimensions_label.grid(row=1, column=0, padx=5, pady=5)
-        # Create a text box for the video dimensions
-        self.dimensions_text = tk.StringVar()
-        self.dimensions_text.set("1280x720")
-        self.dimensions_entry = ttk.Entry(self.widgets_frame, textvariable=self.dimensions_text, command=self.__check_dimensions)
-        self.dimensions_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        self.label_vid_save_dir = ttk.Label(self, text="Video save directory: ")
+        self.btn_open_dir = ttk.Button(self, text='Save Directory', command=self.dir_dialog)
+
+        self.label_json = ttk.Label(self, text="JSON file: ")
+        self.btn_open_json = ttk.Button(self, text='Open JSON', command=self.json_dialog)
+
+        self.btn_start = ttk.Button(self, text='Start Recording', command=self.start_recording)
+
+        
+        # Create a label for the port number
+        self.init_port_num()
+        
+        # Create a label for the dimensions
+        self.init_dimensions()
         
         # Create a label for the framerate
-        self.framerate_label = ttk.Label(self.widgets_frame, text="Framerate: ")
-        self.framerate_label.grid(row=2, column=0, padx=5, pady=5)
-        # Create a text box for the framerate
-        self.framerate_text = tk.StringVar()
-        self.framerate_text.set("30")
-        self.framerate_entry = ttk.Entry(self.widgets_frame, textvariable=self.framerate_text)
-        self.framerate_entry.grid(row=2, column=1, padx=5, pady=5)
+        self.init_framerate()
 
+        self.init_recording_time()
+
+        self.init_crf_value()
+
+        self.init_basename()
+
+        self.init_maxdepth()
+
+        ## Add button 
+        
+        self.label_vid_save_dir.grid(row=self.row_num, column=0, sticky='w')
+        self.btn_open_dir.grid(row=self.row_num, column=1, sticky='w')
+        self.row_num += 1
+
+        self.label_json.grid(row=self.row_num, column=0, sticky='w')
+        self.btn_open_json.grid(row=self.row_num, column=1, sticky='w')
+        self.row_num += 1
+
+        self.btn_start.grid(row=self.row_num, column=0, sticky='w')
+        self.row_num += 1
+
+
+    def dir_dialog(self):
+        dirname = filedialog.askdirectory(**self.dir_opt)
+        if dirname:
+            self.vid_save_dir = dirname
+            self.label_vid_save_dir.config(text="Video save directory: " + self.vid_save_dir)
+            
+        else:
+            print("Error: Directory must not be empty.")
+    
+    def json_dialog(self):
+        filename = filedialog.askopenfilename(**self.json_opt)
+        if filename:
+            self.json_file = filename
+            self.label_json.config(text="JSON file: " + self.json_file)
+            if not os.path.exists(self.json_file):
+                print("Error: File does not exist.")
+                self.json_file = None
+                return
+        else:
+            print("Error: File not selected.")
+            self.json_file = None
+
+
+    def start_recording(self):
+        try:
+
+            self.total_time_sec = int(self.hour_entry.get()) * 3600 + int(self.minute_entry.get()) * 60 + int(self.second_entry.get())
+        except Exception as e:
+            print(e)
+            tkinter.messagebox.showerror(title="Error", message="Invalid time entered. Please enter time in seconds.")
+            return
+        self.time_start = time.time()
+        if not self.json_file:
+            tkinter.messagebox.showerror(title="Error", message="No JSON file selected.")
+            return
+        if not self.vid_save_dir:
+            tkinter.messagebox.showerror(title="Error", message="No video save directory selected.")
+            return
+        if not self.total_time_sec > 0:
+            tkinter.messagebox.showerror(title="Error", message="Invalid time entered. Please enter time in seconds.")
+            return
+        #self.clock_thread.start()
+
+        
+        print("Started encoding and recording")
+        ## TODO call server instance here
+        print("Ended recording")
+
+        #self.clock_thread.join()
+        tkinter.messagebox.showinfo(title="Success", message="Recording complete.")
+        #self.root.destroy()
+
+    
+    def init_recording_time(self):
         # Create a label for the recording time
-        self.recording_time_label = ttk.Label(self.widgets_frame, text="Recording time: ")
-        self.recording_time_label.grid(row=3, column=0, padx=5, pady=5)
-        # Create a text box for the recording time
-        self.recording_time_text = tk.StringVar()
-        self.recording_time_text.set("00:00:30")
-        self.recording_time_entry = ttk.Entry(self.widgets_frame, textvariable=self.recording_time_text)
-        self.recording_time_entry.grid(row=3, column=1, padx=5, pady=5)
+        self.hours = -1
+        self.minutes = -1
+        self.seconds = -1
+        vcmd = (self.register(self.validate_int), '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        sub_grid = ttk.Frame(self)
+        self.time_record_label = ttk.Label(sub_grid, text="Time to record:")
+        
 
+
+        
+        self.hour_entry = ttk.Spinbox(sub_grid, from_=0, to=200, width=3, validate='key', validatecommand=vcmd)
+        self.hour_entry.delete(0, 'end')
+        self.hour_entry.insert(0, "0")
+        self.minute_entry = ttk.Spinbox(sub_grid, from_=0, to=59, width=2, validate='key', validatecommand=vcmd)
+        self.minute_entry.delete(0, 'end')
+        self.minute_entry.insert(0, "0")
+        self.second_entry = ttk.Spinbox(sub_grid, from_=0, to=59, width=2, increment=1, validate='key', validatecommand=vcmd)
+        self.second_entry.delete(0, 'end')
+        self.second_entry.insert(30, "30")
+
+        # Sub grid for the time
+        # New frame
+
+
+        self.time_record_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        # Sub grid for the time
+        self.hour_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.minute_entry.grid(row=0, column=2, padx=5, pady=5)
+        self.second_entry.grid(row=0, column=3, padx=5, pady=5)
+
+
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+        
+
+
+    def init_port_num(self):
+
+        sub_grid = ttk.Frame(self)
+        self.port_label = ttk.Label(sub_grid, text="Port number: ")
+        # Create a text box for the port number
+        self.port_text = tkinter.IntVar()
+        self.port_text.set(5000)
+        self.port_entry = ttk.Spinbox(sub_grid, from_=5000, increment=1, to=5000+600, width=5, textvariable=self.port_text, command=self.__check_port)
+        self.port_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.port_entry.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+
+    def init_dimensions(self):
+        sub_grid = ttk.Frame(self)
+        self.dimensions_label = ttk.Label(sub_grid, text="Video dimensions: ")
+        # Create a text box for the video dimensions
+        self.dimensions_text = tkinter.StringVar()
+        self.dimensions_text.set("1280x720")
+        self.dimensions_entry = ttk.Entry(sub_grid, textvariable=self.dimensions_text, width=10)
+        self.dimensions_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.dimensions_entry.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+
+    def init_framerate(self):
+        sub_grid = ttk.Frame(self)
+        self.framerate_label = ttk.Label(sub_grid, text="Framerate: ")
+        # Create a text box for the framerate
+        self.framerate_text = tkinter.IntVar()
+        self.framerate_text.set(30)
+        self.framerate_entry = ttk.Spinbox(sub_grid, from_=1, increment=1, to=60, textvariable=self.framerate_text, command=self.__check_framerate)
+
+        self.framerate_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.framerate_entry.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+        
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+
+
+
+        # Create a label for the framerate
+        # self.framerate_label = ttk.Label(self, text="Framerate: ")
+        # # Create a text box for the framerate
+        # self.framerate_text = tkinter.IntVar()
+        # self.framerate_text.set(30)
+        # self.framerate_entry = ttk.Spinbox(self, from_=1, increment=1, to=60, textvariable=self.framerate_text, command=self.__check_framerate)
+        
+        # self.framerate_label.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        # self.framerate_entry.grid(row=self.row_num, column=1, padx=5, pady=5, sticky='w')
+        # self.row_num += 1
+
+    def init_crf_value(self):
         # Create a label for the CRF value
-        self.crf_label = ttk.Label(self.widgets_frame, text="CRF value: ")
-        self.crf_label.grid(row=4, column=0, padx=5, pady=5)
+
+        sub_grid = ttk.Frame(self)
+        self.crf_label = ttk.Label(sub_grid, text="CRF value: ")
         # Create a text box for the CRF value
-        self.crf_text = tk.StringVar()
-        self.crf_text.set("22")
-        self.crf_entry = ttk.Entry(self.widgets_frame, textvariable=self.crf_text)
-        self.crf_entry.grid(row=4, column=1, padx=5, pady=5)
+        self.crf_text = tkinter.IntVar()
+        self.crf_text.set(22)
+        self.crf_spinbox = ttk.Spinbox(sub_grid, from_=0, to=51, textvariable=self.crf_text)
 
+        self.crf_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.crf_spinbox.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+
+        # self.crf_label = ttk.Label(self, text="CRF value: ")
+        # # Create a text box for the CRF value
+        # self.crf_text = tkinter.IntVar()
+        # self.crf_text.set(22)
+        # self.crf_spinbox = ttk.Spinbox(self, from_=0, to=51, textvariable=self.crf_text)
+        
+        # self.crf_label.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        # self.crf_spinbox.grid(row=self.row_num, column=1, padx=5, pady=5, sticky='w')
+        # self.row_num += 1
+
+    def init_basename(self):
         # Create a label for the base name of the video files
-        self.base_name_label = ttk.Label(self.widgets_frame, text="Base name of video files: ")
-        self.base_name_label.grid(row=5, column=0, padx=5, pady=5)
+        sub_grid = ttk.Frame(self)
+        self.base_name_label = ttk.Label(sub_grid, text="Base name of video files: ")
         # Create a text box for the base name of the video files
-        self.base_name_text = tk.StringVar()
+        self.base_name_text = tkinter.StringVar()
         self.base_name_text.set("test_")
-        self.base_name_entry = ttk.Entry(self.widgets_frame, textvariable=self.base_name_text)
-        self.base_name_entry.grid(row=5, column=1, padx=5, pady=5)
+        self.base_name_entry = ttk.Entry(sub_grid, textvariable=self.base_name_text)
 
-        # Create a label for the max depth of the depth camera
-        self.max_depth_label = ttk.Label(self.widgets_frame, text="Max depth of depth camera: ")
-        self.max_depth_label.grid(row=6, column=0, padx=5, pady=5)
-        # Create a text box for the max depth of the depth camera
-        self.max_depth_text = tk.StringVar()
-        self.max_depth_text.set("1000")
-        self.max_depth_entry = ttk.Entry(self.widgets_frame, textvariable=self.max_depth_text)
-        self.max_depth_entry.grid(row=6, column=1, padx=5, pady=5)
+        self.base_name_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.base_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky='w')
 
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+
+
+        # # Create a label for the base name of the video files
+        # self.base_name_label = ttk.Label(self, text="Base name of video files: ")
+        # # Create a text box for the base name of the video files
+        # self.base_name_text = tkinter.StringVar()
+        # self.base_name_text.set("test_")
+        # self.base_name_entry = ttk.Entry(self, textvariable=self.base_name_text)
+        
+        # self.base_name_label.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        # self.base_name_entry.grid(row=self.row_num, column=1, padx=5, pady=5, sticky='w')
+
+        # self.row_num += 1
+
+
+    def init_maxdepth(self):
+        # Create a label for the max depth
+        sub_grid = ttk.Frame(self)
+        self.max_depth_label = ttk.Label(sub_grid, text="Max depth: ")
+        # Create a text box for the max depth
+        self.max_depth_text = tkinter.IntVar()
+        self.max_depth_text.set(1000)
+        self.max_depth_spinbox = ttk.Spinbox(sub_grid, from_=1, increment=1, to=(2**16)-1, textvariable=self.max_depth_text)
+
+        self.max_depth_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.max_depth_spinbox.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+    
     def __check_port(self):
         port = self.port_text.get()
         if port < 1024 or port > 65535:
@@ -163,4 +382,43 @@ class ServerGUI(ttk.Frame):
         if not re.match(r"^[0-9]{3,4}x[0-9]{3,4}$", dimensions):
             messagebox.showerror("Error", "Video dimensions must be in the format WIDTHxHEIGHT")
             self.dimensions_text.set("1280x720")
-    
+            
+    def __check_framerate(self):
+        framerate = self.framerate_text.get()
+        if framerate < 1 or framerate > 60:
+            messagebox.showerror("Error", "Framerate must be between 1 and 60")
+            self.framerate_text.set(30)
+
+    def validate_int(self, action, index, value_if_allowed, prior_value, text, validation_type, trigger_type, widget_name):
+        if value_if_allowed == "":
+            # If the entry is empty,change it to 0
+            if self.hour_entry.get() == "":
+                self.hour_entry.insert(0, "0")
+            if self.minute_entry.get() == "":
+                self.minute_entry.insert(0, "0")
+            if self.second_entry.get() == "":
+                self.second_entry.insert(0, "0")
+            return True
+        if value_if_allowed:
+            try:
+                int(value_if_allowed)
+                return True
+            except ValueError:
+                return False
+        # elif on backspace, delete, or other key
+        else:
+            return False
+
+    def run(self):
+        self.root.mainloop()
+
+def testing_run():
+    ip_table_dict = {}
+    parent = tkinter.Tk()
+
+    app = ServerGUI(parent, ip_table_dict)
+    app.run()
+
+
+if __name__ == "__main__":
+    testing_run()
