@@ -138,6 +138,7 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     // typ 0 is LSB frames
     // typ 1 is MSB frames
     // type 2 is Color frames
+    // type 3 is IR frames
     std::string thread_counter = (count_threads > 0 && count_threads < 8) ? " -threads " + std::to_string(count_threads) : "";
     std::string banner = (ffmpeg_verbose) ? " -loglevel repeat+level+debug " : " -loglevel error -nostats "; //" -loglevel trace";
     std::string ffmpeg_command;
@@ -183,11 +184,12 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
 
         return ffmpeg_command;
     }
-    else if (typ == 2)
+    else if (typ == 2 || typ == 3)
     {
         ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast " + " -crf " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " + path_out;
         
         return ffmpeg_command;
+
     }
 
     return "";
@@ -275,7 +277,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                    unsigned int height = 720U, unsigned int fps = 30U, int crf_lsb = 25, int count_threads = 2,
                    bool ffmpeg_verbose = false, bool collect_raw = false, int num_frm_collect = 0, bool show_preview = false,
                    std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false, std::string server_address = "", unsigned short port = 1000, uint8_t disparity_shift = 0,
-                   bool align_depth_to_color = false)
+                   bool align_depth_to_color = false, bool infared = true)
 {
 
     if (time_run > 2147483646)
@@ -331,6 +333,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::string path_lsb = (server_address == "" || port <= 1024) ? (dirname + "test_lsb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port) + "/ ");
     std::string path_msb = (server_address == "" || port <= 1024) ? (dirname + "test_msb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port + 1) + "/ ");
     std::string color_lsb_path = (server_address == "" || port <= 1024) ? (dirname + "test_color_lsb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port + 2) + "/ ");
+    std::string infared_lsb_path = (server_address == "" || port <= 1024) ? (dirname + "test_ir_lsb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port + 3) + "/ ");
     // std::string path_msb = (server_address == "" || port <= -1) ? (dirname + "test_msb.mp4") : (server_address + ":" + port);
     // std::string path_lsb = (server_address == "" || port <= -1) ? (dirname + "test_lsb.mp4") : (server_address + ":" + port);
     // std::string color_lsb_path = (server_address == "" || port <= -1) ? (dirname + "test_color_lsb.mp4") : (server_address + ":" + port);
@@ -345,6 +348,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     std::string color_lsb = build_ffmpeg_cmd("rgb24", "yuv420p", "libx264", color_lsb_path, time_run, count_threads, width_color, height_color, fps, crf_color, ffmpeg_verbose, depth_lossless, 2);
     // std::string raw_cmd = build_ffmpeg_cmd("gray16le", "gray16le", "rawvideo", path_raw, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 4);
+    std::string ir_str = build_ffmpeg_cmd("gray", "yuv420p", "libx264", infared_lsb_path, time_run, count_threads, width, height, fps, crf_color, ffmpeg_verbose, depth_lossless, 3);
+    
     if (str_msb == "")
     {
         std::cerr << "Error with build_ffmpeg_cmd " << std::endl;
@@ -355,14 +360,20 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::cout << "FFmpeg command for color stream too " << std::endl;
         std::cout << color_lsb << std::endl;
     }
+    if (ir_str != "")
+    {
+        std::cout << "FFmpeg command for infared stream too " << std::endl;
+        std::cout << ir_str << std::endl;
+    }
     std::cout << "FFmpeg command for str_lsb LSB frames:" << std::endl;
     std::cout << str_lsb << std::endl;
     std::cout << "FFmpeg command for str_msb MSB frames:" << std::endl;
     std::cout << str_msb << std::endl;
     FILE *pipe_lsb = NULL;
     FILE *pipe_msb = NULL;
-
     FILE *color_pipe = NULL;
+    FILE *ir_pipe = NULL;
+    
     int diff = (int)max_d - (int)min_d;
     bool only_10_bits = false;
     // floor( ( (double)(max_d - min_d) * 1000.0)/((double)depth_u)) <= 1023
@@ -431,6 +442,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             if (!(color_pipe = popen(color_lsb.c_str(), "w")))
             {
                 std::cerr << "popen error 2" << std::endl;
+                return 0;
+            }
+        }
+        if (infared){
+            if (!(ir_pipe = popen(ir_str.c_str(), "w")))
+            {
+                std::cerr << "popen error infared" << std::endl;
                 return 0;
             }
         }
@@ -504,7 +522,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::cout << "Disparity Shift " << advanced_mode_dev.get_depth_table().disparityShift << std::endl;
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configurationst
     cfg.enable_stream(RS2_STREAM_INFRARED, width, height, RS2_FORMAT_Y8, fps);
-
     
     if (color || align_depth_to_color)
     {
@@ -613,6 +630,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     rs2::frame color_frame;
     rs2::frame depth_frame_in;
     rs2::frame rgb_frame;
+    rs2::frame ir_frame;
     rs2::threshold_filter thresh_filter;
     // int min_dis = 0;
     // int max_dis = 16;
@@ -736,6 +754,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     std::cout << "Error with fwrite frames scaled depth" << std::endl;
                     break;
                 }
+
+
                 // if (max_d > 1023) // WILL need to add logic for scaling
                 // {
 
@@ -779,7 +799,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                     {
                         if (!fwrite((uint8_t *)rgb_frame.get_data(), 1, height_color * width_color * 3, color_pipe))
                         {
-                            std::cerr << "Error with fwrite frames 2" << std::endl;
+                            std::cerr << "Error with fwrite frames color" << std::endl;
+                            break;
+                        }
+                    }
+                }
+
+                if (infared){
+                    if ((ir_frame = frameset.get_infrared_frame()))
+                    {
+                        if (!fwrite((uint8_t *)ir_frame.get_data(), 1, height * width, ir_pipe))
+                        {
+                            std::cerr << "Error with fwrite frames infared" << std::endl;
                             break;
                         }
                     }
@@ -916,6 +947,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     // avformat_free_context(oc);
     // free(store_frame_lsb);
     // free(store_frame_msb);
+
+    memset(store_frame_lsb, 0, num_bytes);
+    memset(store_frame_msb, 0, num_bytes);
     free(store_frame_lsb);
     free(store_frame_msb);
 
@@ -978,6 +1012,14 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             pclose(color_pipe);
             color_pipe = NULL;
         }
+        if (infared){
+            fflush(ir_pipe);
+            pclose(ir_pipe);
+            ir_pipe = NULL;
+            
+        }
+
+
 
 #endif
     }
@@ -1088,6 +1130,7 @@ try
     int port = 1000;
     uint8_t disp_shift = 0;
     int align_int = 0;
+    int infared = 0;
     // int rosbag = 0;
     // int opt;
     // po::options_description desc("Allowed options");
@@ -1179,6 +1222,7 @@ try
     port = parse_integer_cmd(input, "-port", port);
     disp_shift = (uint8_t)parse_integer_cmd(input, "-disp_shift", (int)disp_shift);
     align_int = parse_integer_cmd(input, "-align_to_color", align_int);
+    infared = parse_integer_cmd(input, "-ir", infared);
     // rosbag = parse_integer_cmd(input, "-rosbag", rosbag);
     if (width == -5 || width < 200 || width > 1920)
     {
@@ -1262,6 +1306,11 @@ try
         print_usage("-align_int");
         return EXIT_FAILURE;
     }
+
+    if(infared < 0 || infared > 1){
+        print_usage("-ir");
+        return EXIT_FAILURE;
+    }
     if (sec <= (long)0){
         std::cout << "Error -sec" << std::endl;
         print_usage("-sec");
@@ -1292,8 +1341,9 @@ try
     std::cout << "port " << port << std::endl;
     std::cout << "disp_shift: " << disp_shift << std::endl;
     std::cout << "align_int: " << align_int << std::endl;
+    std::cout << "infared: " << infared << std::endl;
     // std::cout << "rosbag: " << bool(rosbag) << std::endl;
-    int retval = startRecording(dir, sec, bagfile, (uint16_t)max_depth, (uint16_t)min_depth, (uint16_t)depth_unit, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless), server_address, (unsigned short)port, disp_shift, (bool)align_int);
+    int retval = startRecording(dir, sec, bagfile, (uint16_t)max_depth, (uint16_t)min_depth, (uint16_t)depth_unit, width, height, fps, crf, thr, bool(verbose), bool(numraw), numraw, bool(view), jsonfile, bool(color), crf_color, bool(depth_lossless), server_address, (unsigned short)port, disp_shift, (bool)align_int, (bool)infared);
     if (!retval)
     {
         std::cout << "FAILURE WHILE RECORDING" << std::endl;

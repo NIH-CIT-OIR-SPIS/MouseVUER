@@ -354,7 +354,11 @@ bool InputParser::cmdOptionExists(const std::string &option) const
  */
 void print_usage(std::string choice)
 {
-    if (choice == "-align_to_color")
+    if (choice == "-ir")
+    {
+        std::cout << "Usage: -ir <int> 0 or 1. 0 for no IR, 1 for IR" << std::endl;
+    }
+    else if (choice == "-align_to_color")
     {
         std::cout << "Usage: -align_to_color <int> 0 or 1. 0 for no alignment and regular recording, 1 for depth alignment to color, NOTE High Processing COST" << std::endl;
     }

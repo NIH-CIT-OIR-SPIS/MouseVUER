@@ -112,7 +112,7 @@ def validate_loglevel(loglevel):
         raise argparse.ArgumentTypeError("Error: Log level must be one of the following: error, verbose, debug")
     return loglevel
 
-def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str, ip_str: str):
+def build_ffmpeg_cmd_group(server_addr: str, loglevel: str, port: int, dir: str, ip_str: str, color: bool, ir: bool):
     """
     Build the ffmpeg command string
     :param server_addr:
@@ -124,11 +124,21 @@ def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str, 
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
     str_time = str(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
+    
     cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_lsb_port_{}_{}_out.mp4".format(loglevel, addr, port, dir, ip_str, str_time, port )
     cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_msb_port_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  ip_str, str_time, port + 1)
-    return cmd_lsb, cmd_msb
+    cmd_group = [cmd_lsb, cmd_msb]
+    if color:
+        cmd_color = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_color_port_{}_{}_out.mp4".format(loglevel, addr, port + 2, dir, ip_str, str_time, port + 2)
+        cmd_group.append(cmd_color)
+    
+    if ir:
+        cmd_ir = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt gray -y -movflags +faststart {}/vid_{}_ir_port_{}_{}_out.mp4".format(loglevel, addr, port + 3, dir, ip_str, str_time, port + 3)
+        cmd_group.append(cmd_ir)
 
-def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, dir: str):
+    return cmd_group
+
+def build_ffmpeg_cmd_group_list(map_dict: dict, loglevel: str, server_addr: str, dir: str, color: bool, ir: bool):
     """
     Build the ffmpeg command string
     :param map_dict:
@@ -137,9 +147,9 @@ def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, 
     cmd_list = []
     for ip, port in map_dict.items():
         ip_str = str(ip).replace('.','_')
-        cmd_lsb, cmd_msb = build_ffmpeg_cmd_pair(server_addr, loglevel, port, dir, ip_str)
-        cmd_list.append(cmd_lsb)
-        cmd_list.append(cmd_msb)
+        cmd_group = build_ffmpeg_cmd_group(server_addr, loglevel, port, dir, ip_str, color, ir)
+        for cmd in cmd_group:
+            cmd_list.append(cmd)
     return cmd_list
     
 
@@ -365,7 +375,7 @@ class Server:
                     #     print("Received: {}".format(data.decode('ascii')))
                     #     print("Address: {}".format(addr))
                     #conn.send("ADDRESS: {}".format(self.server_ip))
-                    message = "time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d},to_run:{:d}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1)#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
+                    message = "time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d},to_run:{:d},color:{:d},ir:{:d}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1, self.argdict['color'], self.argdict['ir'])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
                     
                     #message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
                     conn.send(message.encode('ascii'))
@@ -421,6 +431,8 @@ def server_side_command_line_parser():
     parser.add_argument('--depth_unit', '--depth_unit', type=int, default=1000, help='The units of the depth camera to use valid range, [40, 25000]. Default value is 1000')
     parser.add_argument('--num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
     parser.add_argument('--dir', '--dir', type=str, default='Testing_DIR', help='The directory to save the video files to. Default is the current directory')
+    parser.add_argument('--ir', type=int, default=1, help='The infrared mode to use. Valid values are 0 for no infared, any other value for infrared. Default is 1')
+    parser.add_argument('--color', type=int, default=1, help='The color mode to use. Valid values are 0 for no color, any other value for color. Default is 1')
     return parser.parse_args()
 
 
@@ -434,7 +446,8 @@ def main():
     
     args = server_side_command_line_parser()
     server = Server(ip_lst, **vars(args))
-    cmd_list = build_ffmpeg_cmd_pair_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'])
+
+    cmd_list = build_ffmpeg_cmd_group_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'], bool(server.argdict['color'] != 0), bool(server.argdict['ir'] !=0))
     p1 = multiprocessing.Process(target=run_processes_parallel, args=(cmd_list,))
     p1.start()
     server.listen()
