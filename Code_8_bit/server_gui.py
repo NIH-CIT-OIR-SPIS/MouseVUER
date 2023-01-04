@@ -207,7 +207,6 @@ class ServerGUI(ttk.Frame):
         #self.clock_thread.join()
         tkinter.messagebox.showinfo(title="Success", message="Recording complete.")
         #self.root.destroy()
-
     
     def init_recording_time(self):
         # Create a label for the recording time
@@ -217,9 +216,6 @@ class ServerGUI(ttk.Frame):
         vcmd = (self.register(self.validate_int), '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
         sub_grid = ttk.Frame(self)
         self.time_record_label = ttk.Label(sub_grid, text="Time to record:")
-        
-
-
         
         self.hour_entry = ttk.Spinbox(sub_grid, from_=0, to=200, width=3, validate='key', validatecommand=vcmd)
         self.hour_entry.delete(0, 'end')
@@ -288,19 +284,6 @@ class ServerGUI(ttk.Frame):
         sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
         self.row_num += 1
 
-
-
-        # Create a label for the framerate
-        # self.framerate_label = ttk.Label(self, text="Framerate: ")
-        # # Create a text box for the framerate
-        # self.framerate_text = tkinter.IntVar()
-        # self.framerate_text.set(30)
-        # self.framerate_entry = ttk.Spinbox(self, from_=1, increment=1, to=60, textvariable=self.framerate_text, command=self.__check_framerate)
-        
-        # self.framerate_label.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
-        # self.framerate_entry.grid(row=self.row_num, column=1, padx=5, pady=5, sticky='w')
-        # self.row_num += 1
-
     def init_crf_value(self):
         # Create a label for the CRF value
 
@@ -317,16 +300,6 @@ class ServerGUI(ttk.Frame):
         sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
         self.row_num += 1
 
-        # self.crf_label = ttk.Label(self, text="CRF value: ")
-        # # Create a text box for the CRF value
-        # self.crf_text = tkinter.IntVar()
-        # self.crf_text.set(22)
-        # self.crf_spinbox = ttk.Spinbox(self, from_=0, to=51, textvariable=self.crf_text)
-        
-        # self.crf_label.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
-        # self.crf_spinbox.grid(row=self.row_num, column=1, padx=5, pady=5, sticky='w')
-        # self.row_num += 1
-
     def init_basename(self):
         # Create a label for the base name of the video files
         sub_grid = ttk.Frame(self)
@@ -341,20 +314,6 @@ class ServerGUI(ttk.Frame):
 
         sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
         self.row_num += 1
-
-
-        # # Create a label for the base name of the video files
-        # self.base_name_label = ttk.Label(self, text="Base name of video files: ")
-        # # Create a text box for the base name of the video files
-        # self.base_name_text = tkinter.StringVar()
-        # self.base_name_text.set("test_")
-        # self.base_name_entry = ttk.Entry(self, textvariable=self.base_name_text)
-        
-        # self.base_name_label.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
-        # self.base_name_entry.grid(row=self.row_num, column=1, padx=5, pady=5, sticky='w')
-
-        # self.row_num += 1
-
 
     def init_maxdepth(self):
         # Create a label for the max depth
