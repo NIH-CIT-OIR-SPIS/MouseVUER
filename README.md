@@ -112,6 +112,25 @@ export PKG_CONFIG_PATH
 sudo ldconfig -v
 ```
 
+### Making your json file config
+Connect your realsense camera and run
+```
+realsense-viewer
+```
+
+Then make any setting changes you wish to make and save changes using the save icon on the camera. You will be prompted to save it to a .json file
+We will denote this json file as YourJsonFile.json
+
+Save this file in the Code_8_bit/ directory
+
+### Directions for Use
+Then plug in your Intel RealSense Camera into the computer's USB port
+
+Then run:
+```
+cd ~/DepthCameraRecordingTool/Code_8_bit/ && mkdir Testing_DIR
+```
+
 
 
 ### Directions for Use
@@ -280,7 +299,8 @@ Then For ***each*** client computer:
     Navigate on the client computer to your home directory using the Files application on Ubuntu
     Paste a copy of the DepthCameraRecordingTool in this folder.
 
-Alternativley you could just open up an ssh session to each client and copy the directories over.
+Alternativley you could just open up an ssh session to each client and copy the directories over. (This however assumes you are connecting the computers to routers)
+
 
 ### For each Client 
 ```
@@ -362,6 +382,8 @@ Running a recording for 30 seconds at a crf of 22, with 4 clients connected
 python3 server_side.py --dir Testing_DIR/ --num_clients 4 --json Default.json --time_run 30 --crf 22
 ```
 
+
+You could also enter in your own json file as well for different settings just be sure that these files are also on the client computers.
 
 
 # Directions Collecting_Training_Code/

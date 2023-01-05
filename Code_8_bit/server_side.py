@@ -20,8 +20,9 @@ import shlex
 import datetime
 import traceback
 from client_side import PORT_CLIENT_LISTEN, COMMON_NAME, ORGANIZATION, COUNTRY_ORGIN, BYTES_SIZE
-
-
+from typing import Dict, Any
+# copy
+import copy
 # For GUI
 
 
@@ -243,6 +244,20 @@ def validate_ip(addr):
         #print("IP address {} is not valid".format(addr))
         raise argparse.ArgumentTypeError("IP address {} is not valid".format(addr))
         return None
+def make_message(settings, json_settings, server_ip, ffmpeg_port) -> Dict[str, Any]:
+    """
+    Make the message to send to the server
+    :param settings:
+    :param json_settings:
+    :return:
+    """
+    #self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1, self.argdict['color'], self.argdict['ir'], self.argdict['json']
+    message = copy.copy(settings)
+
+    message['json_file_data'] = json_settings
+    message['server_ip'] = server_ip
+    message['ffmpeg_port'] = ffmpeg_port
+    return message
 
 class Server:
     """
@@ -319,7 +334,12 @@ class Server:
             raise Exception("Error: FPS must be less than 30 if dimensions are 1280x720 or 1920x1080. FPS given: {}, Dimensions given: {}".format(self.argdict['fps'], self.argdict['dimensions']))
         if self.argdict['depth_unit'] < 40 or self.argdict['depth_unit'] >= 65535:
             raise Exception("Error: Depth unit must be greater than 40 and less than 65535. Depth unit given: {}".format(self.argdict['depth_unit']))
-        
+        if not os.path.exists(self.argdict['json']):
+            raise Exception("Error: JSON file does not exist. JSON file given: {}".format(self.argdict['json']))
+        else:
+            with open(self.argdict['json'], 'r') as f:
+                self.json_file_depth = json.load(f)
+
     def __initialize_maps(self):
         i = 0
         port_store = self.port
@@ -375,10 +395,12 @@ class Server:
                     #     print("Received: {}".format(data.decode('ascii')))
                     #     print("Address: {}".format(addr))
                     #conn.send("ADDRESS: {}".format(self.server_ip))
-                    message = "time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d},to_run:{:d},color:{:d},ir:{:d}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1, self.argdict['color'], self.argdict['ir'])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
+                    #message = "time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d},to_run:{:d},color:{:d},ir:{:d},json:{:d}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1, self.argdict['color'], self.argdict['ir'], self.argdict['json'])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
                     
                     #message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
-                    conn.send(message.encode('ascii'))
+                    #conn.send(message.encode('ascii'))
+                    message = make_message(self.argdict, self.json_file_depth, self.server_ip, ffmpeg_port)
+                    conn.sendall((json.dumps(message) + '\n').encode('ascii'))
                     
                 else:
                     #print("Recieved: {}".format(data))
@@ -422,7 +444,7 @@ def server_side_command_line_parser():
     parser.add_argument('--dimensions', type=str, default='1280x720', help='Dimensions of the video stream, (widthxheight) valid dimensions are: (640x480, 1280x720, 1920x1080). Default is 1280x720')
     parser.add_argument('--fps', type=int, default=30, help='Framerate of recordings.Valid framerates are: (15, 30, 60, 90). Default is 30. 60 fps and 90 fps are only available for 640x480. 30 fps and 15 fps are available for all dimensions.')
     parser.add_argument('--time_run', type=int, default=30, help='Amount of time to record in seconds. Default 30 seconds')
-    parser.add_argument('--json', type=str, default='', help='Json file to be sent to the client and used for the video recordings')
+    parser.add_argument('--json', type=str, default='', help='Json file that is sent to be used for the video recordings')
     #parser.add_argument('--split_time', type=int, default=120, help='Length in to split each recording into. Default is 120 seconds')
     parser.add_argument('--crf', type=int, default=22, help='The quality of the video. Valid range is [0, 51]. Default is 22')
     parser.add_argument('--basename', '--basename', type=str, default='test_', help='The base name of the video files')
@@ -432,7 +454,7 @@ def server_side_command_line_parser():
     parser.add_argument('--num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
     parser.add_argument('--dir', '--dir', type=str, default='Testing_DIR', help='The directory to save the video files to. Default is the current directory')
     parser.add_argument('--ir', type=int, default=1, help='The infrared mode to use. Valid values are 0 for no infared, any other value for infrared. Default is 1')
-    parser.add_argument('--color', type=int, default=0, help='The color mode to use. Valid values are 0 for no color, any other value for color. Default is 1')
+    parser.add_argument('--color', type=int, default=0, help='The color mode to use. Valid values are 0 for no color, any other value for color. Default is 0 no color')
     return parser.parse_args()
 
 

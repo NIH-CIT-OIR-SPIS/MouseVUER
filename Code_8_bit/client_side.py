@@ -30,7 +30,7 @@ ORGANIZATION = "NIH"
 COUNTRY_ORGIN = "US"
 PORT_CLIENT_LISTEN = 1026
 HOST_ADDR = "192.168.1.234"
-BYTES_SIZE = 4096
+BYTES_SIZE = 4096*4
 WAIT_SEC = 4
 LOGFILE = "client_side.log"
 logger = logging.getLogger()
@@ -61,30 +61,59 @@ def get_my_ip():
     s.close()
     return ip
 
-def run_rtmp_command(recieved: str):
-    arr = recieved.split(",")
-    for i in range(len(arr)):
-        arr[i] = arr[i].strip()
-        arr[i] = arr[i].split(":")[1]
+def run_rtmp_command(recieved: dict):
+    json_data = recieved['json_file_data']
+    with open(recieved['json'], 'w') as f:
+        json.dump(json_data, f)
     
-    time_run = int(arr[0])
-    crf = int(arr[1])
-    server_ip = str(arr[2])
-    port = int(arr[3])
-    max_depth = int(arr[4])
-    min_depth = int(arr[5])
-    depth_unit = int(arr[6])
-    run_it = int(arr[7])
-    color = 1 if int(arr[8]) != 0 else 0
-    ir = 1 if int(arr[9]) != 0 else 0
-    cmd = "./bin/multicam -dir ../ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d} -color {:d} -ir {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit, color, ir)
-    #print(cmd)
-    # Try to run shell command, timeout on error
+    cmd = "./bin/multicam -dir ../ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d} -json {} -color {:d} -ir {:d} ".format(recieved["time_run"], recieved["crf"], recieved["server_ip"], recieved["port"], recieved["max_depth"], recieved["min_depth"], recieved["depth_unit"], recieved['json'], recieved["color"], recieved["ir"])
+
     try:
         os.system(cmd)
     except Exception as e:
         print("No response heard go back to waiting")
         pass
+
+
+# def run_rtmp_command(recieved: str):
+#     arr = recieved.split(",")
+#     for i in range(len(arr)):
+#         arr[i] = arr[i].strip()
+#         arr[i] = arr[i].split(":")[1]
+    
+#     time_run = int(arr[0])
+#     crf = int(arr[1])
+#     server_ip = str(arr[2])
+#     port = int(arr[3])
+#     max_depth = int(arr[4])
+#     min_depth = int(arr[5])
+#     depth_unit = int(arr[6])
+#     run_it = int(arr[7])
+#     color = 1 if int(arr[8]) != 0 else 0
+#     ir = 1 if int(arr[9]) != 0 else 0
+
+#     cmd = "./bin/multicam -dir ../ -sec {:d} -crf {:d} -sv_addr {} -port {:d} -max_depth {:d} -min_depth {:d} -depth_unit {:d} -color {:d} -ir {:d}".format(time_run, crf, server_ip, port, max_depth, min_depth, depth_unit, color, ir)
+#     #print(cmd)
+#     # Try to run shell command, timeout on error
+#     json_file_in = str(arr[10])
+#     # check if file exists
+#     if not os.path.isfile(json_file_in):
+#         logger.error("File not found: {}".format(json_file_in))
+#         json_file_in = "Default.json"
+    
+#     if not os.path.isfile(json_file_in):
+#         logger.error("Don't delete Default.json, if you delete default settings you will have difficulties")
+#     else:
+#         cmd += " -json {}".format(json_file_in)
+    
+#     try:
+#         os.system(cmd)
+#     except Exception as e:
+#         print("No response heard go back to waiting")
+#         pass
+
+
+
 # def trying_connect(s: socket, host, port):
 #     print("Trying to connect to {}:{}".format(host, port))
 #     while s.connect_ex((host, port)) != 0:
@@ -94,6 +123,19 @@ def run_rtmp_command(recieved: str):
 #         #     count = 0
 #         # count += 1
 #         #time.sleep(WAIT_SEC)
+
+def parse_raw_json(raw_json: str):
+    """
+    Parse raw json string into a dictionary
+    :param raw_json:
+    :return:
+    """
+    try:
+        json_dict = json.loads(raw_json)
+    except json.decoder.JSONDecodeError as e:
+        logger.error("Error: {}".format(e))
+        return None
+    return json_dict
 
 class Client:
     def __init__(self, server_sni_hostname: str, host: str, port: int, server_cert_file: str, client_cert_file: str, client_key_file: str):
@@ -136,7 +178,8 @@ class Client:
         message = "Host: {}, Port: {}, My_ip: {}, ".format(host, port, get_my_ip())
         conn.send(message.encode('ascii'))
         data = conn.recv(BYTES_SIZE)
-        recieved = "{}".format(data.decode("ascii")) # decode the data
+        # The data recieved is a raw json string that needs to be parsed back into a dictionary
+        recieved = parse_raw_json(data.decode('ascii'))
         #print("{},{}".format(os.path.basename(__file__),recieved))
         #print("Closing connection")
         #print("Recieved data: {}".format(data))

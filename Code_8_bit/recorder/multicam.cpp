@@ -1162,7 +1162,7 @@ try
     dir = input.getCmdOption("-dir");
     if (dir.empty() || !does_dir_exist(dir))
     {
-        std::cout << "ERROR -dir" << std::endl;
+        std::cout << "ERROR -dir (directory not found)" << std::endl;
         print_usage("-dir");
         return EXIT_FAILURE;
     }

@@ -101,13 +101,6 @@ sudo apt-get -y install ffmpeg && \
 sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev libswscale-dev
 ```
 
-### Directions for Use
-Then plug in your Intel RealSense Camera into the computer's USB port
-
-Then run:
-```
-cd ~/DepthCameraRecordingTool/Code_8_bit/ && mkdir Testing_DIR
-```
 
 Or for a new run try
 ```
