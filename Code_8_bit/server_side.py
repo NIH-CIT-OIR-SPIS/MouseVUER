@@ -133,7 +133,7 @@ def build_ffmpeg_cmd_group(server_addr: str, loglevel: str, port: int, dir: str,
         cmd_group.append(cmd_color)
     
     if ir:
-        cmd_ir = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt gray -y -movflags +faststart {}/vid_{}_ir_port_{}_{}_out.mp4".format(loglevel, addr, port + 3, dir, ip_str, str_time, port + 3)
+        cmd_ir = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -y -movflags +faststart {}/vid_{}_ir_port_{}_{}_out.mp4".format(loglevel, addr, port + 3, dir, ip_str, str_time, port + 3)
         cmd_group.append(cmd_ir)
 
     return cmd_group
@@ -423,7 +423,7 @@ def server_side_command_line_parser():
     parser.add_argument('--fps', type=int, default=30, help='Framerate of recordings.Valid framerates are: (15, 30, 60, 90). Default is 30. 60 fps and 90 fps are only available for 640x480. 30 fps and 15 fps are available for all dimensions.')
     parser.add_argument('--time_run', type=int, default=30, help='Amount of time to record in seconds. Default 30 seconds')
     parser.add_argument('--json', type=str, default='', help='Json file to be sent to the client and used for the video recordings')
-    parser.add_argument('--split_time', type=int, default=120, help='Length in to split each recording into. Default is 120 seconds')
+    #parser.add_argument('--split_time', type=int, default=120, help='Length in to split each recording into. Default is 120 seconds')
     parser.add_argument('--crf', type=int, default=22, help='The quality of the video. Valid range is [0, 51]. Default is 22')
     parser.add_argument('--basename', '--basename', type=str, default='test_', help='The base name of the video files')
     parser.add_argument('--max_depth', '--max_depth', type=int, default=65535, help='The max depth of for the depth camera to use. Must be greater than min_depth. Valid range is [1, 65535]. Default is 65535')
@@ -432,7 +432,7 @@ def server_side_command_line_parser():
     parser.add_argument('--num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
     parser.add_argument('--dir', '--dir', type=str, default='Testing_DIR', help='The directory to save the video files to. Default is the current directory')
     parser.add_argument('--ir', type=int, default=1, help='The infrared mode to use. Valid values are 0 for no infared, any other value for infrared. Default is 1')
-    parser.add_argument('--color', type=int, default=1, help='The color mode to use. Valid values are 0 for no color, any other value for color. Default is 1')
+    parser.add_argument('--color', type=int, default=0, help='The color mode to use. Valid values are 0 for no color, any other value for color. Default is 1')
     return parser.parse_args()
 
 

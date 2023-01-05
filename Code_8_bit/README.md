@@ -106,7 +106,7 @@ Then plug in your Intel RealSense Camera into the computer's USB port
 
 Then run:
 ```
-make -j4
+cd ~/DepthCameraRecordingTool/Code_8_bit/ && mkdir Testing_DIR
 ```
 
 Or for a new run try
