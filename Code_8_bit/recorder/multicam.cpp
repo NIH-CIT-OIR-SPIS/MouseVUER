@@ -194,7 +194,71 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
 
     return "";
 }
+/**
+ * @brief      { function_description }
+ * @param      pipe          The pipe
+ * 
+*/
+int save_intrinsics(rs2::pipeline &pipe, std::string dirname)
+{
+    std::string path_out = dirname + "/intrinsics.txt";
+    std::ofstream intrinsics_file;
+    intrinsics_file.open(path_out);
+    rs2::pipeline_profile profile = pipe.get_active_profile();
+    // rs2::video_stream_profile color_profile = profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
+    rs2::video_stream_profile depth_profile = profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
+    rs2::video_stream_profile ir_profile = profile.get_stream(RS2_STREAM_INFRARED, 1).as<rs2::video_stream_profile>();
+    rs2::video_stream_profile ir2_profile = profile.get_stream(RS2_STREAM_INFRARED, 2).as<rs2::video_stream_profile>();
+    rs2_extrinsics e = ir_profile.get_extrinsics_to(ir2_profile);
+    float baseline = e.translation[0];
 
+    // rs2_intrinsics color_intrinsics = color_profile.get_intrinsics();
+    rs2_intrinsics depth_intrinsics = depth_profile.get_intrinsics();
+    rs2_intrinsics ir_intrinsics = ir_profile.get_intrinsics();
+    rs2_intrinsics ir2_intrinsics = ir2_profile.get_intrinsics();
+
+    auto scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
+    // intrinsics_file << "Color intrinsics: " << std::endl;
+    // intrinsics_file << "width: " << color_intrinsics.width << std::endl;
+    // intrinsics_file << "height: " << color_intrinsics.height << std::endl;
+    // intrinsics_file << "ppx: " << color_intrinsics.ppx << std::endl;
+    // intrinsics_file << "ppy: " << color_intrinsics.ppy << std::endl;
+    // intrinsics_file << "fx: " << color_intrinsics.fx << std::endl;
+    // intrinsics_file << "fy: " << color_intrinsics.fy << std::endl;
+    // intrinsics_file << "model: " << color_intrinsics.model << std::endl;
+    // intrinsics_file << "coeffs: " << color_intrinsics.coeffs[0] << " " << color_intrinsics.coeffs[1] << " " << color_intrinsics.coeffs[2] << " " << color_intrinsics.coeffs[3] << " " << color_intrinsics.coeffs[4] << std::endl;
+    intrinsics_file << "Depth intrinsics: " << std::endl;
+    intrinsics_file << "width: " << depth_intrinsics.width << std::endl;
+    intrinsics_file << "height: " << depth_intrinsics.height << std::endl;
+    intrinsics_file << "ppx: " << depth_intrinsics.ppx << std::endl;
+    intrinsics_file << "ppy: " << depth_intrinsics.ppy << std::endl;
+    intrinsics_file << "fx: " << depth_intrinsics.fx << std::endl;
+    intrinsics_file << "fy: " << depth_intrinsics.fy << std::endl;
+    intrinsics_file << "coeffs: " << depth_intrinsics.coeffs[0] << " " << depth_intrinsics.coeffs[1] << " " << depth_intrinsics.coeffs[2] << " " << depth_intrinsics.coeffs[3] << " " << depth_intrinsics.coeffs[4] << std::endl;
+    intrinsics_file << "depth_baseline: " << baseline << std::endl;
+    intrinsics_file << "depth_units: " << scale << std::endl;
+
+    // intrinsics_file << "IR intrinsics: " << std::endl;
+    // intrinsics_file << "width: " << ir_intrinsics.width << std::endl;
+    // intrinsics_file << "height: " << ir_intrinsics.height << std::endl;
+    // intrinsics_file << "ppx: " << ir_intrinsics.ppx << std::endl;
+    // intrinsics_file << "ppy: " << ir_intrinsics.ppy << std::endl;
+    // intrinsics_file << "fx: " << ir_intrinsics.fx << std::endl;
+    // intrinsics_file << "fy: " << ir_intrinsics.fy << std::endl;
+    // intrinsics_file << "coeffs: " << ir_intrinsics.coeffs[0] << " " << ir_intrinsics.coeffs[1] << " " << ir_intrinsics.coeffs[2] << " " << ir_intrinsics.coeffs[3] << " " << ir_intrinsics.coeffs[4] << "\n" << std::endl;
+    // intrinsics_file << "IR2 intrinsics: " << std::endl;
+    // intrinsics_file << "width: " << ir2_intrinsics.width << std::endl;
+    // intrinsics_file << "height: " << ir2_intrinsics.height << std::endl;
+    // intrinsics_file << "ppx: " << ir2_intrinsics.ppx << std::endl;
+    // intrinsics_file << "ppy: " << ir2_intrinsics.ppy << std::endl;
+    // intrinsics_file << "fx: " << ir2_intrinsics.fx << std::endl;
+    // intrinsics_file << "fy: " << ir2_intrinsics.fy << std::endl;
+    // intrinsics_file << "model: " << ir2_intrinsics.model << std::endl;
+    // intrinsics_file << "coeffs: " << ir2_intrinsics.coeffs[0] << " " << ir2_intrinsics.coeffs[1] << " " << ir2_intrinsics.coeffs[2] << " " << ir2_intrinsics.coeffs[3] << " " << ir2_intrinsics.coeffs[4] << std::endl;
+    intrinsics_file.close();
+    std::cout << "Intrinsics saved" << std::endl;
+    return 0;
+}
 int run_alignment_func(rs2::pipeline &pipe, unsigned int fps, long time_run, std::string dirname, int width, int height)
 {
     rs2::align align_to_color(RS2_STREAM_COLOR);
@@ -521,13 +585,17 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
     std::cout << "Disparity Shift " << advanced_mode_dev.get_depth_table().disparityShift << std::endl;
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configurationst
-    cfg.enable_stream(RS2_STREAM_INFRARED, width, height, RS2_FORMAT_Y8, fps);
+    cfg.enable_stream(RS2_STREAM_INFRARED, 1, width, height, RS2_FORMAT_Y8, fps);
+    cfg.enable_stream(RS2_STREAM_INFRARED, 2, width, height, RS2_FORMAT_Y8, fps);
     
     if (color || align_depth_to_color)
     {
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);
     }
     std::cout << align_depth_to_color << std::endl;
+
+    
+
     /** Libav Help **/
     // const char *crf_to_c = std::to_string(crf_lsb).c_str();
     // OutputStream video_st = {0}; //, audio_st = {0};
@@ -705,6 +773,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     uint8_t *ptr_depth_frm = NULL;
     // encode_video = 0;
     pipe.start(cfg); // Start the pipe with the cfg
+
+    //save intrinics
+    int gggge = save_intrinsics(pipe, dirname);
     timer tStart;
     if (!align_depth_to_color)
     {
@@ -722,6 +793,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             }
             if (depth_frame_in = frameset.get_depth_frame())
             {
+                // convert from depth to disparity
+                // rs2::disparity_transform depth_to_disparity(true);
+                // auto depth_disp = depth_frame_in.apply_filter(depth_to_disparity);
 
                 // if (max_dis < 16.0f)
                 // {
@@ -806,7 +880,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 }
 
                 if (infared){
-                    if ((ir_frame = frameset.get_infrared_frame()))
+                    if ((ir_frame = frameset.get_infrared_frame(2)))
                     {
                         if (!fwrite((uint8_t *)ir_frame.get_data(), 1, height * width, ir_pipe))
                         {
