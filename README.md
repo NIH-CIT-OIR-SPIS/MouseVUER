@@ -1,4 +1,3 @@
-
 # Depth Recording Tool
 
 ### Authors
