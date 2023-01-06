@@ -35,6 +35,7 @@ sudo apt-get -y install libboost-all-dev && \
 sudo apt-get -y install libglfw3 && \
 sudo apt-get -y install libglfw3-dev && \
 sudo apt-get -y install freeglut3-dev libgl1-mesa-dev libglu1-mesa-dev  && \
+sudo apt-get -y install libjsoncpp-dev && \
 sudo apt-get -y install ffmpeg && \
 sudo apt-get -y install libavcodec-dev libavutil-dev libavformat-dev libswscale-dev
 ```
@@ -154,11 +155,25 @@ Then in order to see a list of options do the following
 ### Examples
 For example here is a simple recording for 30 seconds with files saved to Testing_DIR/
 
+Decrease crf for better quality at expense of higher cpu processing and possible frame delays
+thr just means number of cores you wish to utilize, default is 2, choose a number greater than 8 or less than 1 to cause it to use all cores
 ```
-./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 4 -jsonfile Default.json
+./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 0 -jsonfile Default.json
 ```
 
-For command help type:
+Record with depth, color and IR stream while aligning depth frames to color
+
+```
+./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 0 -jsonfile Default.json -color 1 -ir 1 -align_to_color 1
+```
+
+Record with just depth, and IR stream for 30 seconds 
+
+```
+./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 0 -jsonfile Default.json -ir 1
+```
+
+For command info  help type:
 
 ```
 ./bin/multicam -h

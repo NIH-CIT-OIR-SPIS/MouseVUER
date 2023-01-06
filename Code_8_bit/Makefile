@@ -42,7 +42,7 @@
 CC = g++
 CFLAGS = -std=c++17 $(shell pkg-config --cflags glfw3 opencv4) -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -Ithird-party -Irecorder -Ithird-party/imgui/
 CFLAGS += -D__STDC_LIMIT_MACROS -fopenmp -O3 -D__STDC_CONSTANT_MACROS -Wall
-LIBS = $(shell pkg-config --libs glfw3 opencv4) -lrealsense2 -pthread -lglfw -lGL -lglut -lGLU -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale
+LIBS = $(shell pkg-config --libs glfw3 opencv4) -lrealsense2 -pthread -lglfw -lGL -lglut -lGLU -lavcodec -lavformat -lavutil -lswresample -lm -lz -lswscale -ljsoncpp
 
 FILENM = multicam
 FILENM2 = util_multicam

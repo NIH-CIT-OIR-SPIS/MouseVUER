@@ -393,7 +393,7 @@ void print_usage(std::string choice)
     }
     else if (choice == "-depth_lossless")
     {
-        std::cout << "-depth_lossless [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
+        std::cout << "-depth_lossless  DEPRICATED (don't use) [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
     }
     else if (choice == "-crf_color")
     {
@@ -476,7 +476,7 @@ void print_usage(std::string choice)
         std::cout << "-jsonfile [string: JSON FILE PATH]\tFor intel realsense file configuration if needed. Please note that this json file name cannot have any spaces" << std::endl;
         std::cout << "-color [int: 0 or 1]\tWhether to save color RGB stream as well" << std::endl;
         std::cout << "-crf_color [int: 0-50]\t Control rate factor for RGB video" << std::endl;
-        std::cout << "-depth_lossless [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
+        std::cout << "-depth_lossless  DEPRICATED (don't use) [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
         std::cout << "Usage: -max_depth <int> max_depth default is 65535 " << std::endl;
         std::cout << "Usage: -min_depth <int> min_depth default is 0 " << std::endl;
         std::cout << "Usage: -depth_unit <int>  Depth units represent the measurement length of a single depth step. A Depth step is difference between each discrete depth value in a depth image." << std::endl;
@@ -489,6 +489,7 @@ void print_usage(std::string choice)
         std::cout << "Usage:  -sv_addr <server_address> valid ip address " << std::endl;
         std::cout << "Usage -disp_shift <0-255>  Disparity Shifty larger value for objects closer to camera." << std::endl;
         std::cout << "Usage: -align_to_color <int> 0 or 1. 0 for no alignment and regular recording, 1 for depth alignment to color, NOTE High Processing COST" << std::endl;
+        std::cout << "Usage: -ir <int> 0 or 1. 0 for no IR, 1 for IR" << std::endl;
         // std::cout << "-rosbag [int: 0 or 1]\tWhether to save color .bag file and not compress" << std::endl;
     }
 }

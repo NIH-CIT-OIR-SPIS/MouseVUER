@@ -62,6 +62,7 @@
 #include <iostream>
 #include <random>
 
+#include <jsoncpp/json/json.h>
 /*My own defined header file*/
 #include "recorder.hpp"
 
@@ -336,7 +337,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                    std::string json_file = "", bool color = false, int crf_color = 30, bool depth_lossless = false, std::string server_address = "", unsigned short port = 1000, uint8_t disparity_shift = 0,
                    bool align_depth_to_color = false, bool near_ir = true)
 {
-
     if (time_run > 2147483646)
     {
         std::cout << "You're running a recording for 60+ years. You better know what you're doing." << std::endl;
@@ -512,6 +512,20 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::string preset_json((std::istreambuf_iterator<char>(fp_file)), std::istreambuf_iterator<char>());
 
         advanced_mode_dev.load_json(preset_json);
+
+        std::ifstream if_str(json_file);
+        Json::Reader reader;
+        Json::Value root;
+        reader.parse(if_str, root);
+
+        height = std::stoi(root["viewer"]["stream-height"].asString());
+        width = std::stoi(root["viewer"]["stream-width"].asString());
+        fps = std::stoi(root["viewer"]["stream-fps"].asString());
+        
+        // close the file
+        if_str.close();
+        
+
     }
     if (bag_file_dir.size() > 1 && does_file_exist(bag_file_dir))
     {
@@ -817,6 +831,7 @@ try
         return EXIT_FAILURE;
     }
     std::string dir = "";
+    //auto processor_count = std::thread::hardware_concurrency();
     long sec = 0;
     int max_depth = 65535;
     int min_depth = 0;
@@ -970,8 +985,8 @@ try
     }
     if (depth_lossless < 0 || depth_lossless > 1)
     {
-        print_usage("-depth_lossless");
-        return EXIT_FAILURE;
+        std::cout << "Depth lossless is a deprecated option. please don't use it" << std::endl;
+        depth_lossless = 0;
     }
     std::cout << "max_depth: " << max_depth << std::endl;
     std::cout << "min_depth: " << min_depth << std::endl;
