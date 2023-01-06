@@ -445,3 +445,8 @@ See info ffmpeg
 ```
 ffmpeg -h encoder=libx264
 ```
+
+Decompress bag file
+```
+python3 decompress_from_bag_file.py -f some.bag -o Testing_DIR/
+```
