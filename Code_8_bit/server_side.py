@@ -23,6 +23,7 @@ from client_side import PORT_CLIENT_LISTEN, COMMON_NAME, ORGANIZATION, COUNTRY_O
 from typing import Dict, Any
 # copy
 import copy
+import errno
 # For GUI
 
 
@@ -62,6 +63,12 @@ NO_FORCE_EXIT = True
 # ORGANIZATION = "NIH"
 # COUNTRY_ORGIN = "US"
 # BYTES_SIZE = 4096
+
+def make_folder(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+
 def run_processes_parallel(cmd_lst):
     """
     Start up two server processes in parallel. Send them both signals to terminate.
@@ -125,7 +132,10 @@ def build_ffmpeg_cmd_group(server_addr: str, loglevel: str, port: int, dir: str,
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
     str_time = str(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
-    
+    make_folder(dir)
+    dir = os.path.join(dir, "vids" + ip_str)
+    make_folder(dir)
+
     cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_lsb_port_{}_{}_out.mp4".format(loglevel, addr, port, dir, ip_str, str_time, port )
     cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_msb_port_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  ip_str, str_time, port + 1)
     cmd_group = [cmd_lsb, cmd_msb]
@@ -138,6 +148,11 @@ def build_ffmpeg_cmd_group(server_addr: str, loglevel: str, port: int, dir: str,
         cmd_group.append(cmd_ir)
 
     return cmd_group
+
+
+
+
+
 
 def build_ffmpeg_cmd_group_list(map_dict: dict, loglevel: str, server_addr: str, dir: str, color: bool, ir: bool):
     """
@@ -244,6 +259,8 @@ def validate_ip(addr):
         #print("IP address {} is not valid".format(addr))
         raise argparse.ArgumentTypeError("IP address {} is not valid".format(addr))
         return None
+
+
 def make_message(settings, json_settings, server_ip, ffmpeg_port) -> Dict[str, Any]:
     """
     Make the message to send to the server
