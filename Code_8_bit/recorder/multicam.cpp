@@ -199,9 +199,9 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
  * @param      pipe          The pipe
  * 
 */
-int save_intrinsics(rs2::pipeline &pipe, std::string dirname)
+void save_intrinsics(rs2::pipeline &pipe, std::string dirname)
 {
-    std::string path_out = dirname + "/intrinsics.txt";
+    std::string path_out = dirname + "/intrinsics.json";
     std::ofstream intrinsics_file;
     intrinsics_file.open(path_out);
     rs2::pipeline_profile profile = pipe.get_active_profile();
@@ -218,46 +218,29 @@ int save_intrinsics(rs2::pipeline &pipe, std::string dirname)
     rs2_intrinsics ir2_intrinsics = ir2_profile.get_intrinsics();
 
     auto scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
-    // intrinsics_file << "Color intrinsics: " << std::endl;
-    // intrinsics_file << "width: " << color_intrinsics.width << std::endl;
-    // intrinsics_file << "height: " << color_intrinsics.height << std::endl;
-    // intrinsics_file << "ppx: " << color_intrinsics.ppx << std::endl;
-    // intrinsics_file << "ppy: " << color_intrinsics.ppy << std::endl;
-    // intrinsics_file << "fx: " << color_intrinsics.fx << std::endl;
-    // intrinsics_file << "fy: " << color_intrinsics.fy << std::endl;
-    // intrinsics_file << "model: " << color_intrinsics.model << std::endl;
-    // intrinsics_file << "coeffs: " << color_intrinsics.coeffs[0] << " " << color_intrinsics.coeffs[1] << " " << color_intrinsics.coeffs[2] << " " << color_intrinsics.coeffs[3] << " " << color_intrinsics.coeffs[4] << std::endl;
-    intrinsics_file << "Depth intrinsics: " << std::endl;
-    intrinsics_file << "width: " << depth_intrinsics.width << std::endl;
-    intrinsics_file << "height: " << depth_intrinsics.height << std::endl;
-    intrinsics_file << "ppx: " << depth_intrinsics.ppx << std::endl;
-    intrinsics_file << "ppy: " << depth_intrinsics.ppy << std::endl;
-    intrinsics_file << "fx: " << depth_intrinsics.fx << std::endl;
-    intrinsics_file << "fy: " << depth_intrinsics.fy << std::endl;
-    intrinsics_file << "coeffs: " << depth_intrinsics.coeffs[0] << " " << depth_intrinsics.coeffs[1] << " " << depth_intrinsics.coeffs[2] << " " << depth_intrinsics.coeffs[3] << " " << depth_intrinsics.coeffs[4] << std::endl;
-    intrinsics_file << "depth_baseline: " << baseline << std::endl;
-    intrinsics_file << "depth_units: " << scale << std::endl;
+    // intrinsics_file << "width: " << depth_intrinsics.width << std::endl;
+    // intrinsics_file << "height: " << depth_intrinsics.height << std::endl;
+    // intrinsics_file << "ppx: " << depth_intrinsics.ppx << std::endl;
+    // intrinsics_file << "ppy: " << depth_intrinsics.ppy << std::endl;
+    // intrinsics_file << "fx: " << depth_intrinsics.fx << std::endl;
+    // intrinsics_file << "fy: " << depth_intrinsics.fy << std::endl;
+    // intrinsics_file << "coeffs: " << depth_intrinsics.coeffs[0] << " " << depth_intrinsics.coeffs[1] << " " << depth_intrinsics.coeffs[2] << " " << depth_intrinsics.coeffs[3] << " " << depth_intrinsics.coeffs[4] << std::endl;
+    // intrinsics_file << "depth_baseline: " << baseline << std::endl;
+    // intrinsics_file << "depth_units: " << scale << std::endl;
 
-    // intrinsics_file << "IR intrinsics: " << std::endl;
-    // intrinsics_file << "width: " << ir_intrinsics.width << std::endl;
-    // intrinsics_file << "height: " << ir_intrinsics.height << std::endl;
-    // intrinsics_file << "ppx: " << ir_intrinsics.ppx << std::endl;
-    // intrinsics_file << "ppy: " << ir_intrinsics.ppy << std::endl;
-    // intrinsics_file << "fx: " << ir_intrinsics.fx << std::endl;
-    // intrinsics_file << "fy: " << ir_intrinsics.fy << std::endl;
-    // intrinsics_file << "coeffs: " << ir_intrinsics.coeffs[0] << " " << ir_intrinsics.coeffs[1] << " " << ir_intrinsics.coeffs[2] << " " << ir_intrinsics.coeffs[3] << " " << ir_intrinsics.coeffs[4] << "\n" << std::endl;
-    // intrinsics_file << "IR2 intrinsics: " << std::endl;
-    // intrinsics_file << "width: " << ir2_intrinsics.width << std::endl;
-    // intrinsics_file << "height: " << ir2_intrinsics.height << std::endl;
-    // intrinsics_file << "ppx: " << ir2_intrinsics.ppx << std::endl;
-    // intrinsics_file << "ppy: " << ir2_intrinsics.ppy << std::endl;
-    // intrinsics_file << "fx: " << ir2_intrinsics.fx << std::endl;
-    // intrinsics_file << "fy: " << ir2_intrinsics.fy << std::endl;
-    // intrinsics_file << "model: " << ir2_intrinsics.model << std::endl;
-    // intrinsics_file << "coeffs: " << ir2_intrinsics.coeffs[0] << " " << ir2_intrinsics.coeffs[1] << " " << ir2_intrinsics.coeffs[2] << " " << ir2_intrinsics.coeffs[3] << " " << ir2_intrinsics.coeffs[4] << std::endl;
+    intrinsics_file << "{" << std::endl;
+    intrinsics_file << "    \"width\": " << depth_intrinsics.width << "," << std::endl;
+    intrinsics_file << "    \"height\": " << depth_intrinsics.height << "," << std::endl;
+    intrinsics_file << "    \"ppx\": " << depth_intrinsics.ppx << "," << std::endl;
+    intrinsics_file << "    \"ppy\": " << depth_intrinsics.ppy << "," << std::endl;
+    intrinsics_file << "    \"fx\": " << depth_intrinsics.fx << "," << std::endl;
+    intrinsics_file << "    \"fy\": " << depth_intrinsics.fy << "," << std::endl;
+    intrinsics_file << "    \"coeffs\": [" << depth_intrinsics.coeffs[0] << ", " << depth_intrinsics.coeffs[1] << ", " << depth_intrinsics.coeffs[2] << ", " << depth_intrinsics.coeffs[3] << ", " << depth_intrinsics.coeffs[4] << "]," << std::endl;
+    intrinsics_file << "    \"depth_baseline\": " << baseline << "," << std::endl;
+    intrinsics_file << "    \"depth_units\": " << scale << std::endl;
+    intrinsics_file << "}" << std::endl;
     intrinsics_file.close();
     std::cout << "Intrinsics saved" << std::endl;
-    return 0;
 }
 int run_alignment_func(rs2::pipeline &pipe, unsigned int fps, long time_run, std::string dirname, int width, int height)
 {
@@ -486,8 +469,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     //         return 0;
     //     }
     // }
-    if (!align_depth_to_color)
-    {
+    // if (!align_depth_to_color)
+    // {
         if (!(pipe_lsb = popen(str_lsb.c_str(), "w")))
         {
             std::cerr << "popen error" << std::endl;
@@ -516,7 +499,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 return 0;
             }
         }
-    }
+    // }
 #endif
     // if (show_preview)
     //{
@@ -771,19 +754,25 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     uint8_t store_val_lsb = 0;
     uint16_t *ptr_depth_frm_16 = NULL;
     uint8_t *ptr_depth_frm = NULL;
+     
     // encode_video = 0;
     pipe.start(cfg); // Start the pipe with the cfg
-
-    //save intrinics
-    int gggge = save_intrinsics(pipe, dirname);
-    timer tStart;
-    if (!align_depth_to_color)
+    rs2::align align_to_color(RS2_STREAM_COLOR);
+    //warm up camera
+    for (int i = 0; i < 30; i++)
     {
+        frameset = pipe.wait_for_frames();
+    }
+    //save intrinics
+    save_intrinsics(pipe, dirname);
+    timer tStart;
+    // if (!align_depth_to_color)
+    // {
         while ((long)time_run * fps > counter)
         {
             try
             {
-                frameset = pipe.wait_for_frames(1000); // No frames seen for 1 second then exit
+                frameset = pipe.wait_for_frames(1500); // No frames seen for 1.5 second then exit
             }
 
             catch (const rs2::error &e)
@@ -791,8 +780,22 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 std::cout << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
                 break;
             }
-            if (depth_frame_in = frameset.get_depth_frame())
+
+            if (color && align_depth_to_color){
+                //auto depth_frameset = frameset.
+                frameset = align_to_color.process(frameset);
+                depth_frame_in = frameset.get_depth_frame();
+            } else{
+                depth_frame_in = frameset.get_depth_frame();
+            }
+
+            if (depth_frame_in)
             {
+                // align depth_frame_in to color frame
+
+                // rs2::align align_to_color(RS2_STREAM_COLOR);
+                // frameset = align_to_color.process(frameset);
+                // depth_frame_in = frameset.get_depth_frame();
                 // convert from depth to disparity
                 // rs2::disparity_transform depth_to_disparity(true);
                 // auto depth_disp = depth_frame_in.apply_filter(depth_to_disparity);
@@ -804,6 +807,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 // Filter frames that are between these two depths
 
                 ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
+
 
                 // Remember all data after width * height *2 is 0 so we don't have to put total_sz_lsb_bit here
                 //std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
@@ -979,27 +983,27 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             cv::destroyAllWindows();
         }
 #endif
-    }
-    else
-    {
+    // }
+    // else
+    // {
 
-        int outer = run_alignment_func(pipe, fps, time_run, dirname, width, height);
-        // rs2::align align_to_color(RS2_STREAM_DEPTH);
-        // float alpha = 0.5f;
+    //     int outer = run_alignment_func(pipe, fps, time_run, dirname, width, height);
+    //     // rs2::align align_to_color(RS2_STREAM_DEPTH);
+    //     // float alpha = 0.5f;
 
-        // while ((long)time_run * fps > counter)
-        // {
-        //     rs2::frameset frameset = pipe.wait_for_frames();
-        //     frameset = align_to_color.process(frameset);
-        //     rs2::frame color_frame = frameset.get_color_frame();
-        //     rs2::frame depth_frame = frameset.get_depth_frame();
-        //     if (!color_frame || !depth_frame)
-        //     {
-        //         continue;
-        //     }
+    //     // while ((long)time_run * fps > counter)
+    //     // {
+    //     //     rs2::frameset frameset = pipe.wait_for_frames();
+    //     //     frameset = align_to_color.process(frameset);
+    //     //     rs2::frame color_frame = frameset.get_color_frame();
+    //     //     rs2::frame depth_frame = frameset.get_depth_frame();
+    //     //     if (!color_frame || !depth_frame)
+    //     //     {
+    //     //         continue;
+    //     //     }
 
-        // }
-    }
+    //     // }
+    // }
     unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();
     pipe.stop();
     // return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data, color_data, stride), ost->tmp_pkt);
