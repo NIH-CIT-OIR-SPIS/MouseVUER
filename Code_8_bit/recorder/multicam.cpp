@@ -12,14 +12,9 @@
  * CPU Load around 50% when recording just depth video, higher if other settings are on like raw recording, previewing, etc.
  *
  * @version 0.1
- * @date 2022-06-30
- * @copyright Copyright (c) 2022
+ * @date 01/06/2023
+ * 
  */
-
-// TODO: Add networking code for operating on a network drive or on storage
-// TODO: Download Intel(R) helper API for a GUI like system that the user can use with OpenGL. File is example.hpp
-// TODO: Add support for multiple cameras if you have time.
-
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
 
@@ -81,7 +76,7 @@ enum class direction
  * @brief A timer structure that uses the steady clock
  * @param reset Resets the timer
  * @param milliseconds_elapsed Returns the number of milliseconds elapsed since the timer was reset
-*/
+ */
 struct timer
 {
     void reset()
@@ -105,7 +100,7 @@ struct timer
  * @param filename The name of the file to write to
  * @param txt The text to write to the file
  * @return true if the file was written to successfully, false otherwise
-*/
+ */
 bool write_txt_to_file(std::string filename, std::string txt)
 {
     std::ofstream myfile;
@@ -125,7 +120,7 @@ bool write_txt_to_file(std::string filename, std::string txt)
 /**
  * @brief Checks if a string is a number or not
  * @param str The string to check
-*/
+ */
 bool isNumber(const std::string &str)
 {
 
@@ -135,12 +130,11 @@ bool isNumber(const std::string &str)
            (str.find_first_not_of("[0123456789]") == std::string::npos);
 }
 
-
 /**
  * @brief Splits a string into tokens
  * @param str The string to split
  * @param delim The delimiter to split the string with
-*/
+ */
 std::vector<std::string> split(const std::string &str, char delim)
 {
     using namespace std;
@@ -165,7 +159,7 @@ std::vector<std::string> split(const std::string &str, char delim)
 /**
  * @brief Validates an IP address
  * @param ip The IP address to validate
-*/
+ */
 bool validateIP(std::string ip)
 {
     using namespace std;
@@ -236,7 +230,6 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     if (depth_lossless)
     {
         std::cout << "depth_lossless is a depricated feature" << std::endl;
-        return "";
     }
     if (typ == 0)
     {
@@ -270,10 +263,9 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
 
         return ffmpeg_command;
     }
-
+    std::cout << "Error: Unknown ffmpeg command type" << std::endl;
     return "";
 }
-
 
 /**
  * @brief      Save the intrinsics of the camera to a json file
@@ -312,7 +304,6 @@ void save_intrinsics(rs2::pipeline &pipe, std::string dirname)
     intrinsics_file.close();
     std::cout << "Intrinsics saved" << std::endl;
 }
-
 
 /**
  * @brief Starts a recording for Intel realsense,
@@ -510,7 +501,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     if (json_file != "" && does_file_exist(json_file))
     {
 
-
         rs400::advanced_mode advanced_mode_dev = dev.as<rs400::advanced_mode>();
         if (!advanced_mode_dev.is_enabled())
         {
@@ -522,7 +512,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::string preset_json((std::istreambuf_iterator<char>(fp_file)), std::istreambuf_iterator<char>());
 
         advanced_mode_dev.load_json(preset_json);
-
     }
     if (bag_file_dir.size() > 1 && does_file_exist(bag_file_dir))
     {
@@ -533,7 +522,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
     if (!(json_file.size() > 0))
     {
-
 
         depth_table.depthUnits = (int32_t)depth_u;  // in micro meters
         depth_table.depthClampMin = (int32_t)min_d; // 100 mm
@@ -553,8 +541,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);
     }
     std::cout << align_depth_to_color << std::endl;
-
-
 
     std::string frame_file_nm = dirname + "frame_num_";
     int y_comp = height * width; //
@@ -595,7 +581,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
 
     const int sz_write_color_pipe = height_color * width_color * 3;
     const int sz_write_ir_pipe = height_color * width_color * 2;
-    
+
     timer tStart;
     while ((long)time_run * fps > counter)
     {
@@ -808,7 +794,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     return 1;
 }
 
-
 int main(int argc, char *argv[])
 try
 {
@@ -849,7 +834,6 @@ try
     uint8_t disp_shift = 0;
     int align_int = 0;
     int infared = 0;
-
 
     std::string bagfile = "";
     std::string jsonfile = "";
