@@ -432,7 +432,7 @@ void print_usage(std::string choice)
     }
     else if (choice == "-thr")
     {
-        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding." << std::endl;
+        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding, choose 0 if you wish to use all threads" << std::endl;
     }
     else if (choice == "-numraw")
     {
@@ -468,7 +468,7 @@ void print_usage(std::string choice)
         std::cout << "-ht [uint: HEIGHT]" << std::endl;
         std::cout << "-fps [uint: FRAMERATE]" << std::endl;
         std::cout << "-crf [uint: CONTROL RATE FACTOR]\t(DEFAULT=18) Recommended crf optional to change" << std::endl;
-        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding." << std::endl;
+        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding, choose 0 if you wish to use all threads" << std::endl;
         std::cout << "-numraw [uint: NUMBER FRAMES RAW TO COLLECT]\t(OPT) Used only if you want to collect raw frames of the stream. May slow down framerate." << std::endl;
         std::cout << "-verbose [int: 0 or 1]\t(OPT) Used only if you wish to see exacty what ffmpeg will say from command line." << std::endl;
         std::cout << "-view [int: 0 or 1]\t(DEFAULT=0) Whether or not to preview the frames as you capture them. Does slow down fps." << std::endl;

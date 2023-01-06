@@ -609,27 +609,12 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             break;
         }
 
-        if (color)
+        if (color && align_depth_to_color)
         {
-            // Write color frame to file
-            if ((colour_frame = frameset.get_color_frame()))
-            {
-                if (!fwrite((uint8_t *)colour_frame.get_data(), sizeof(uint8_t), sz_write_color_pipe, color_pipe))
-                {
-                    std::cerr << "Error with fwrite frames color" << std::endl;
-                    break;
-                }
-            }
-            if (align_depth_to_color)
-            {
-                // auto depth_frameset = frameset.
-                frameset = align_to_color.process(frameset);
-                depth_frame_in = frameset.get_depth_frame();
-            }
-            else
-            {
-                depth_frame_in = frameset.get_depth_frame();
-            }
+
+            // auto depth_frameset = frameset.
+            frameset = align_to_color.process(frameset);
+            depth_frame_in = frameset.get_depth_frame();
         }
         else
         {
@@ -663,6 +648,18 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 break;
             }
 
+            // Write color frame to file
+            if (color)
+            {
+                if ((colour_frame = frameset.get_color_frame()))
+                {
+                    if (!fwrite((uint8_t *)colour_frame.get_data(), sizeof(uint8_t), sz_write_color_pipe, color_pipe))
+                    {
+                        std::cerr << "Error with fwrite frames color" << std::endl;
+                        break;
+                    }
+                }
+            }
             if (near_ir)
             {
                 if ((ir_frame = frameset.get_infrared_frame(2)))
@@ -956,7 +953,7 @@ try
         print_usage("-crf");
         return EXIT_FAILURE;
     }
-    if (thr < 1)
+    if (thr < 0)
     {
         print_usage("-thr");
         return EXIT_FAILURE;
