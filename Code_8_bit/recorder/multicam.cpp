@@ -76,6 +76,12 @@ enum class direction
     to_depth,
     to_color
 };
+
+/**
+ * @brief A timer structure that uses the steady clock
+ * @param reset Resets the timer
+ * @param milliseconds_elapsed Returns the number of milliseconds elapsed since the timer was reset
+*/
 struct timer
 {
     void reset()
@@ -94,6 +100,12 @@ struct timer
     clock::time_point start = clock::now();
 };
 
+/**
+ * @brief Writes
+ * @param filename The name of the file to write to
+ * @param txt The text to write to the file
+ * @return true if the file was written to successfully, false otherwise
+*/
 bool write_txt_to_file(std::string filename, std::string txt)
 {
     std::ofstream myfile;
@@ -111,9 +123,76 @@ bool write_txt_to_file(std::string filename, std::string txt)
 }
 
 /**
- * @brief BParses a command for ffmpeg
- *
- *
+ * @brief Checks if a string is a number or not
+ * @param str The string to check
+*/
+bool isNumber(const std::string &str)
+{
+
+    // `std::find_first_not_of` searches the string for the first character
+    // that does not match any of the characters specified in its arguments
+    return !str.empty() &&
+           (str.find_first_not_of("[0123456789]") == std::string::npos);
+}
+
+
+/**
+ * @brief Splits a string into tokens
+ * @param str The string to split
+ * @param delim The delimiter to split the string with
+*/
+std::vector<std::string> split(const std::string &str, char delim)
+{
+    using namespace std;
+
+    auto i = 0;
+    vector<string> list;
+
+    auto pos = str.find(delim);
+
+    while (pos != string::npos)
+    {
+        list.push_back(str.substr(i, pos - i));
+        i = ++pos;
+        pos = str.find(delim, pos);
+    }
+
+    list.push_back(str.substr(i, str.length()));
+
+    return list;
+}
+
+/**
+ * @brief Validates an IP address
+ * @param ip The IP address to validate
+*/
+bool validateIP(std::string ip)
+{
+    using namespace std;
+    // split the string into tokens
+    vector<string> list = split(ip, '.');
+
+    // if the token size is not equal to four
+    if (list.size() != 4)
+    {
+        return false;
+    }
+
+    // validate each token
+    for (string str : list)
+    {
+        // verify that the string is a number or not, and the numbers
+        // are in the valid range
+        if (!isNumber(str) || stoi(str) > 255 || stoi(str) < 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+/**
+ * @brief Parses a command for ffmpeg
  * @param pix_fmt  The pixel format of the input frames i.e. YUV420P, RGB24, YUV420P10LE, etc.
  * @param pix_fmt_out  The pixel format of the output frames format i.e. YUV420P, RGB24, YUV420P10LE, etc.
  * @param encoder   The encoder to use i.e. libx264, libx265.
@@ -146,7 +225,8 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     std::string re_flag = (path_out.find("rtmp:") != std::string::npos) ? " -re " : "";
     std::string flv_flag = (path_out.find("rtmp:") != std::string::npos) ? " -f flv " : "";
     std::string apostr = "\'";
-    if (!path_out.find("rtmp:")){
+    if (!path_out.find("rtmp:"))
+    {
         apostr += path_out;
         path_out = apostr + "\'";
     }
@@ -187,47 +267,37 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
     else if (typ == 2 || typ == 3)
     {
         ffmpeg_command = "ffmpeg " + banner + " -y " + thread_counter + " -f rawvideo -pix_fmt " + pix_fmt + " -c:v rawvideo -s " + std::to_string(width) + "x" + std::to_string(height) + " -t " + std::to_string(time_run) + " -r " + std::to_string(fps) + " -an -i - -c:v " + encoder + " -preset veryfast " + " -crf " + std::to_string(crf) + " -movflags +faststart " + flv_flag + " " + path_out;
-        
-        return ffmpeg_command;
 
+        return ffmpeg_command;
     }
 
     return "";
 }
+
+
 /**
- * @brief      { function_description }
- * @param      pipe          The pipe
- * 
-*/
+ * @brief      Save the intrinsics of the camera to a json file
+ * @param      pipe     The pipe
+ * @param      dirname  The dirname
+ *
+ */
 void save_intrinsics(rs2::pipeline &pipe, std::string dirname)
 {
     std::string path_out = dirname + "/intrinsics.json";
     std::ofstream intrinsics_file;
     intrinsics_file.open(path_out);
     rs2::pipeline_profile profile = pipe.get_active_profile();
-    // rs2::video_stream_profile color_profile = profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
     rs2::video_stream_profile depth_profile = profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
     rs2::video_stream_profile ir_profile = profile.get_stream(RS2_STREAM_INFRARED, 1).as<rs2::video_stream_profile>();
     rs2::video_stream_profile ir2_profile = profile.get_stream(RS2_STREAM_INFRARED, 2).as<rs2::video_stream_profile>();
     rs2_extrinsics e = ir_profile.get_extrinsics_to(ir2_profile);
     float baseline = e.translation[0];
 
-    // rs2_intrinsics color_intrinsics = color_profile.get_intrinsics();
     rs2_intrinsics depth_intrinsics = depth_profile.get_intrinsics();
     rs2_intrinsics ir_intrinsics = ir_profile.get_intrinsics();
     rs2_intrinsics ir2_intrinsics = ir2_profile.get_intrinsics();
 
     auto scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
-    // intrinsics_file << "width: " << depth_intrinsics.width << std::endl;
-    // intrinsics_file << "height: " << depth_intrinsics.height << std::endl;
-    // intrinsics_file << "ppx: " << depth_intrinsics.ppx << std::endl;
-    // intrinsics_file << "ppy: " << depth_intrinsics.ppy << std::endl;
-    // intrinsics_file << "fx: " << depth_intrinsics.fx << std::endl;
-    // intrinsics_file << "fy: " << depth_intrinsics.fy << std::endl;
-    // intrinsics_file << "coeffs: " << depth_intrinsics.coeffs[0] << " " << depth_intrinsics.coeffs[1] << " " << depth_intrinsics.coeffs[2] << " " << depth_intrinsics.coeffs[3] << " " << depth_intrinsics.coeffs[4] << std::endl;
-    // intrinsics_file << "depth_baseline: " << baseline << std::endl;
-    // intrinsics_file << "depth_units: " << scale << std::endl;
-
     intrinsics_file << "{" << std::endl;
     intrinsics_file << "    \"width\": " << depth_intrinsics.width << "," << std::endl;
     intrinsics_file << "    \"height\": " << depth_intrinsics.height << "," << std::endl;
@@ -242,59 +312,8 @@ void save_intrinsics(rs2::pipeline &pipe, std::string dirname)
     intrinsics_file.close();
     std::cout << "Intrinsics saved" << std::endl;
 }
-// int run_alignment_func(rs2::pipeline &pipe, unsigned int fps, long time_run, std::string dirname, int width, int height)
-// {
-//     rs2::align align_to_color(RS2_STREAM_COLOR);
-//     // window app(1280, 720, "RealSense Align Example"); // Simple window handling
-//     // ImGui_ImplGlfw_Init(app, false);                  // ImGui library intializition
-//     rs2::colorizer c; // Helper to colorize depth images
-//     // texture depth_image, color_image;                 // Helpers for renderig images
-//     int counter = 0;
-//     float alpha = 0.5f;
-//     direction dir = direction::to_color;
-//     std::string path_out = dirname + "/color";
-//     std::string path_out_depth = dirname + "/aligned_depth";
-//     while ((long)time_run * fps > counter)
-//     {
-//         rs2::frameset frameset = pipe.wait_for_frames();
-//         rs2::frame aligned_frame = align_to_color.process(frameset);
-//         auto depth = frameset.get_depth_frame();
-//         auto color = frameset.get_color_frame();
-//         auto colorized_depth = c.colorize(depth);
-//         #if __has_include(<opencv2/opencv.hpp>)
-//         cv::Mat colorized_depth_img(cv::Size(width, height), CV_8UC3, (void *)colorized_depth.get_data(), cv::Mat::AUTO_STEP);
-//         cv::Mat color_img(cv::Size(width, height), CV_8UC3, (void *)color.get_data(), cv::Mat::AUTO_STEP);
 
-//         cv::imwrite(path_out + std::to_string(counter) + ".png", color_img);
-//         #endif
-//         std::string bin_out = path_out_depth + std::to_string(counter) + "_depthy.bin";
-//         FILE *p_file;
-//         if ((p_file = fopen(bin_out.c_str(), "wb")))
-//         {
-//             // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
-//             fwrite((uint8_t *)depth.get_data(), 1, width * height * 2, p_file);
-//             fclose(p_file);
-//         }
-//         else
-//         {
-//             std::cout << " Problem writing raw file " << bin_out << std::endl;
-//         }
-//         // glEnable(GL_BLEND);
-//         // // Use the Alpha channel for blending
-//         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//         // //depth_image.render(colorized_depth, { 0, 0, app.width(), app.height() });
-//         // color_image.render(color, { 0, 0, app.width(), app.height() }, alpha);
-//         counter++;
-//         // glColor4f(1.f, 1.f, 1.f, 1.f);
-//         // glDisable(GL_BLEND);
 
-//         // // Render the UI:
-//         // ImGui_ImplGlfw_NewFrame(1);
-//         // render_slider({ 15.f, app.height() - 60, app.width() - 30, app.height() }, &alpha, &dir);
-//         // ImGui::Render();
-//     }
-//     return 1;
-// }
 /**
  * @brief Starts a recording for Intel realsense,
  *        piping it through ffmpeg for compression using libx264rgb,
@@ -353,7 +372,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         return 0;
     }
 
-    //const auto processor_count = std::thread::hardware_concurrency();
+    // const auto processor_count = std::thread::hardware_concurrency();
     int width_color = width;   // width / 2;
     int height_color = height; // height / 2;
     int ret = 0;
@@ -361,14 +380,11 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     int encode_video = 0;
     int i = 0, k = 0, y = 0;
     int num_bytes = width * height;
-
     long counter = 0;
-
     // std::string path_raw = dirname + "test_raw.mp4"; //(server_address == "" || port <= -1) ? (dirname + "test_raw.mp4") : ("rtmp://"+ server_address + ":" + std::to_string(port) + "/ ");
     /* Bit Shifting Settings */
-    const int shift_by = 0;   // 2;
+    const int shift_by = 0;  // 2;
     const int and_val = 0b0; // 0b11;
-
     int y_comp_8_bit = height * width;
     int u_comp_8_bit = y_comp_8_bit / 4;
     int v_comp_8_bit = y_comp_8_bit / 4;
@@ -376,19 +392,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::string type_str_msb = "yuv420p";
     std::string encoder_msb = "libx264";
     int total_sz_8_bit = y_comp_8_bit + u_comp_8_bit + v_comp_8_bit;
-
     std::string path_lsb = (server_address == "" || port <= 1024) ? (dirname + "test_lsb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port) + "/ ");
     std::string path_msb = (server_address == "" || port <= 1024) ? (dirname + "test_msb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port + 1) + "/ ");
     std::string color_lsb_path = (server_address == "" || port <= 1024) ? (dirname + "test_color_lsb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port + 2) + "/ ");
     std::string infared_lsb_path = (server_address == "" || port <= 1024) ? (dirname + "test_ir_lsb.mp4") : ("rtmp://" + server_address + ":" + std::to_string(port + 3) + "/ ");
-    // std::string path_msb = (server_address == "" || port <= -1) ? (dirname + "test_msb.mp4") : (server_address + ":" + port);
-    // std::string path_lsb = (server_address == "" || port <= -1) ? (dirname + "test_lsb.mp4") : (server_address + ":" + port);
-    // std::string color_lsb_path = (server_address == "" || port <= -1) ? (dirname + "test_color_lsb.mp4") : (server_address + ":" + port);
-    // std::string path_msb = dirname + "test_msb.mp4";
-    // std::string path_lsb = dirname + "test_lsb.mp4";
-    // std::string color_lsb_path = dirname + "test_color.mp4";
-    // std::cout << ffmpeg_verbose << std::endl;
-
     std::string str_lsb = build_ffmpeg_cmd("yuv420p", "yuv420p", "libx264", path_lsb, time_run, count_threads, width, height, fps, crf_lsb, ffmpeg_verbose, depth_lossless, 0);
     // std::string str_msb = build_ffmpeg_cmd("gray", "yuvj420p", "libx264", path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
     std::string str_msb = build_ffmpeg_cmd(type_str_msb, type_str_msb, encoder_msb, path_msb, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 1);
@@ -396,7 +403,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::string color_lsb = build_ffmpeg_cmd("rgb24", "yuv420p", "libx264", color_lsb_path, time_run, count_threads, width_color, height_color, fps, crf_color, ffmpeg_verbose, depth_lossless, 2);
     // std::string raw_cmd = build_ffmpeg_cmd("gray16le", "gray16le", "rawvideo", path_raw, time_run, count_threads, width, height, fps, 0, ffmpeg_verbose, depth_lossless, 4);
     std::string ir_str = build_ffmpeg_cmd("gray", "yuv420p", "libx264", infared_lsb_path, time_run, count_threads, width, height, fps, crf_color, ffmpeg_verbose, depth_lossless, 3);
-    
+
     if (str_msb == "")
     {
         std::cerr << "Error with build_ffmpeg_cmd " << std::endl;
@@ -420,7 +427,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     FILE *pipe_msb = NULL;
     FILE *color_pipe = NULL;
     FILE *ir_pipe = NULL;
-    
+
     int diff = (int)max_d - (int)min_d;
     bool only_10_bits = false;
     // floor( ( (double)(max_d - min_d) * 1000.0)/((double)depth_u)) <= 1023
@@ -430,99 +437,80 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     }
     // FILE *p_pipe_raw = NULL;
 #ifdef _WIN32
-    // p_pipe_raw = fopen(path_raw.c_str(), "w");
-
-    // if (p_pipe_raw == NULL)
-    // {
-    //     std::cerr << "fopen error" << std::endl;
-    //     return 0;
-    // }
-
-    if (!(pipe_lsb = _popen(str_lsb.c_str(), "wb")))
+    if (!(pipe_lsb = _popen(str_lsb.c_str(), "w")))
     {
-        std::cerr << "_popen error" << std::endl;
-        exit(1);
+        std::cerr << "popen error" << std::endl;
+        return 0;
     }
     if (diff > 1023)
     {
-        if (!(pipe_msb = _popen(str_msb.c_str(), "wb")))
+        if (!(pipe_msb = _popen(str_msb.c_str(), "w")))
         {
-            std::cerr << "_popen error" << std::endl;
+            std::cerr << "Not greater than diff or popen error" << std::endl;
             // return 0;
         }
     }
-    // }
     if (color)
     {
-        if (!(color_pipe = _popen(color_lsb.c_str(), "wb")))
+        if (!(color_pipe = _popen(color_lsb.c_str(), "w")))
         {
-            std::cerr << "_popen error 2" << std::endl;
-            exit(1);
+            std::cerr << "popen error 2" << std::endl;
+            return 0;
+        }
+    }
+    if (infared)
+    {
+        if (!(ir_pipe = _popen(ir_str.c_str(), "w")))
+        {
+            std::cerr << "popen error infared" << std::endl;
+            return 0;
         }
     }
 #else
-    // if(num_frm_collect){
-    //     p_pipe_raw = fopen(path_raw.c_str(), "w");
-    //     if (p_pipe_raw == NULL)
-    //     {
-    //         std::cerr << "fopen error" << std::endl;
-    //         return 0;
-    //     }
-    // }
-    // if (!align_depth_to_color)
-    // {
-        if (!(pipe_lsb = popen(str_lsb.c_str(), "w")))
+    if (!(pipe_lsb = popen(str_lsb.c_str(), "w")))
+    {
+        std::cerr << "popen error" << std::endl;
+        return 0;
+    }
+    if (diff > 1023)
+    {
+        if (!(pipe_msb = popen(str_msb.c_str(), "w")))
         {
-            std::cerr << "popen error" << std::endl;
+            std::cerr << "Not greater than diff or popen error" << std::endl;
+            // return 0;
+        }
+    }
+    if (color)
+    {
+        if (!(color_pipe = popen(color_lsb.c_str(), "w")))
+        {
+            std::cerr << "popen error 2" << std::endl;
             return 0;
         }
-        if (diff > 1023)
+    }
+    if (infared)
+    {
+        if (!(ir_pipe = popen(ir_str.c_str(), "w")))
         {
-            if (!(pipe_msb = popen(str_msb.c_str(), "w")))
-            {
-                std::cerr << "Not greater than diff or popen error" << std::endl;
-                // return 0;
-            }
+            std::cerr << "popen error infared" << std::endl;
+            return 0;
         }
-        if (color)
-        {
-            if (!(color_pipe = popen(color_lsb.c_str(), "w")))
-            {
-                std::cerr << "popen error 2" << std::endl;
-                return 0;
-            }
-        }
-        if (infared){
-            if (!(ir_pipe = popen(ir_str.c_str(), "w")))
-            {
-                std::cerr << "popen error infared" << std::endl;
-                return 0;
-            }
-        }
-    // }
+    }
 #endif
-    // if (show_preview)
-    //{
 
-    //}
     rs2::context ctx;
     rs2::pipeline pipe(ctx);
     rs2::config cfg;
-    // std::vector<rs2::pipeline
+
     std::string serial;
-    
-    // if(!device_with_streams({RS2_STREAM_DEPTH, RS2_STREAM_COLOR}, serial))
-    // {
-    //     std::cerr << " Error No device with depth and color streams" << std::endl;
-    //     return 0;
-    // }
+
     auto device = ctx.query_devices();
     auto dev = device[0];
+
     if (json_file != "" && does_file_exist(json_file))
     {
 
-        // for (rs2::device &&dev : ctx.query_devices())
-        // {
+
         rs400::advanced_mode advanced_mode_dev = dev.as<rs400::advanced_mode>();
         if (!advanced_mode_dev.is_enabled())
         {
@@ -534,35 +522,24 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         std::string preset_json((std::istreambuf_iterator<char>(fp_file)), std::istreambuf_iterator<char>());
 
         advanced_mode_dev.load_json(preset_json);
-        // }
+
     }
-    // std::cout << "HHHH " << bag_file_dir << std::endl;
     if (bag_file_dir.size() > 1 && does_file_exist(bag_file_dir))
     {
-        // cfg.enable_record_to_file("abag_file.bag");
-        // std::cout << "This shoudl happend" << std::endl;
         cfg.enable_device_from_file(bag_file_dir, false);
     }
-    
+
     auto advanced_mode_dev = dev.as<rs400::advanced_mode>();
     STDepthTableControl depth_table = advanced_mode_dev.get_depth_table();
     if (!(json_file.size() > 0))
     {
 
-        
-        // depth_table.depthUnits = 0.001;
-        // std::cout << "Depth units"
+
         depth_table.depthUnits = (int32_t)depth_u;  // in micro meters
         depth_table.depthClampMin = (int32_t)min_d; // 100 mm
         depth_table.depthClampMax = (int32_t)max_d; //(int)pow(2, 16); // pow(2, 16);// 1000 mm
         depth_table.disparityShift = (int32_t)disparity_shift;
         advanced_mode_dev.set_depth_table(depth_table);
-        // if (!advanced_mode_dev.is_enabled())
-        // {
-        //     // If not, enable advanced-mode
-        //     advanced_mode_dev.toggle_advanced_mode(true);
-        //     std::cout << "Advanced mode enabled. " << std::endl;
-        // }
     }
     std::cout << "Depth max: " << advanced_mode_dev.get_depth_table().depthClampMax << "mm\nDepth unit: " << advanced_mode_dev.get_depth_table().depthUnits << std::endl;
     std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
@@ -570,101 +547,16 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configurationst
     cfg.enable_stream(RS2_STREAM_INFRARED, 1, width, height, RS2_FORMAT_Y8, fps);
     cfg.enable_stream(RS2_STREAM_INFRARED, 2, width, height, RS2_FORMAT_Y8, fps);
-    
+
     if (color || align_depth_to_color)
     {
         cfg.enable_stream(RS2_STREAM_COLOR, width_color, height_color, RS2_FORMAT_RGB8, fps);
     }
     std::cout << align_depth_to_color << std::endl;
 
-    
 
-    /** Libav Help **/
-    // const char *crf_to_c = std::to_string(crf_lsb).c_str();
-    // OutputStream video_st = {0}; //, audio_st = {0};
-    // const AVOutputFormat *fmt;
-    // AVFormatContext *oc;
-    // const AVCodec *video_codec;
-
-    // AVDictionary *opt = NULL;
-
-    // const char *filename = path_lsb.c_str();
-    // AVPixelFormat pix_fmt_use = AV_PIX_FMT_YUV420P;
-    // AVCodecID codec_id_in = AV_CODEC_ID_H264;
-    // /* allocate the output media context */
-    // avformat_alloc_output_context2(&oc, NULL, NULL, filename);
-    // if (!oc)
-    // {
-    //     printf("Could not deduce output format from file extension: using MPEG.\n");
-    //     avformat_alloc_output_context2(&oc, NULL, "mpeg", filename);
-    // }
-    // if (!oc)
-    //     return 0;
-
-    // fmt = oc->oformat;
-    // // AV_CODEC_ID_H264;
-
-    // /* Add the audio and video streams using the default format codecs
-    //  * and initialize the codecs. */
-    // if (fmt->video_codec != AV_CODEC_ID_NONE)
-    // {
-    //     add_stream(&video_st, oc, &video_codec, codec_id_in, crf_to_c, pix_fmt_use, width, height, fps);
-    //     have_video = 1;
-    //     encode_video = 1;
-    // }
-    // // for (i = 2; i + 1 < argc; i += 2)
-    // // {
-    // //     if (!strcmp(argv[i], "-flags") || !strcmp(argv[i], "-fflags"))
-    // //         av_dict_set(&opt, argv[i] + 1, argv[i + 1], 0);
-    // // }
-    // // if (fmt->audio_codec != AV_CODEC_ID_NONE)
-    // // {
-    // //     add_stream(&audio_st, oc, &audio_codec, fmt->audio_codec);
-    // //     have_audio = 1;
-    // //     encode_audio = 1;
-    // // }
-
-    // /* Now that all the parameters are set, we can open the audio and
-    //  * video codecs and allocate the necessary encode buffers. */
-    // if (have_video)
-    // {
-    //     open_video(oc, video_codec, &video_st, opt, pix_fmt_use);
-    // }
-    // // if (have_audio)
-    // //     open_audio(oc, audio_codec, &audio_st, opt);
-    // av_dump_format(oc, 0, filename, 1);
-    // /* open the output file, if needed */
-    // if (!(fmt->flags & AVFMT_NOFILE))
-    // {
-    //     // printf("Opening output file %s\n", filename);
-    //     ret = avio_open(&oc->pb, filename, AVIO_FLAG_WRITE);
-    //     if (ret < 0)
-    //     {
-    //         fprintf(stderr, "Could not open '%s'\n", filename);
-    //         return 0;
-    //     }
-    // }
-
-    // /* Write the stream header, if any. */
-    // ret = avformat_write_header(oc, &opt);
-    // if (ret < 0)
-    // {
-    //     fprintf(stderr, "Error occurred when opening output file:\n");
-    //     return 0;
-    // }
-    // filename = argv[1];
-
-    /**End Libav help **/
-
-    //* bytes_per_pixel * sizeof(uint8_t);
 
     std::string frame_file_nm = dirname + "frame_num_";
-    // int i = 0;
-
-    // std::vector<uint8_t> store_frame_lsb(height * width * 2, (uint8_t)0);
-    // std::vector<uint8_t> store_frame_msb(height * width * 3, (uint8_t)0);
-    
-    // std::vector<uint16_t> store_frame_depth(height * width, (uint16_t)0);
     int y_comp = height * width; //
     int u_comp = y_comp / 4;
     int v_comp = y_comp / 4;
@@ -682,361 +574,163 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     rs2::frame depth_frame_in;
     rs2::frame rgb_frame;
     rs2::frame ir_frame;
-    rs2::threshold_filter thresh_filter;
-    // int min_dis = 0;
-    // int max_dis = 16;
-
-    // float min_dis = (int)((min_d) / (65535)) * (16.0);
-
-    // float max_dis = (int)((max_d) / (65535)) * (16.0);
-    //  float min_dis = 0.0f;
-    //  float max_dis = 16.0f;
 
     std::string text_out = std::to_string(depth_table.depthClampMax) + " " + std::to_string(depth_table.depthClampMin) + " " + std::to_string(depth_table.depthUnits);
     write_txt_to_file(dirname + "video_head_file.txt", text_out);
-    // thresh_filter.set_option(RS2_OPTION_MIN_DISTANCE, min_dis); // start at 0.0 meters away
-    // thresh_filter.set_option(RS2_OPTION_MAX_DISTANCE, max_dis); // Will not record anything beyond 16 meters away
-    std::map<int, rs2::frame> render_frames;
-    // int min_dis_d = (int)min_dis;
-    // int max_dis_d = (int)max_dis;
 
-    // std::cout << "min_dis_d: " << min_dis << std::endl;
-    // std::cout << "max_dis_d: " << max_dis << std::endl;
-    // std::cout << "diff: " << diff << std::endl;
-    // if (show_preview){
-    //     window app(1280, 960, "Camera Depth Device");
-    // }
-    /*
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::vector<int> rand_vec;
-    std::uniform_int_distribution<> distr(300, 1280 * 720);
-    int randun = 0;
-    int size_of_vec = 92160;
-    FILE * output_vec_ind = NULL;
-    FILE *output_vec_val = NULL;
-    char * output_vec_ind_file = "Testing_DIR/output_vec_ind_file.txt";
-    char * output_vec_vals_file = "Testing_DIR/output_vec_vals_file.txt";
-    if((output_vec_ind = fopen(output_vec_ind_file, "w")) == NULL || (output_vec_val = fopen(output_vec_vals_file, "w")) == NULL)
-    {
-        printf("Error opening file!\n");
-        return 0;
-    }
-
-    for (int n = 0; n < size_of_vec; n++)
-    {
-        randun = distr(gen);
-        if (std::find(rand_vec.begin(), rand_vec.end(), randun) == rand_vec.end())
-        {
-            rand_vec.push_back(randun);
-            fprintf(output_vec_ind, "%d\n", randun);
-            // if (n == 0){
-            //     fprintf("{%d, ", randun);
-
-            // }else if (n == size_of_vec - 1){
-            //     printf("%d}\n", randun);
-            // }else{
-            //     printf("%d, ", randun);
-            // }
-        }else{
-            n--;
-        }
-        //rand_vec.push_back();
-    }
-    fclose(output_vec_ind);*/
-    // printf("}\n");
-    // std::cout << rand_vec << std::endl;
-
-    // uint16_t *color_data = NULL;
-    // uint8_t *ptr_depth_frm = NULL;
-    // uint16_t *ptr_depth_frm_16 = NULL;
-    uint16_t store_val = 0;
-    uint8_t store_val_lsb = 0;
     uint16_t *ptr_depth_frm_16 = NULL;
     uint8_t *ptr_depth_frm = NULL;
-     
+
     // encode_video = 0;
     pipe.start(cfg); // Start the pipe with the cfg
     rs2::align align_to_color(RS2_STREAM_COLOR);
-    //warm up camera
+    // warm up camera
     for (int i = 0; i < 15; i++)
     {
         frameset = pipe.wait_for_frames();
     }
-    //save intrinics
-    save_intrinsics(pipe, dirname);
-    const int sz_write_color_pipe = height_color * width_color * 3;
-    const int sz_write_ir_pipe = height_color * width_color * 2; 
-    timer tStart;
-    // if (!align_depth_to_color)
-    // {
-        while ((long)time_run * fps > counter)
-        {
-            try
-            {
-                frameset = pipe.wait_for_frames(1000); // No frames seen for 1.5 second then exit
-            }
 
-            catch (const rs2::error &e)
+    // Save the intrinsics of the camera for example the callibration matrix and the distortion coefficients, needed for any rectification or projection
+    save_intrinsics(pipe, dirname);
+
+    const int sz_write_color_pipe = height_color * width_color * 3;
+    const int sz_write_ir_pipe = height_color * width_color * 2;
+    
+    timer tStart;
+    while ((long)time_run * fps > counter)
+    {
+        try
+        {
+            frameset = pipe.wait_for_frames(1000); // No frames seen for 1.5 second then exit
+        }
+        catch (const rs2::error &e)
+        {
+            std::cout << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
+            break;
+        }
+
+        if (color)
+        {
+            if ((rgb_frame = frameset.get_color_frame()))
             {
-                std::cout << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
+                if (!fwrite((uint8_t *)rgb_frame.get_data(), sizeof(uint8_t), sz_write_color_pipe, color_pipe))
+                {
+                    std::cerr << "Error with fwrite frames color" << std::endl;
+                    break;
+                }
+            }
+            if (align_depth_to_color)
+            {
+                // auto depth_frameset = frameset.
+                frameset = align_to_color.process(frameset);
+                depth_frame_in = frameset.get_depth_frame();
+            }
+        }
+        else
+        {
+            depth_frame_in = frameset.get_depth_frame();
+        }
+
+        if (depth_frame_in)
+        {
+            ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
+
+            // Remember all data after width * height *2 is 0 so we don't have to put total_sz_lsb_bit here
+            // std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
+
+            for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += channel_size)
+            {
+
+                store_frame_msb[k] = ptr_depth_frm[i + 1]; //& (uint8_t)0b00000001;
+                // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
+                store_frame_lsb[k] = ptr_depth_frm[i];
+                // store_frame_test[y] = store_frame_lsb[i];
+            }
+            if (pipe_msb == NULL || !fwrite(store_frame_msb, sizeof(uint8_t), total_sz_8_bit, pipe_msb))
+            {
+                std::cout << "Error with fwrite pipe_msb frames" << std::endl;
                 break;
             }
 
-            if (color){
-                if ((rgb_frame = frameset.get_color_frame()))
+            if (pipe_lsb == NULL || !fwrite(store_frame_lsb, sizeof(uint8_t), total_sz_lsb_bit, pipe_lsb))
+            {
+                std::cout << "Error with fwrite frames scaled depth" << std::endl;
+                break;
+            }
+
+            if (infared)
+            {
+                if ((ir_frame = frameset.get_infrared_frame(2)))
                 {
-                    if (!fwrite((uint8_t *)rgb_frame.get_data(), sizeof(uint8_t), sz_write_color_pipe, color_pipe))
+                    if (!fwrite((uint8_t *)ir_frame.get_data(), 1, height * width, ir_pipe))
                     {
-                        std::cerr << "Error with fwrite frames color" << std::endl;
+                        std::cerr << "Error with fwrite frames infared" << std::endl;
                         break;
                     }
                 }
-                if (align_depth_to_color){
-                    //auto depth_frameset = frameset.
-                    frameset = align_to_color.process(frameset);
-                    depth_frame_in = frameset.get_depth_frame();
-                }
-            } else{
-                depth_frame_in = frameset.get_depth_frame();
             }
 
-            if (depth_frame_in)
+#if __has_include(<opencv2/opencv.hpp>)
+            // std::cerr << "Why no printing" << std::endl;
+            if (show_preview)
             {
-                // align depth_frame_in to color frame
 
-                // rs2::align align_to_color(RS2_STREAM_COLOR);
-                // frameset = align_to_color.process(frameset);
-                // depth_frame_in = frameset.get_depth_frame();
-                // convert from depth to disparity
-                // rs2::disparity_transform depth_to_disparity(true);
-                // auto depth_disp = depth_frame_in.apply_filter(depth_to_disparity);
-
-                // if (max_dis < 16.0f)
-                // {
-                //     depth_frame_in = thresh_filter.process(depth_frame_in);
-                // }
-                // Filter frames that are between these two depths
-
-                ptr_depth_frm = (uint8_t *)depth_frame_in.get_data();
-
-
-                // Remember all data after width * height *2 is 0 so we don't have to put total_sz_lsb_bit here
-                //std::copy(ptr_depth_frm, ptr_depth_frm + (width * height * 2), store_frame_lsb);
-                
-                for (i = 0, k = 0; i < num_bytes * 2; i += 2, k += channel_size)
+                if (counter % 15 == 0)
                 {
 
-                    store_frame_msb[k] = ptr_depth_frm[i + 1]; //& (uint8_t)0b00000001;
-                    // store_frame_lsb[i + 1] &= (uint8_t)0b00000011;
-                    store_frame_lsb[k] = ptr_depth_frm[i];
-                    // store_frame_test[y] = store_frame_lsb[i];
-                }
-                if (pipe_msb == NULL || !fwrite(store_frame_msb, sizeof(uint8_t), total_sz_8_bit, pipe_msb))
-                {
-                    std::cout << "Error with fwrite pipe_msb frames" << std::endl;
-                    break;
-                }
-                
-
-                if (pipe_lsb == NULL || !fwrite(store_frame_lsb, sizeof(uint8_t), total_sz_lsb_bit, pipe_lsb))
-                {
-                    std::cout << "Error with fwrite frames scaled depth" << std::endl;
-                    break;
-                }
-
-
-                // if (max_d > 1023) // WILL need to add logic for scaling
-                // {
-
-                // }
-                // else
-                // {
-                //     for (i = 0; i < num_bytes * 2; i += 2)
-                //     {
-                //         store_frame_lsb[i + 1] &= (uint8_t)0b11;
-                //         // store_frame_test[y] = store_frame_lsb[i];
-                //     }
-                // }
-                // // if (encode_video)
-                // // {
-                // //     //
-                // //     encode_video = !write_video_frame(oc, &video_st, (uint8_t *)store_frame_test);
-                // //     //encode_video = !write_video_frame(oc, &video_st, (uint8_t *)store_frame_lsb);
-                // // }
-                // // else
-                // // {
-                // //     fprintf(stderr, "\n\nError encoding video only %ld\n\n", counter);
-                // // }
-                // if (!fwrite(store_frame_lsb, 1, total_sz_lsb_bit, pipe_lsb))
-                // {
-                //     std::cout << "Error with fwrite frames" << std::endl;
-                //     break;
-                // }
-
-                // if (max_d > 1023)
-                // {
-                //     if (!fwrite(store_frame_msb, 1, height * width * 3U, pipe_msb))
-                //     {
-                //         std::cout << "Error with fwrite frames" << std::endl;
-                //         break;
-                //     }
-                // }
-                /*
-                if (color)
-                {
-                    if ((rgb_frame = frameset.get_color_frame()))
+                    color_frame = coloriz.process(depth_frame_in);
+                    cv::Mat img(cv::Size(width, height), CV_8UC3, (uint8_t *)color_frame.get_data(), cv::Mat::AUTO_STEP);
+                    cv::imshow("Raw Preview", img);
+                    std::string text = "Time: " + std::to_string(tStart.milliseconds_elapsed() / 1000.0);
+                    cv::putText(img,                         // target image
+                                text,                        // text
+                                cv::Point(10, img.rows / 2), // top-left position
+                                cv::FONT_HERSHEY_DUPLEX,
+                                1.0,
+                                CV_RGB(0, 0, 0), // font color
+                                2);
+                    if ((char)cv::waitKey(25) == 27) //
                     {
-                        if (!fwrite((uint8_t *)rgb_frame.get_data(), 1, height_color * width_color * 3, color_pipe))
-                        {
-                            std::cerr << "Error with fwrite frames color" << std::endl;
-                            break;
-                        }
+                        break;
                     }
                 }
-                */
-                if (infared){
-                    if ((ir_frame = frameset.get_infrared_frame(2)))
-                    {
-                        if (!fwrite((uint8_t *)ir_frame.get_data(), 1, height * width, ir_pipe))
-                        {
-                            std::cerr << "Error with fwrite frames infared" << std::endl;
-                            break;
-                        }
-                    }
-                }
-
-#if __has_include(<opencv2/opencv.hpp>)
-                // std::cerr << "Why no printing" << std::endl;
-                if (show_preview)
-                {
-
-                    if (counter % 15 == 0)
-                    {
-
-                        color_frame = coloriz.process(depth_frame_in);
-                        cv::Mat img(cv::Size(width, height), CV_8UC3, (uint8_t *)color_frame.get_data(), cv::Mat::AUTO_STEP);
-                        cv::imshow("Raw Preview", img);
-                        std::string text = "Time: " + std::to_string(tStart.milliseconds_elapsed() / 1000.0);
-                        cv::putText(img,                         // target image
-                                    text,                        // text
-                                    cv::Point(10, img.rows / 2), // top-left position
-                                    cv::FONT_HERSHEY_DUPLEX,
-                                    1.0,
-                                    CV_RGB(0, 0, 0), // font color
-                                    2);
-                        if ((char)cv::waitKey(25) == 27) //
-                        {
-                            break;
-                        }
-                    }
-                }
-#endif
-
-                if (collect_raw)
-                {
-                    if (counter < (long)num_frm_collect)
-                    {
-                        std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
-                        FILE *p_file;
-                        if ((p_file = fopen(bin_out.c_str(), "wb")))
-                        {
-                            // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
-                            fwrite((uint8_t *)depth_frame_in.get_data(), 1, num_bytes * 2, p_file);
-                            fclose(p_file);
-                        }
-                        else
-                        {
-                            std::cout << "Problem writing raw file " << bin_out << std::endl;
-                        }
-                        // if (!fwrite((uint8_t*)depth_frame_in.get_data(), 1, num_bytes*2, p_pipe_raw))
-                        // {
-                        //     std::cout << "Error with fwrite frames raw" << std::endl;
-                        //     break;
-                        // }
-                    }
-                    // if ((long)time_run * fps  - counter <= (long)num_frm_collect)
-                    // {
-                    //     std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
-                    //     FILE *p_file;
-                    //     if ((p_file = fopen(bin_out.c_str(), "wb")))
-                    //     {
-                    //         // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
-                    //         fwrite((uint8_t *)depth_frame_in.get_data(), 1, num_bytes * 2, p_file);
-                    //         fclose(p_file);
-                    //     }
-                    //     else
-                    //     {
-                    //         std::cout << "Problem writing raw file " << bin_out << std::endl;
-                    //     }
-                    //     // if (!fwrite((uint8_t*)depth_frame_in.get_data(), 1, num_bytes*2, p_pipe_raw))
-                    //     // {
-                    //     //     std::cout << "Error with fwrite frames raw" << std::endl;
-                    //     //     break;
-                    //     // }
-                    // }
-                }
-                // if (show_preview)
-                // {
-
-                // render_frames[0] = coloriz.process(depth_frame_in);
-                // app.show(render_frames);
-
-                // }
-                ++counter;
-                // fflush(pipe_lsb);
-                // fflush(pipe_msb);
             }
+#endif
+
+            if (collect_raw)
+            {
+                if (counter < (long)num_frm_collect)
+                {
+                    std::string bin_out = frame_file_nm + std::to_string(counter) + "_data.bin";
+                    FILE *p_file;
+                    if ((p_file = fopen(bin_out.c_str(), "wb")))
+                    {
+                        // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
+                        fwrite((uint8_t *)depth_frame_in.get_data(), 1, num_bytes * 2, p_file);
+                        fclose(p_file);
+                    }
+                    else
+                    {
+                        std::cout << "Problem writing raw file " << bin_out << std::endl;
+                    }
+                }
+            }
+
+            ++counter;
+            // fflush(pipe_lsb);
+            // fflush(pipe_msb);
         }
+    }
 
 #if __has_include(<opencv2/opencv.hpp>)
-        if (show_preview)
-        {
-            cv::destroyAllWindows();
-        }
+    if (show_preview)
+    {
+        cv::destroyAllWindows();
+    }
 #endif
-    // }
-    // else
-    // {
 
-    //     int outer = run_alignment_func(pipe, fps, time_run, dirname, width, height);
-    //     // rs2::align align_to_color(RS2_STREAM_DEPTH);
-    //     // float alpha = 0.5f;
-
-    //     // while ((long)time_run * fps > counter)
-    //     // {
-    //     //     rs2::frameset frameset = pipe.wait_for_frames();
-    //     //     frameset = align_to_color.process(frameset);
-    //     //     rs2::frame color_frame = frameset.get_color_frame();
-    //     //     rs2::frame depth_frame = frameset.get_depth_frame();
-    //     //     if (!color_frame || !depth_frame)
-    //     //     {
-    //     //         continue;
-    //     //     }
-
-    //     // }
-    // }
     unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();
     pipe.stop();
-    // return write_frame(oc, ost->enc, ost->st, get_video_frame(ost, time_run, data, color_data, stride), ost->tmp_pkt);
-
-    // write_frame(oc, (&video_st)->enc, (&video_st)->st, NULL, (&video_st)->tmp_pkt);
-    // av_write_trailer(oc);
-    // // delete [] color_data;
-    // /* Close each codec. */
-    // if (have_video)
-    //     close_stream(oc, &video_st);
-    // // if (have_audio)
-    // //     close_stream(oc, &audio_st);
-
-    // if (!(fmt->flags & AVFMT_NOFILE))
-    //     /* Close the output file. */
-    //     avio_closep(&oc->pb);
-
-    // /* free the stream */
-    // avformat_free_context(oc);
-    // free(store_frame_lsb);
-    // free(store_frame_msb);
 
     memset(store_frame_lsb, 0, num_bytes);
     memset(store_frame_msb, 0, num_bytes);
@@ -1060,13 +754,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             _pclose(pipe_msb);
             pipe_msb = NULL;
         }
-        // }
-        // if (p_pipe_raw)
-        // {
-        //     fflush(p_pipe_raw);
-        //     _pclose(p_pipe_raw);
-        //     p_pipe_raw = NULL;
-        // }
 
         if (color)
         {
@@ -1074,6 +761,13 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             _pclose(color_pipe);
             color_pipe = NULL;
         }
+        if (infared)
+        {
+            fflush(ir_pipe);
+            _pclose(ir_pipe);
+            ir_pipe = NULL;
+        }
+
 #else
         // if(!rosbag){
         if (pipe_lsb)
@@ -1088,13 +782,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             pclose(pipe_msb);
             pipe_msb = NULL;
         }
-        // }
-        // if (p_pipe_raw)
-        // {
-        //     fflush(p_pipe_raw);
-        //     pclose(p_pipe_raw);
-        //     p_pipe_raw = NULL;
-        // }
 
         if (color)
         {
@@ -1102,14 +789,12 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             pclose(color_pipe);
             color_pipe = NULL;
         }
-        if (infared){
+        if (infared)
+        {
             fflush(ir_pipe);
             pclose(ir_pipe);
             ir_pipe = NULL;
-            
         }
-
-
 
 #endif
     }
@@ -1123,63 +808,6 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     return 1;
 }
 
-bool isNumber(const std::string &str)
-{
-
-    // `std::find_first_not_of` searches the string for the first character
-    // that does not match any of the characters specified in its arguments
-    return !str.empty() &&
-           (str.find_first_not_of("[0123456789]") == std::string::npos);
-}
-
-// Function to split string `str` using a given delimiter
-std::vector<std::string> split(const std::string &str, char delim)
-{
-    using namespace std;
-
-    auto i = 0;
-    vector<string> list;
-
-    auto pos = str.find(delim);
-
-    while (pos != string::npos)
-    {
-        list.push_back(str.substr(i, pos - i));
-        i = ++pos;
-        pos = str.find(delim, pos);
-    }
-
-    list.push_back(str.substr(i, str.length()));
-
-    return list;
-}
-
-// Function to validate an IP address
-bool validateIP(std::string ip)
-{
-    using namespace std;
-    // split the string into tokens
-    vector<string> list = split(ip, '.');
-
-    // if the token size is not equal to four
-    if (list.size() != 4)
-    {
-        return false;
-    }
-
-    // validate each token
-    for (string str : list)
-    {
-        // verify that the string is a number or not, and the numbers
-        // are in the valid range
-        if (!isNumber(str) || stoi(str) > 255 || stoi(str) < 0)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
 
 int main(int argc, char *argv[])
 try
@@ -1221,17 +849,7 @@ try
     uint8_t disp_shift = 0;
     int align_int = 0;
     int infared = 0;
-    // int rosbag = 0;
-    // int opt;
-    // po::options_description desc("Allowed options");
-    // desc.add_options()
-    //     ("help", "produce help message")
-    //     ("optimization", po::value<int>(&opt)->default_value(10),
-    // "optimization level")
-    //     ("include-path,I", po::value< std::vector<std::string> >(),
-    // "include path")
-    //     ("input-file", po::value< std::vector<std::string> >(), "input file")
-    // ;
+
 
     std::string bagfile = "";
     std::string jsonfile = "";
@@ -1397,11 +1015,13 @@ try
         return EXIT_FAILURE;
     }
 
-    if(infared < 0 || infared > 1){
+    if (infared < 0 || infared > 1)
+    {
         print_usage("-ir");
         return EXIT_FAILURE;
     }
-    if (sec <= (long)0){
+    if (sec <= (long)0)
+    {
         std::cout << "Error -sec" << std::endl;
         print_usage("-sec");
         return EXIT_FAILURE;
