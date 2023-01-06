@@ -156,7 +156,7 @@ Then in order to see a list of options do the following
 For example here is a simple recording for 30 seconds with files saved to Testing_DIR/
 
 Decrease crf for better quality at expense of higher cpu processing and possible frame delays
-thr just means number of cores you wish to utilize, default is 2, choose a number greater than 8 or less than 1 to cause it to use all cores
+thr just means number of cores you wish to utilize, default is 2, choose a number greater than 8 or 0 to cause it to use all cores
 ```
 ./bin/multicam -dir Testing_DIR/ -sec 30 -fps 30 -crf 23 -thr 0 -jsonfile Default.json
 ```
