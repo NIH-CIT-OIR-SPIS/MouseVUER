@@ -242,59 +242,59 @@ void save_intrinsics(rs2::pipeline &pipe, std::string dirname)
     intrinsics_file.close();
     std::cout << "Intrinsics saved" << std::endl;
 }
-int run_alignment_func(rs2::pipeline &pipe, unsigned int fps, long time_run, std::string dirname, int width, int height)
-{
-    rs2::align align_to_color(RS2_STREAM_COLOR);
-    // window app(1280, 720, "RealSense Align Example"); // Simple window handling
-    // ImGui_ImplGlfw_Init(app, false);                  // ImGui library intializition
-    rs2::colorizer c; // Helper to colorize depth images
-    // texture depth_image, color_image;                 // Helpers for renderig images
-    int counter = 0;
-    float alpha = 0.5f;
-    direction dir = direction::to_color;
-    std::string path_out = dirname + "/color";
-    std::string path_out_depth = dirname + "/aligned_depth";
-    while ((long)time_run * fps > counter)
-    {
-        rs2::frameset frameset = pipe.wait_for_frames();
-        rs2::frame aligned_frame = align_to_color.process(frameset);
-        auto depth = frameset.get_depth_frame();
-        auto color = frameset.get_color_frame();
-        auto colorized_depth = c.colorize(depth);
-        #if __has_include(<opencv2/opencv.hpp>)
-        cv::Mat colorized_depth_img(cv::Size(width, height), CV_8UC3, (void *)colorized_depth.get_data(), cv::Mat::AUTO_STEP);
-        cv::Mat color_img(cv::Size(width, height), CV_8UC3, (void *)color.get_data(), cv::Mat::AUTO_STEP);
+// int run_alignment_func(rs2::pipeline &pipe, unsigned int fps, long time_run, std::string dirname, int width, int height)
+// {
+//     rs2::align align_to_color(RS2_STREAM_COLOR);
+//     // window app(1280, 720, "RealSense Align Example"); // Simple window handling
+//     // ImGui_ImplGlfw_Init(app, false);                  // ImGui library intializition
+//     rs2::colorizer c; // Helper to colorize depth images
+//     // texture depth_image, color_image;                 // Helpers for renderig images
+//     int counter = 0;
+//     float alpha = 0.5f;
+//     direction dir = direction::to_color;
+//     std::string path_out = dirname + "/color";
+//     std::string path_out_depth = dirname + "/aligned_depth";
+//     while ((long)time_run * fps > counter)
+//     {
+//         rs2::frameset frameset = pipe.wait_for_frames();
+//         rs2::frame aligned_frame = align_to_color.process(frameset);
+//         auto depth = frameset.get_depth_frame();
+//         auto color = frameset.get_color_frame();
+//         auto colorized_depth = c.colorize(depth);
+//         #if __has_include(<opencv2/opencv.hpp>)
+//         cv::Mat colorized_depth_img(cv::Size(width, height), CV_8UC3, (void *)colorized_depth.get_data(), cv::Mat::AUTO_STEP);
+//         cv::Mat color_img(cv::Size(width, height), CV_8UC3, (void *)color.get_data(), cv::Mat::AUTO_STEP);
 
-        cv::imwrite(path_out + std::to_string(counter) + ".png", color_img);
-        #endif
-        std::string bin_out = path_out_depth + std::to_string(counter) + "_depthy.bin";
-        FILE *p_file;
-        if ((p_file = fopen(bin_out.c_str(), "wb")))
-        {
-            // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
-            fwrite((uint8_t *)depth.get_data(), 1, width * height * 2, p_file);
-            fclose(p_file);
-        }
-        else
-        {
-            std::cout << " Problem writing raw file " << bin_out << std::endl;
-        }
-        // glEnable(GL_BLEND);
-        // // Use the Alpha channel for blending
-        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        // //depth_image.render(colorized_depth, { 0, 0, app.width(), app.height() });
-        // color_image.render(color, { 0, 0, app.width(), app.height() }, alpha);
-        counter++;
-        // glColor4f(1.f, 1.f, 1.f, 1.f);
-        // glDisable(GL_BLEND);
+//         cv::imwrite(path_out + std::to_string(counter) + ".png", color_img);
+//         #endif
+//         std::string bin_out = path_out_depth + std::to_string(counter) + "_depthy.bin";
+//         FILE *p_file;
+//         if ((p_file = fopen(bin_out.c_str(), "wb")))
+//         {
+//             // uint16_t* bit_data = (uint16_t*)depth_frame_in.get_data();
+//             fwrite((uint8_t *)depth.get_data(), 1, width * height * 2, p_file);
+//             fclose(p_file);
+//         }
+//         else
+//         {
+//             std::cout << " Problem writing raw file " << bin_out << std::endl;
+//         }
+//         // glEnable(GL_BLEND);
+//         // // Use the Alpha channel for blending
+//         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//         // //depth_image.render(colorized_depth, { 0, 0, app.width(), app.height() });
+//         // color_image.render(color, { 0, 0, app.width(), app.height() }, alpha);
+//         counter++;
+//         // glColor4f(1.f, 1.f, 1.f, 1.f);
+//         // glDisable(GL_BLEND);
 
-        // // Render the UI:
-        // ImGui_ImplGlfw_NewFrame(1);
-        // render_slider({ 15.f, app.height() - 60, app.width() - 30, app.height() }, &alpha, &dir);
-        // ImGui::Render();
-    }
-    return 1;
-}
+//         // // Render the UI:
+//         // ImGui_ImplGlfw_NewFrame(1);
+//         // render_slider({ 15.f, app.height() - 60, app.width() - 30, app.height() }, &alpha, &dir);
+//         // ImGui::Render();
+//     }
+//     return 1;
+// }
 /**
  * @brief Starts a recording for Intel realsense,
  *        piping it through ffmpeg for compression using libx264rgb,
@@ -759,12 +759,14 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     pipe.start(cfg); // Start the pipe with the cfg
     rs2::align align_to_color(RS2_STREAM_COLOR);
     //warm up camera
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < 15; i++)
     {
         frameset = pipe.wait_for_frames();
     }
     //save intrinics
     save_intrinsics(pipe, dirname);
+    const int sz_write_color_pipe = height_color * width_color * 3;
+    const int sz_write_ir_pipe = height_color * width_color * 2; 
     timer tStart;
     // if (!align_depth_to_color)
     // {
@@ -772,7 +774,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         {
             try
             {
-                frameset = pipe.wait_for_frames(1500); // No frames seen for 1.5 second then exit
+                frameset = pipe.wait_for_frames(1000); // No frames seen for 1.5 second then exit
             }
 
             catch (const rs2::error &e)
@@ -781,10 +783,20 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 break;
             }
 
-            if (color && align_depth_to_color){
-                //auto depth_frameset = frameset.
-                frameset = align_to_color.process(frameset);
-                depth_frame_in = frameset.get_depth_frame();
+            if (color){
+                if ((rgb_frame = frameset.get_color_frame()))
+                {
+                    if (!fwrite((uint8_t *)rgb_frame.get_data(), sizeof(uint8_t), sz_write_color_pipe, color_pipe))
+                    {
+                        std::cerr << "Error with fwrite frames color" << std::endl;
+                        break;
+                    }
+                }
+                if (align_depth_to_color){
+                    //auto depth_frameset = frameset.
+                    frameset = align_to_color.process(frameset);
+                    depth_frame_in = frameset.get_depth_frame();
+                }
             } else{
                 depth_frame_in = frameset.get_depth_frame();
             }
@@ -870,7 +882,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                 //         break;
                 //     }
                 // }
-
+                /*
                 if (color)
                 {
                     if ((rgb_frame = frameset.get_color_frame()))
@@ -882,7 +894,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
                         }
                     }
                 }
-
+                */
                 if (infared){
                     if ((ir_frame = frameset.get_infrared_frame(2)))
                     {
