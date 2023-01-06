@@ -1,11 +1,9 @@
 import pyrealsense2 as rs
-
 import numpy as np
 import cv2
 import os
 import argparse
 import time
-
 import traceback
 from PIL import Image
 
@@ -33,7 +31,6 @@ def make_sep_ir_rgb_depth(bag_file: str, dir: str):
     # Start streaming
 
     # Enable all streams
-
     config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
     config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
     config.enable_stream(rs.stream.infrared, 1, 1280, 720,  rs.format.y8, 30)

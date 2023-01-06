@@ -57,6 +57,7 @@ from
 https://docs.opencv.org/4.6.0/d7/d9f/tutorial_linux_install.html
 1) Install manually using guide below.
 ```
+python3 -m pip install pyrealsense2 && \
 sudo apt install -y g++ && \
 sudo apt install -y cmake && \
 sudo apt install -y make && \
@@ -179,8 +180,6 @@ For command info  help type:
 ./bin/multicam -h
 ```
 
-
-
 ## Run multicam program
 
 ```
@@ -210,9 +209,6 @@ Decompressing regular no comparison
 ```
 ffmpeg -i Testing_DIR/test_lsb_5000_out.mp4 -i Testing_DIR/test_msb_5001_out.mp4 -map 0:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_lsb_5000.mkv -map 1:v -c:v rawvideo -pix_fmt yuv420p Testing_DIR/output_msb_5001.mkv
 ```
-
-
-
 
 
 # Directions for Configuring Server Client System
