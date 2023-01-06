@@ -13,7 +13,7 @@
  *
  * @version 0.1
  * @date 01/06/2023
- * 
+ *
  */
 #if __has_include(<opencv2/opencv.hpp>)
 #include <opencv2/opencv.hpp>
@@ -521,11 +521,9 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
         height = std::stoi(root["viewer"]["stream-height"].asString());
         width = std::stoi(root["viewer"]["stream-width"].asString());
         fps = std::stoi(root["viewer"]["stream-fps"].asString());
-        
+
         // close the file
         if_str.close();
-        
-
     }
     if (bag_file_dir.size() > 1 && does_file_exist(bag_file_dir))
     {
@@ -547,7 +545,8 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     std::cout << "Depth min: " << advanced_mode_dev.get_depth_table().depthClampMin << "mm" << std::endl;
     std::cout << "Disparity Shift " << advanced_mode_dev.get_depth_table().disparityShift << std::endl;
     cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps); // Realsense configurationst
-    if (near_ir){
+    if (near_ir)
+    {
         cfg.enable_stream(RS2_STREAM_INFRARED, 1, width, height, RS2_FORMAT_Y8, fps);
         cfg.enable_stream(RS2_STREAM_INFRARED, 2, width, height, RS2_FORMAT_Y8, fps);
     }
@@ -625,6 +624,10 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
             {
                 // auto depth_frameset = frameset.
                 frameset = align_to_color.process(frameset);
+                depth_frame_in = frameset.get_depth_frame();
+            }
+            else
+            {
                 depth_frame_in = frameset.get_depth_frame();
             }
         }
@@ -831,7 +834,7 @@ try
         return EXIT_FAILURE;
     }
     std::string dir = "";
-    //auto processor_count = std::thread::hardware_concurrency();
+    // auto processor_count = std::thread::hardware_concurrency();
     long sec = 0;
     int max_depth = 65535;
     int min_depth = 0;
