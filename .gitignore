@@ -11,6 +11,12 @@ Code/Collect_Training_Code/Testing_DIR/*
 *.tif
 *.avi
 
+
+# Ignore certain image files
+*.png
+*.tif
+
+
 *.pyc
 *.obj
 # Ignore key files
