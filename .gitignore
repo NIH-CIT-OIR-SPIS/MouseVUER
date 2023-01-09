@@ -1,8 +1,6 @@
 Code/Testing_DIR/*
 Code/bin/*
-Code_8_bit/bin/*
-Code_8_bit/Testing_DIR/*
-Collect_Training_Code/Testing_DIR/*
+Code/Collect_Training_Code/Testing_DIR/*
 
 #ignore .bin files 
 *.bin
