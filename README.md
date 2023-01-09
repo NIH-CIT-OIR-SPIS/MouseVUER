@@ -122,14 +122,14 @@ realsense-viewer
 Then make any setting changes you wish to make and save changes using the save icon on the camera. You will be prompted to save it to a .json file
 We will denote this json file as YourJsonFile.json
 
-Save this file in the Code_8_bit/ directory
+Save this file in the Code/ directory
 
 ### Directions for Use
 Then plug in your Intel RealSense Camera into the computer's USB port
 
 Then run:
 ```
-cd ~/DepthCameraRecordingTool/Code_8_bit/ && mkdir Testing_DIR
+cd ~/DepthCameraRecordingTool/Code/ && mkdir Testing_DIR
 ```
 
 
@@ -284,7 +284,7 @@ Key generation
 Type the following in to a terminal on your Server
 
 ```
-cd ~/DepthCameraRecordingTool/Code_8_bit/ && \
+cd ~/DepthCameraRecordingTool/Code/ && \
 make clean && make -j4 && \
 python3 make_ssl_keys_cert.py
 ```
@@ -314,7 +314,7 @@ Alternativley you could just open up an ssh session to each client and copy the 
 
 ### For each Client 
 ```
-cd ~/DepthCameraRecordingTool/Code_8_bit/ && \
+cd ~/DepthCameraRecordingTool/Code/ && \
 make clean && \
 make -j4
 ```
@@ -327,7 +327,7 @@ Then if prompted type in 1 and hit ENTER
 Using the arrow keys go down to the very bottom of the file
 Then add the following text replacing USER with your client username found if you go to settings and users:
 ```
-@reboot sleep 10; export XAUTHORITY=/home/<USER>/.Xauthority; cd /home/<USER>/DepthCameraRecordingTool/Code_8_bit/ && python3 client_side.py &
+@reboot sleep 10; export XAUTHORITY=/home/<USER>/.Xauthority; cd /home/<USER>/DepthCameraRecordingTool/Code/ && python3 client_side.py &
 ```
 Then hit the keys CTRL+X then Y then ENTER
 
@@ -401,6 +401,7 @@ You could also enter in your own json file as well for different settings just b
 ### Running recording lossless compression with GUI
 
 ```
+cd ~/DepthCameraRecordingTool/Code/Collect_Training_Code/
 python3 collect_aligned_depth_training_vids.py
 ```
 
@@ -409,6 +410,7 @@ python3 collect_aligned_depth_training_vids.py
 ```
 python3 decompress_training_vids_gui.py
 ```
+
 ### Run collect_raw for 30 seconds using ffv1, with aligned frames from directory Collect_Training_Code/
 
 make -j4 && ./bin/collect_raw -dir Testing_DIR/ -sec 30 -align 1 -jsonfile ../Code/Default.json
@@ -445,7 +447,11 @@ See info ffmpeg
 ffmpeg -h encoder=libx264
 ```
 
-Decompress bag file
+## Utility Functions found in Code/util_functions
 ```
 python3 decompress_from_bag_file.py -f some.bag -o Testing_DIR/
 ```
+
+
+
+
