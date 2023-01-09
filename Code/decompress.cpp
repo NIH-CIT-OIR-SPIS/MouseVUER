@@ -50,7 +50,7 @@ extern "C"
 
 static int frm_group_size = 3;
 static int print_psnr = 1;
-const int shift_by = 2; // 0;
+const int shift_by = 0; // 0;
 static const int shift_back_by = 16 - (8 - shift_by);
 
 namespace buff_global
@@ -204,19 +204,10 @@ static int exec_ffprobe(std::string str_cmd)
 void print_usage(std::string choice = "")
 {
 
-    if (choice == "" || choice == "-help" || choice == "-h")
+    if (choice == "-num_frm")
     {
-        std::cout << "Usage: " << std::endl;
-        std::cout << " [options]" << std::endl;
-        std::cout << "Options:" << std::endl;
-        std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
-        std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
-        std::cout << " -hd <header txt file> : required Header file will be named something like video_header.txt" << std::endl;
-        std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
-        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
-        std::cout << " -help                  : Print this help" << std::endl;
-        std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
-        std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
+
+        std::cout << "Usage: -num_frm  <INT> number of frames to decompress (default: -1), must be valid" << std::endl;
     }
     else if (choice == "-print_psnr")
     {
@@ -248,20 +239,22 @@ void print_usage(std::string choice = "")
     {
         std::cout << " -cmp <raw_file_dir> : optional Input raw file directory, IE where all the raw files lie, for developer only" << std::endl;
     }
-    else
-    {
-        std::cout << "Usage: " << std::endl;
-        std::cout << " [options]" << std::endl;
-        std::cout << "Options:" << std::endl;
-        std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
-        std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
-        std::cout << " -hd <header txt file> : required Header file" << std::endl;
-        std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
-        std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
-        std::cout << " -help                  : Print this help" << std::endl;
-        std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
-        std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
-    }
+    //{
+
+    std::cout << "\nOTHER OPTIONS: " << std::endl;
+    std::cout << "Usage: " << std::endl;
+    std::cout << " [options]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << " -ilsb <input_file>  : required Input lsb video file" << std::endl;
+    std::cout << " -imsb <input_file>  : optional Input msb video file" << std::endl;
+    std::cout << " -hd <header txt file> : required Header file" << std::endl;
+    std::cout << " -o <directory name>    : required Output directory for decompressed files " << std::endl;
+    std::cout << " -cmp <raw_file_dir> : optional Input raw file directory" << std::endl;
+    std::cout << " -help                  : Print this help" << std::endl;
+    std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
+    std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
+    std::cout << "Usage: -num_frm  <INT> number of frames to decompress (default: -1), must be valid" << std::endl;
+    //}
 }
 
 template <typename T>
@@ -292,7 +285,6 @@ static inline int abs_diff(int a, int b)
         return a - b;
     }
 }
-
 double img_mean(uint16_t *arr, int n)
 {
     double sum = 0.0;
@@ -352,19 +344,23 @@ double get_ssim(uint16_t *compressed, uint16_t *raw, int siz = 0, int pr_lum = 0
     double var_compr = img_variance(compressed, siz, mean_compr);
     double var_raw = img_variance(raw, siz, mean_raw);
     double covar = img_covariance(compressed, raw, siz, mean_compr, mean_raw);
-    if (pr_lum){
-        double lum = (2 * mean_compr * mean_raw + c1) / ( mean_compr * mean_compr + mean_raw * mean_raw + c1);
-    
+    if (pr_lum)
+    {
+        double lum = (2 * mean_compr * mean_raw + c1) / (mean_compr * mean_compr + mean_raw * mean_raw + c1);
+
         printf("Luminance SSIM: %f\n", lum);
     }
-    if (pr_contr || pr_struct){
+    if (pr_contr || pr_struct)
+    {
         double std_var1 = sqrt(var_compr);
         double std_var_raw = sqrt(var_raw);
-        if(pr_contr){
-            printf("Contrast SSIM: %f\n", ( (2*std_var1*std_var_raw + c2) / (var_compr + var_raw + c2) ));
+        if (pr_contr)
+        {
+            printf("Contrast SSIM: %f\n", ((2 * std_var1 * std_var_raw + c2) / (var_compr + var_raw + c2)));
         }
-        if(pr_struct){
-            printf("Structure SSIM: %f\n", ( (covar + c3) / (std_var1 * std_var_raw + c3) ));
+        if (pr_struct)
+        {
+            printf("Structure SSIM: %f\n", ((covar + c3) / (std_var1 * std_var_raw + c3)));
         }
     }
 
@@ -497,32 +493,20 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     {
         fread(store_raw_depth, sizeof(uint16_t), H * W, read_raw);
     }
-    if (max_d - min_d <= 1023 || frame_msb == NULL)
+
+    for (y = 0; y < H * W; ++y)
     {
-        for (i = 0, y = 0; i < H * W * 2; i += 2, ++y)
-        {
-            store_num = (uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8);
 
-            store_num += min_d;
-            store_depth[y] = store_num;
-            // store_depth_lsb[y] = store_num;
-        }
+        curr_lsb = (uint16_t)frame_lsb[y]; //((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
+
+        curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by; // 10;
+
+        store_num = curr_lsb | curr_msb;
+
+        store_depth[y] = store_num;
+        // store_depth_lsb[y] = curr_lsb;
     }
-    else
-    {
-        for (i = 0, y = 0; i < H * W * 2; i += 2, ++y)
-        {
 
-            curr_lsb = ((uint16_t)frame_lsb[i] | (((uint16_t)frame_lsb[i + 1]) << 8));
-
-            curr_msb = ((uint16_t)frame_msb[y]) << shift_back_by; // 10;
-
-            store_num = curr_lsb | curr_msb;
-
-            store_depth[y] = store_num;
-            // store_depth_lsb[y] = curr_lsb;
-        }
-    }
     // if (video_frame_count == 200)
     // {
     //     lineRead(store_depth_lsb);
@@ -763,9 +747,10 @@ static int decode_packet(AVCodecContext *dec, const AVPacket *pkt, AVFrame *fram
 // }
 
 static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb, int num_frames_msb,
-                      std::string output_dir, std::string input_file_lsb, std::string input_file_msb, std::string input_raw_file_dir)
+                      std::string output_dir, std::string input_file_lsb, std::string input_file_msb, std::string input_raw_file_dir, int num_frm_dec)
 {
-
+    int grp_trck = -1;
+    int count_grper = 0;
     int ret = 0;
     int i = 0, j = 0, y = 0, x = 0, frm_count_lsb = 0, frm_count_msb = 0;
     int *pt_y = NULL, *pt_x = NULL;
@@ -816,11 +801,11 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
         src_filename_msb = (char *)malloc(input_file_msb.size() + 1);
         strcpy(src_filename_msb, input_file_msb.c_str());
     }
-    if (max_d - min_d <= 1023)
-    {
-        printf("max_d - min_d <= 1023\n");
-        take_msb = false;
-    }
+    // if (max_d - min_d <= 1023)
+    // {
+    //     printf("max_d - min_d <= 1023\n");
+    //     take_msb = false;
+    // }
 
     /* open input file, and allocate format context */
     if (avformat_open_input(&fmt_ctx, src_filename, NULL, NULL) < 0)
@@ -949,10 +934,13 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
     //     lsb_frame_buf[i] = (uint8_t *)malloc(2560 *);
     //     msb_frame_buf[i] = (uint8_t *)malloc(video_dst_bufsize_msb);
     // }
-
+    if (num_frm_dec > 0)
+    {
+        grp_trck = num_frm_dec / frm_group_size;
+    }
     if (take_msb)
     {
-        while (*pt_lsb_frm_count < num_frames_lsb || *pt_msb_frm_count < num_frames_msb)
+        while ((*pt_lsb_frm_count < num_frames_lsb || *pt_msb_frm_count < num_frames_msb))
         {
             while (*pt_x < frm_group_size)
             {
@@ -1059,6 +1047,11 @@ static int decompress(int max_d, int min_d, int depth_units, int num_frames_lsb,
             }
             *pt_y = 0, *pt_x = 0;
             if (counte > 10)
+            {
+                break;
+            }
+            ++count_grper;
+            if (count_grper >= grp_trck && grp_trck != -1)
             {
                 break;
             }
@@ -1176,7 +1169,33 @@ end:
 #endif
     return 1;
 }
+/**
+ * @brief
+ * function to find the number closest to n and divisible by m
+ * @param n
+ * @param m
+ * @return int
+ */
+int closestNumber(int n, int m)
+{
+    // find the quotient
+    int q = n / m;
 
+    // 1st possible closest number
+    int n1 = m * q;
+
+    // 2nd possible closest number
+    int n2 = (n * m) > 0 ? (m * (q + 1)) : (m * (q - 1));
+
+    // if true, then n1 is the required closest number
+    if (std::abs(n - n1) < std::abs(n - n2))
+    {
+        return n1;
+    }
+
+    // else n2 is the required closest number
+    return n2;
+}
 long double getCompressionRatio(std::uintmax_t sz, int num_frames)
 {
     std::uintmax_t calc_raw_sz = (std::uintmax_t)num_frames * H * W * 2;
@@ -1186,7 +1205,7 @@ int main(int argc, char *argv[])
 {
     int deref1 = 0, deref2 = 0, deref3 = 0; // deref4 = 0, deref5 = 0, deref6 = 0;
     int ret = 0;
-    if (argc > 13 || argc < 2)
+    if (argc > 15 || argc < 2)
     {
         std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
         print_usage();
@@ -1252,6 +1271,7 @@ int main(int argc, char *argv[])
 
     int num_frames_lsb = 0;
     int num_frames_msb = 0;
+    int num_frm_dec = -1;
     num_frames_lsb = exec_ffprobe(ffprobe_cmd);
     if (input.cmdOptionExists("-imsb"))
     {
@@ -1289,17 +1309,38 @@ int main(int argc, char *argv[])
         }
     }
 
-    // int i = 100;
+    if (input.cmdOptionExists("-num_frm"))
+    {
+        num_frm_dec = parse_integer_cmd(input, "-num_frm", num_frm_dec);
+        if (num_frm_dec < -1 || num_frm_dec == 0 || num_frm_dec > num_frames_lsb || num_frm_dec > num_frames_msb)
+        {
+            std::cout << "Invalid value for -num_frm must be less than the number of frames in file" << std::endl;
+            print_usage("-num_frm");
+            return EXIT_FAILURE;
+        }
+    }
 
-    // for (; i > 3; i--)
-    // {
-    //     if (num_frames_lsb % i == 0)
-    //     {
-    //         frm_group_size = i;
-    //         break;
-    //     }
-    // }
-    frm_group_size = 50;
+    if (input.cmdOptionExists("-sz"))
+    {
+        frm_group_size = parse_integer_cmd(input, "-sz", frm_group_size);
+        if (frm_group_size < 1 || frm_group_size > num_frames_lsb)
+        {
+            std::cout << "Invalid value for -sz must be less than the number of frames in file" << std::endl;
+            print_usage("-sz");
+            return EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        frm_group_size = 10;
+    }
+    
+    if (num_frm_dec != -1)
+    {
+        num_frm_dec = closestNumber(num_frm_dec, frm_group_size);
+        printf("num_frm_dec: %d\n", num_frm_dec);
+        printf("group_count %d\n", closestNumber(num_frm_dec, frm_group_size));
+    }
     printf("frm_group_size: %d\n", frm_group_size);
 
     std::uintmax_t total_compressed_sz = 0;
@@ -1317,7 +1358,7 @@ int main(int argc, char *argv[])
     }
 
     timer tStart;
-    ret = !decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir);
+    ret = !decompress(deref1, deref2, deref3, num_frames_lsb, num_frames_msb, output_dir, input_lsb_file, input_msb_file, input_raw_file_dir, num_frm_dec);
     unsigned long long milliseconds_ellapsed = tStart.milliseconds_elapsed();
     std::cout << "Time decompress run for in seconds: " << (milliseconds_ellapsed / 1000.0) << std::endl;
     if (ret)

@@ -354,7 +354,11 @@ bool InputParser::cmdOptionExists(const std::string &option) const
  */
 void print_usage(std::string choice)
 {
-    if (choice == "-align_to_color")
+    if (choice == "-ir")
+    {
+        std::cout << "Usage: -ir <int> 0 or 1. 0 for no IR, 1 for IR" << std::endl;
+    }
+    else if (choice == "-align_to_color")
     {
         std::cout << "Usage: -align_to_color <int> 0 or 1. 0 for no alignment and regular recording, 1 for depth alignment to color, NOTE High Processing COST" << std::endl;
     }
@@ -389,7 +393,7 @@ void print_usage(std::string choice)
     }
     else if (choice == "-depth_lossless")
     {
-        std::cout << "-depth_lossless [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
+        std::cout << "-depth_lossless  DEPRICATED (don't use) [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
     }
     else if (choice == "-crf_color")
     {
@@ -428,7 +432,7 @@ void print_usage(std::string choice)
     }
     else if (choice == "-thr")
     {
-        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding." << std::endl;
+        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding, choose 0 if you wish to use all threads" << std::endl;
     }
     else if (choice == "-numraw")
     {
@@ -464,7 +468,7 @@ void print_usage(std::string choice)
         std::cout << "-ht [uint: HEIGHT]" << std::endl;
         std::cout << "-fps [uint: FRAMERATE]" << std::endl;
         std::cout << "-crf [uint: CONTROL RATE FACTOR]\t(DEFAULT=18) Recommended crf optional to change" << std::endl;
-        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding." << std::endl;
+        std::cout << "-thr [uint: THREADS IN]\t(OPT) Number of threads to utilize, doesn't effect libx265/HEVC encoding, choose 0 if you wish to use all threads" << std::endl;
         std::cout << "-numraw [uint: NUMBER FRAMES RAW TO COLLECT]\t(OPT) Used only if you want to collect raw frames of the stream. May slow down framerate." << std::endl;
         std::cout << "-verbose [int: 0 or 1]\t(OPT) Used only if you wish to see exacty what ffmpeg will say from command line." << std::endl;
         std::cout << "-view [int: 0 or 1]\t(DEFAULT=0) Whether or not to preview the frames as you capture them. Does slow down fps." << std::endl;
@@ -472,7 +476,7 @@ void print_usage(std::string choice)
         std::cout << "-jsonfile [string: JSON FILE PATH]\tFor intel realsense file configuration if needed. Please note that this json file name cannot have any spaces" << std::endl;
         std::cout << "-color [int: 0 or 1]\tWhether to save color RGB stream as well" << std::endl;
         std::cout << "-crf_color [int: 0-50]\t Control rate factor for RGB video" << std::endl;
-        std::cout << "-depth_lossless [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
+        std::cout << "-depth_lossless  DEPRICATED (don't use) [int: 0 or 1]\t If you wish to store the depth frames losslessly compressed, causes high CPU usage." << std::endl;
         std::cout << "Usage: -max_depth <int> max_depth default is 65535 " << std::endl;
         std::cout << "Usage: -min_depth <int> min_depth default is 0 " << std::endl;
         std::cout << "Usage: -depth_unit <int>  Depth units represent the measurement length of a single depth step. A Depth step is difference between each discrete depth value in a depth image." << std::endl;
@@ -485,6 +489,7 @@ void print_usage(std::string choice)
         std::cout << "Usage:  -sv_addr <server_address> valid ip address " << std::endl;
         std::cout << "Usage -disp_shift <0-255>  Disparity Shifty larger value for objects closer to camera." << std::endl;
         std::cout << "Usage: -align_to_color <int> 0 or 1. 0 for no alignment and regular recording, 1 for depth alignment to color, NOTE High Processing COST" << std::endl;
+        std::cout << "Usage: -ir <int> 0 or 1. 0 for no IR, 1 for IR" << std::endl;
         // std::cout << "-rosbag [int: 0 or 1]\tWhether to save color .bag file and not compress" << std::endl;
     }
 }

@@ -20,6 +20,15 @@ import shlex
 import datetime
 import traceback
 from client_side import PORT_CLIENT_LISTEN, COMMON_NAME, ORGANIZATION, COUNTRY_ORGIN, BYTES_SIZE
+from typing import Dict, Any
+# copy
+import copy
+import errno
+# For GUI
+
+
+from server_gui import ServerGUI
+
 """
 This is the server side of the application.
 GET LIST OF ALL IP ADDRESSES
@@ -54,6 +63,12 @@ NO_FORCE_EXIT = True
 # ORGANIZATION = "NIH"
 # COUNTRY_ORGIN = "US"
 # BYTES_SIZE = 4096
+
+def make_folder(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+
 def run_processes_parallel(cmd_lst):
     """
     Start up two server processes in parallel. Send them both signals to terminate.
@@ -90,12 +105,6 @@ def run_processes_parallel(cmd_lst):
                 if p is not None:
                     p.send_signal(signal.SIGQUIT)
 
-# def port_type(port: int):
-#     port = int(port)
-#     if port <= 1024 or port > 65000:
-#         raise argparse.ArgumentTypeError("Error: Port number must in the ranges [1025, 65535]. Port number given: {}".format(port))
-#     return port
-
 def validate_ip(addr):
     try:
         ip = ipaddress.ip_address(addr)
@@ -111,52 +120,7 @@ def validate_loglevel(loglevel):
         raise argparse.ArgumentTypeError("Error: Log level must be one of the following: error, verbose, debug")
     return loglevel
 
-# def make_commands(addr: str, loglevel: str, port: int): 
-#     addr1 = validate_ip(addr)
-#     port = port_type(port)
-#     loglevel = validate_loglevel(loglevel)
-#     # split_size = int(split_size)
-#     # if split_size < 1:
-#     #     raise argparse.ArgumentTypeError("Error: Split size must be greater than 0")
-#     #print("Address: {}, loglevel {}, port {}".format(addr, loglevel, port))
-#     #loglevel = "error"
-#     #addr1 = "169.254.255.255"
-#     #port_num_lsb = port
-#     cmd_lst = []
-#     cmd1 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y Testing_DIR/test_lsb_{}_out.mp4".format(loglevel, addr1, port, port)
-#     cmd2 = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y Testing_DIR/test_msb_{}_out.mp4".format(loglevel, addr1, port + 1, port + 1)
-#     #shlex.quote(cmd1)
-#     #shlex.quote(cmd2)
-#     print("Command 1: {}".format(cmd1))
-#     print("Command 2: {}".format(cmd2))
-#     cmd_lst.append(cmd1)
-#     cmd_lst.append(cmd2)
-#     return cmd1, cmd2
-#     # run_processes_parallel(cmd_lst)
-#     # if platform.system() == "Linux":
-#     #     os.system("stty echo")
-# class Process(multiprocessing.Process):
-#     def __init__(self, *args, **kwargs):
-#         multiprocessing.Process.__init__(self, *args, **kwargs)
-#         self._pconn, self._cconn = multiprocessing.Pipe()
-#         self._exception = None
-
-#     def run(self):
-#         try:
-#             multiprocessing.Process.run(self)
-#             self._cconn.send(None)
-#         except Exception as e:
-#             tb = traceback.format_exc()
-#             self._cconn.send((e, tb))
-#             # raise e  # You can still rise this exception if you need to
-
-#     @property
-#     def exception(self):
-#         if self._pconn.poll():
-#             self._exception = self._pconn.recv()
-#         return self._exception
-
-def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str):
+def build_ffmpeg_cmd_group(server_addr: str, loglevel: str, port: int, dir: str, ip_str: str, color: bool, ir: bool):
     """
     Build the ffmpeg command string
     :param server_addr:
@@ -167,21 +131,41 @@ def build_ffmpeg_cmd_pair(server_addr: str, loglevel: str, port: int, dir: str):
     addr = validate_ip(server_addr)
     port = port_type(port)
     loglevel = validate_loglevel(loglevel)
-    cmd_lsb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p10le -y -movflags +faststart {}/test_lsb_{}_out.mp4".format(loglevel, addr, port, dir, port)
-    cmd_msb = "ffmpeg -threads 4 -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/test_msb_{}_out.mp4".format(loglevel, addr, port + 1, dir,  port + 1)
-    return cmd_lsb, cmd_msb
+    str_time = str(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
+    make_folder(dir)
+    dir = os.path.join(dir, "vids" + ip_str)
+    make_folder(dir)
 
-def build_ffmpeg_cmd_pair_list(map_dict: dict, loglevel: str, server_addr: str, dir: str):
+    cmd_lsb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_lsb_port_{}_{}_out.mp4".format(loglevel, addr, port, dir, ip_str, str_time, port )
+    cmd_msb = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_msb_port_{}_{}_out.mp4".format(loglevel, addr, port + 1, dir,  ip_str, str_time, port + 1)
+    cmd_group = [cmd_lsb, cmd_msb]
+    if color:
+        cmd_color = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -pix_fmt yuv420p -y -movflags +faststart {}/vid_{}_color_port_{}_{}_out.mp4".format(loglevel, addr, port + 2, dir, ip_str, str_time, port + 2)
+        cmd_group.append(cmd_color)
+    
+    if ir:
+        cmd_ir = "ffmpeg -hide_banner -listen 1 -timeout 10000 -f flv -loglevel {} -an -i rtmp://{}:{}/ -vcodec copy -y -movflags +faststart {}/vid_{}_ir_port_{}_{}_out.mp4".format(loglevel, addr, port + 3, dir, ip_str, str_time, port + 3)
+        cmd_group.append(cmd_ir)
+
+    return cmd_group
+
+
+
+
+
+
+def build_ffmpeg_cmd_group_list(map_dict: dict, loglevel: str, server_addr: str, dir: str, color: bool, ir: bool):
     """
     Build the ffmpeg command string
     :param map_dict:
     :return:
     """
     cmd_list = []
-    for _, port in map_dict.items():
-        cmd_lsb, cmd_msb = build_ffmpeg_cmd_pair(server_addr, loglevel, port, dir)
-        cmd_list.append(cmd_lsb)
-        cmd_list.append(cmd_msb)
+    for ip, port in map_dict.items():
+        ip_str = str(ip).replace('.','_')
+        cmd_group = build_ffmpeg_cmd_group(server_addr, loglevel, port, dir, ip_str, color, ir)
+        for cmd in cmd_group:
+            cmd_list.append(cmd)
     return cmd_list
     
 
@@ -276,24 +260,21 @@ def validate_ip(addr):
         raise argparse.ArgumentTypeError("IP address {} is not valid".format(addr))
         return None
 
-# class ServerWorker:
-#     def __init__(self, clientinfo):
-#         self.clientinfo = clientinfo
 
-#     def run(self):
-#         threading.Thread(target=self.requesting).start()
+def make_message(settings, json_settings, server_ip, ffmpeg_port) -> Dict[str, Any]:
+    """
+    Make the message to send to the server
+    :param settings:
+    :param json_settings:
+    :return:
+    """
+    #self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1, self.argdict['color'], self.argdict['ir'], self.argdict['json']
+    message = copy.copy(settings)
 
-
-#     def requesting(self):
-#         """ Recive Request from client """
-#         connsocket = self.clientinfo['connsocket'][0]
-#         while True:
-#             data = connsocket.recv(1024)
-#             if data:
-#                 print("Received: {}".format(data))
-#                 self.clientinfo['request'] = data.decode('ascii')
-#                 break
-
+    message['json_file_data'] = json_settings
+    message['server_ip'] = server_ip
+    message['ffmpeg_port'] = ffmpeg_port
+    return message
 
 class Server:
     """
@@ -324,11 +305,14 @@ class Server:
         self.host_port = {}
         self.server_ip = get_my_ip()
         print("Mapping to all ports {}".format(self.client_ip_lst))
+        if not self.client_ip_lst:
+            raise Exception("No clients seen please try again.")
         self.__initialize_maps()
         print("Mapping : {}".format(self.ffmpeg_port_map))
         self.thread_list = []
         #self.__start_ffmpeg(cmd_list)
         self.print_lock = threading.Lock()
+        
         if os.path.isdir(self.argdict['dir']):
             with open(os.path.join(self.argdict['dir'], "video_head_file.txt"), "w") as f:
                 f.write(str(self.argdict['max_depth']) + " " + str(self.argdict['min_depth']) + " " + str(self.argdict['depth_unit']))
@@ -367,8 +351,11 @@ class Server:
             raise Exception("Error: FPS must be less than 30 if dimensions are 1280x720 or 1920x1080. FPS given: {}, Dimensions given: {}".format(self.argdict['fps'], self.argdict['dimensions']))
         if self.argdict['depth_unit'] < 40 or self.argdict['depth_unit'] >= 65535:
             raise Exception("Error: Depth unit must be greater than 40 and less than 65535. Depth unit given: {}".format(self.argdict['depth_unit']))
-        
-
+        if not os.path.exists(self.argdict['json']):
+            raise Exception("Error: JSON file does not exist. JSON file given: {}".format(self.argdict['json']))
+        else:
+            with open(self.argdict['json'], 'r') as f:
+                self.json_file_depth = json.load(f)
 
     def __initialize_maps(self):
         i = 0
@@ -380,13 +367,12 @@ class Server:
         for ip_addr in self.client_ip_lst:
             self.host_port.update({ip_addr: PORT_CLIENT_LISTEN})
             
-
-
     def listen(self):
         print("Listen")
         try:
             self.sock.listen(6)
-            while True:
+            count = 0
+            while count < self.argdict['num_clients']:
                 clientsocket, addr = self.sock.accept()
                 #self.print_lock.acquire()
                 with self.print_lock:
@@ -400,11 +386,19 @@ class Server:
                 # ## START UP FFMPEG SERVER HERE
                 # make_commands(addr, "debug", addr[1])
                 clientsocket.settimeout(60)
-                threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr, ffmpeg_port,)).start()
-                # self.thread_list.append(th)
-                # th.start()
+                th = threading.Thread(target=self.threaded_get_info, args=(clientsocket, addr, ffmpeg_port,))
+                self.thread_list.append(th)
+                th.start()
+                count += 1
+
+
+            for ty in self.thread_list:
+                ty.join()
+            self.sock.close()
+                
         except KeyboardInterrupt:
             print("Keyboard Interrupt, here")
+            
             self.sock.close()
 
     def threaded_get_info(self, clientsocket, addr, ffmpeg_port):
@@ -418,10 +412,12 @@ class Server:
                     #     print("Received: {}".format(data.decode('ascii')))
                     #     print("Address: {}".format(addr))
                     #conn.send("ADDRESS: {}".format(self.server_ip))
-                    message = "time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d},to_run:{:d}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1)#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
+                    #message = "time_run:{:d},crf:{:d},server_ip:{},ffmpeg_port:{:d},max_depth:{:d},min_depth:{:d},depth_unit:{:d},to_run:{:d},color:{:d},ir:{:d},json:{:d}".format(self.argdict['time_run'], self.argdict['crf'], self.server_ip, ffmpeg_port, self.argdict['max_depth'], self.argdict['min_depth'], self.argdict['depth_unit'], 1, self.argdict['color'], self.argdict['ir'], self.argdict['json'])#f'{make_commands(self.server_ip, "debug", addr[1])[0]} :: {make_commands(self.server_ip, "debug", addr[1])[1]}'
                     
                     #message = "FROM SERVER: ADDRESS: {}, SERVER IP: {}".format(addr, self.server_ip)
-                    conn.send(message.encode('ascii'))
+                    #conn.send(message.encode('ascii'))
+                    message = make_message(self.argdict, self.json_file_depth, self.server_ip, ffmpeg_port)
+                    conn.sendall((json.dumps(message) + '\n').encode('ascii'))
                     
                 else:
                     #print("Recieved: {}".format(data))
@@ -436,16 +432,8 @@ class Server:
             conn.close()
             with self.print_lock:
                 print("Connection closed\n")
+                
             #print("Connection closed")
-
-            
-
-
-
-
-
-
-
 
 
 def server_side_command_line_parser():
@@ -473,8 +461,8 @@ def server_side_command_line_parser():
     parser.add_argument('--dimensions', type=str, default='1280x720', help='Dimensions of the video stream, (widthxheight) valid dimensions are: (640x480, 1280x720, 1920x1080). Default is 1280x720')
     parser.add_argument('--fps', type=int, default=30, help='Framerate of recordings.Valid framerates are: (15, 30, 60, 90). Default is 30. 60 fps and 90 fps are only available for 640x480. 30 fps and 15 fps are available for all dimensions.')
     parser.add_argument('--time_run', type=int, default=30, help='Amount of time to record in seconds. Default 30 seconds')
-    parser.add_argument('--json', type=str, default='', help='Json file to be sent to the client and used for the video recordings')
-    parser.add_argument('--split_time', type=int, default=120, help='Length in to split each recording into. Default is 120 seconds')
+    parser.add_argument('--json', type=str, default='', help='Json file that is sent to be used for the video recordings')
+    #parser.add_argument('--split_time', type=int, default=120, help='Length in to split each recording into. Default is 120 seconds')
     parser.add_argument('--crf', type=int, default=22, help='The quality of the video. Valid range is [0, 51]. Default is 22')
     parser.add_argument('--basename', '--basename', type=str, default='test_', help='The base name of the video files')
     parser.add_argument('--max_depth', '--max_depth', type=int, default=65535, help='The max depth of for the depth camera to use. Must be greater than min_depth. Valid range is [1, 65535]. Default is 65535')
@@ -482,15 +470,23 @@ def server_side_command_line_parser():
     parser.add_argument('--depth_unit', '--depth_unit', type=int, default=1000, help='The units of the depth camera to use valid range, [40, 25000]. Default value is 1000')
     parser.add_argument('--num_clients', '--num_clients', type=int, default=1, help='The number of clients to connect to the server. Default is 1')
     parser.add_argument('--dir', '--dir', type=str, default='Testing_DIR', help='The directory to save the video files to. Default is the current directory')
+    parser.add_argument('--ir', type=int, default=1, help='The infrared mode to use. Valid values are 0 for no infared, any other value for infrared. Default is 1')
+    parser.add_argument('--color', type=int, default=0, help='The color mode to use. Valid values are 0 for no color, any other value for color. Default is 0 no color')
     return parser.parse_args()
 
+
+
 def main():
-    args = server_side_command_line_parser()
     print("Getting IP addresses...")
     ip_lst = map_network()
     print("Done getting IP addresses")
+    print("Starting Graphical User Interface...")
+    # TODO: Start GUI
+    
+    args = server_side_command_line_parser()
     server = Server(ip_lst, **vars(args))
-    cmd_list = build_ffmpeg_cmd_pair_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'])
+
+    cmd_list = build_ffmpeg_cmd_group_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'], bool(server.argdict['color'] != 0), bool(server.argdict['ir'] !=0))
     p1 = multiprocessing.Process(target=run_processes_parallel, args=(cmd_list,))
     p1.start()
     server.listen()
@@ -504,15 +500,12 @@ def main():
         p1.join()
         print("Error here: {}".format(e))
         #pass
+    finally:
+        os.system("stty echo")
 
-    os.system("stty echo")
 
 if __name__ == '__main__':
     main()
-    
-    
-
-
     #server.start_conn_send_data(host="127.0.0.1", port=12345)
 
     #lst.remove()
