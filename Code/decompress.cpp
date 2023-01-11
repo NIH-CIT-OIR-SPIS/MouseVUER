@@ -65,6 +65,9 @@ namespace buff_global
     std::vector<double> psnr_vector;
     std::string input_raw_dir_gl = "";
     std::string output_dir_gl = "";
+#if __has_include(<opencv2/opencv.hpp>)
+    std::vector<int> compression_params = {cv::IMWRITE_TIFF_COMPRESSION, 1};
+#endif
 }
 
 struct timer
@@ -455,28 +458,17 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     uint16_t curr_lsb = 0;
     uint16_t store_num = 0;
     uint16_t curr_msb = 0;
-    FILE *out_write = NULL;
+
 
     FILE *read_raw = NULL;
     std::string raw_str = input_raw_dir_gl + "/frame_num_" + std::to_string(video_frame_count + 1) + "_data.bin";
-    std::string outer = output_dir_gl + "/file_out_comp" + std::to_string(video_frame_count + 1) + ".bin";
-    
-    if(buff_global::write_out)
-    {
-        if (!(out_write = fopen(outer.c_str(), "wb")))
-        {
-            printf("Could not open file for writing\n");
-            return -1;
-        }
-    }
+
 
     if (!(read_raw = fopen(raw_str.c_str(), "rb")))
     {
         if (print_psnr)
         {
             printf("No raw files to read not compressing\n");
-        }else{
-            printf("No raw files to read\n");
         }
     }
     else
@@ -582,9 +574,22 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     {
         fclose(read_raw);
     }
-    if (out_write != NULL){
+    if(write_out){
+        std::string outer = output_dir_gl + "/file_out_comp" + std::to_string(video_frame_count + 1) + ".tif";
+        FILE *out_write = NULL;
+        if (!(out_write = fopen(outer.c_str(), "wb")))
+        {
+            printf("Could not open file for writing\n");
+            return -1;
+        }
+        
         fwrite(store_depth, sizeof(uint16_t), H * W, out_write);
         fclose(out_write);
+// # if __has_include(<opencv2/opencv.hpp>)
+//         cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
+//         // write out 
+//         cv::imwrite(outer, dec_img, compression_params);
+// # endif
     }
     // printf("max: %u\n", max);
     // fprintf(stderr, "video_frame_count: %d\n", video_frame_count);
