@@ -56,6 +56,8 @@ static const int shift_back_by = 16 - (8 - shift_by);
 namespace buff_global
 {
     int video_frame_count = 0;
+    int write_out = 1;
+    int view = 0;
     uint16_t store_depth[1280 * 720] = {0};
     // uint16_t store_depth_lsb[1280 * 720] = {0};
     uint16_t store_raw_depth[1280 * 720] = {0};
@@ -214,6 +216,10 @@ void print_usage(std::string choice = "")
     else if (choice == "-cmp")
     {
         std::cout << " -cmp <raw_file_dir> : optional Input raw file directory, IE where all the raw files lie, for developer only" << std::endl;
+    }else if(choice == "-wrt"){
+        std::cout << " -wrt 1 or 0 where 1 is to write out the decompressed videos 0 is just to preview default 1" << std::endl;
+    }else if(choice == "-view"){
+        std::cout << " -view 1 or 0 where 1 is to view the decompressed videos 0 default 0" << std::endl;
     }
     //{
 
@@ -230,6 +236,8 @@ void print_usage(std::string choice = "")
     std::cout << " -print_psnr <input_file> : Print psnr all " << std::endl;
     std::cout << " -sz <frame_group_size> : optional frame group size" << std::endl;
     std::cout << "Usage: -num_frm  <INT> number of frames to decompress (default: -1), must be valid" << std::endl;
+    std::cout << " -wrt 1 or 0 where 1 is to write out the decompressed videos 0 is just to preview default 1" << std::endl;
+    std::cout << " -view 1 or 0 where 1 is to view the decompressed videos 0 default 0" << std::endl;
     //}
 }
 
@@ -442,6 +450,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     double psnr_val = 0;
     double ssim_val = 0;
     // double psnr_val_6_bit = 0;
+    
     uint16_t max = 0;
     uint16_t curr_lsb = 0;
     uint16_t store_num = 0;
@@ -449,13 +458,16 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     FILE *out_write = NULL;
 
     FILE *read_raw = NULL;
-    std::string raw_str = input_raw_dir_gl + "/frame_num_" + std::to_string(video_frame_count) + "_data.bin";
-    std::string outer = output_dir_gl + "/file_out_comp" + std::to_string(video_frame_count) + ".bin";
-
-    if (!(out_write = fopen(outer.c_str(), "wb")))
+    std::string raw_str = input_raw_dir_gl + "/frame_num_" + std::to_string(video_frame_count + 1) + "_data.bin";
+    std::string outer = output_dir_gl + "/file_out_comp" + std::to_string(video_frame_count + 1) + ".bin";
+    
+    if(buff_global::write_out)
     {
-        printf("Could not open file for writing\n");
-        return -1;
+        if (!(out_write = fopen(outer.c_str(), "wb")))
+        {
+            printf("Could not open file for writing\n");
+            return -1;
+        }
     }
 
     if (!(read_raw = fopen(raw_str.c_str(), "rb")))
@@ -463,6 +475,8 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
         if (print_psnr)
         {
             printf("No raw files to read not compressing\n");
+        }else{
+            printf("No raw files to read\n");
         }
     }
     else
@@ -512,26 +526,20 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     // // printf("PSNR value 6 bit = %f\n", psnr_val_6_bit);
     // printf("PSNR value = %f\n", psnr_val);
     ++video_frame_count;
-    if (print_psnr)
+    if (print_psnr || view)
     {
 #if __has_include(<opencv2/opencv.hpp>)
 
         cv::Mat dec_img_color(cv::Size(W, H), CV_8UC3);
         dec_img_color = 0;
         cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
-        cv::Mat raw_img(cv::Size(W, H), CV_16U, store_raw_depth, cv::Mat::AUTO_STEP);
-
         cv::normalize(dec_img, dec_img, 0, 65535, cv::NORM_MINMAX);
-
         float alpha = 1.0 / 255;
         // alpha = 0.7f;
-
         // cv::convertScaleAbs(dec_img, dec_img_color, alpha);
         // cv::convertScaleAbs(raw_img, raw_img_color, alpha);
         dec_img.convertTo(dec_img_color, CV_8U, alpha);
-
         /// dec_img.convertTo()
-
         // uint8_t *ptr_dec_img_color = dec_img_color.data;
         // psnr_val = get_psnr(store_depth, store_raw_depth);
         // printf("Get other PSNR value = %f\n", psnr_val);
@@ -545,6 +553,7 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
         if (read_raw != NULL)
         {
+            cv::Mat raw_img(cv::Size(W, H), CV_16U, store_raw_depth, cv::Mat::AUTO_STEP);
             cv::Mat raw_img_color(cv::Size(W, H), CV_8UC3);
             raw_img_color = 0;
             cv::normalize(raw_img, raw_img, 0, 65535, cv::NORM_MINMAX);
@@ -569,8 +578,14 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
 
 #endif
     }
-    fwrite(store_depth, sizeof(uint16_t), H * W, out_write);
-    fclose(out_write);
+    if (read_raw != NULL)
+    {
+        fclose(read_raw);
+    }
+    if (out_write != NULL){
+        fwrite(store_depth, sizeof(uint16_t), H * W, out_write);
+        fclose(out_write);
+    }
     // printf("max: %u\n", max);
     // fprintf(stderr, "video_frame_count: %d\n", video_frame_count);
 
@@ -1181,7 +1196,7 @@ int main(int argc, char *argv[])
 {
     int deref1 = 0, deref2 = 0, deref3 = 0; // deref4 = 0, deref5 = 0, deref6 = 0;
     int ret = 0;
-    if (argc > 15 || argc < 2)
+    if (argc > 20 || argc < 2)
     {
         std::cout << " THIS FAILED HERE 1: argc: " << argc << std::endl;
         print_usage();
@@ -1262,6 +1277,7 @@ int main(int argc, char *argv[])
         num_frames_msb = exec_ffprobe(ffprobe_cmd2);
     }
 
+    
     if (input.cmdOptionExists("-cmp"))
     {
         if (!does_dir_exist(input.getCmdOption("-cmp")))
@@ -1309,6 +1325,26 @@ int main(int argc, char *argv[])
     else
     {
         frm_group_size = 10;
+    }
+
+    if (input.cmdOptionExists("-wrt")){
+        buff_global::write_out = parse_integer_cmd(input, "-wrt", buff_global::write_out);
+        if (buff_global::write_out < 0 || buff_global::write_out > 1)
+        {
+            std::cout << "Invalid value for -wrt" << std::endl;
+            print_usage("-wrt");
+            return EXIT_FAILURE;
+        }
+    }
+
+    if(input.cmdOptionExists("-view")){
+        buff_global::view = parse_integer_cmd(input, "-view", buff_global::view);
+        if (buff_global::view < 0 || buff_global::view > 1)
+        {
+            std::cout << "Invalid value for -view" << std::endl;
+            print_usage("-view");
+            return EXIT_FAILURE;
+        }
     }
     
     if (num_frm_dec != -1)

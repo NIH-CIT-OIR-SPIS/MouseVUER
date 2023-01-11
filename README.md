@@ -447,9 +447,14 @@ See info ffmpeg
 ffmpeg -h encoder=libx264
 ```
 
-## Utility Functions found in Code/util_functions
+## Utility Functions found in ~/DepthCameraRecordingTool/Code/util_functions
 ```
-python3 decompress_from_bag_file.py -f some.bag -o Testing_DIR/
+python3 decompress_from_bag_file.py -f test.bag -o Testing_DIR/
+```
+
+From depth coordinates (feeding in depth frame as png or tif) to xyz world coordinates given a set of points on the image plane in this example I am using 3 coordinates, you can use any number of coordinates, 
+```
+python3 from_depth_to_xyz.py -cal ../Testing_DIR/intrinsics.json -d Testing_DIR2/depth/depth_frm_40.tif -l "(13,20),(13,30),(640, 360)"
 ```
 
 
