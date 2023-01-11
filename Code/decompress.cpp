@@ -576,20 +576,21 @@ static int output_both_buffs(uint8_t *frame_lsb, uint8_t *frame_msb, int max_d, 
     }
     if(write_out){
         std::string outer = output_dir_gl + "/file_out_comp" + std::to_string(video_frame_count + 1) + ".tif";
-        FILE *out_write = NULL;
-        if (!(out_write = fopen(outer.c_str(), "wb")))
-        {
-            printf("Could not open file for writing\n");
-            return -1;
-        }
         
-        fwrite(store_depth, sizeof(uint16_t), H * W, out_write);
-        fclose(out_write);
-// # if __has_include(<opencv2/opencv.hpp>)
-//         cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
-//         // write out 
-//         cv::imwrite(outer, dec_img, compression_params);
-// # endif
+        // FILE *out_write = NULL;
+        // if (!(out_write = fopen(outer.c_str(), "wb")))
+        // {
+        //     printf("Could not open file for writing\n");
+        //     return -1;
+        // }
+        
+        // fwrite(store_depth, sizeof(uint16_t), H * W, out_write);
+        // fclose(out_write);
+# if __has_include(<opencv2/opencv.hpp>)
+        cv::Mat dec_img(cv::Size(W, H), CV_16U, store_depth, cv::Mat::AUTO_STEP);
+        // write out 
+        cv::imwrite(outer, dec_img, compression_params);
+# endif
     }
     // printf("max: %u\n", max);
     // fprintf(stderr, "video_frame_count: %d\n", video_frame_count);
