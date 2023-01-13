@@ -6,10 +6,6 @@ w = 2**16
 n_p = 512
 p = n_p / w
 
-st_time = time.time()
-depth_val = random.randint(0, 2**16-1)
-print("depth_val: ", depth_val)
-
 
 
 def equat_L(dist):
@@ -33,12 +29,6 @@ def equat_H_b(d):
     else:
         return 2 - ( ((L_d - p4) / p2) % 2)
 
-Le = equat_L(depth_val)
-Hea = equat_H_a(depth_val)
-Heb = equat_H_b(depth_val)
-print("equat_H_a: ", equat_H_a(depth_val))
-print("equat_H_b: ", equat_H_b(depth_val))
-print("equat_L: ", equat_L(depth_val))
 
 def equat_mL(L):
     return floor(4*L/p - .5) % 4
@@ -64,23 +54,43 @@ def delta_f(L_, Ha_, Hb_):
 def back_orig(L_, Ha_, Hb_):
     return int(w*(equat_L0(L_) + delta_f(L_, Ha_, Hb_)))
 
-Le1 = 255 * Le
-Hea1 = 255 * Hea
-Heb1 = 255 * Heb
+st_time = time.time()
+depth_val = random.randint(0, 2**16-1)
+print("depth_val: ", depth_val)
+count = 0
+for depth_val in range(0, 2**16-1):
+    Le = equat_L(depth_val)
+    Hea = equat_H_a(depth_val)
+    Heb = equat_H_b(depth_val)
+    # print("equat_H_a: ", equat_H_a(depth_val))
+    # print("equat_H_b: ", equat_H_b(depth_val))
+    #print("equat_L: ", equat_L(depth_val))
 
-print("Le1: ", Le1)
-print("Hea1:", Hea1)
-print("Heb1:", Heb1)
+    Le1 = 255 * Le
+    Hea1 = 255 * Hea
+    Heb1 = 255 * Heb
 
-print("rounded: ")
-print(" Le1 rounded ", int(Le1))
-print(" Hea1 rounded ", int(Hea1))
-print(" Heb1 rounded ", int(Heb1))
+    # print("Le1: ", Le1)
+    # print("Hea1:", Hea1)
+    # print("Heb1:", Heb1)
 
-Le = Le1 / 255
-Hea = Hea1 / 255
+    # print("rounded: ")
+    # print(" Le1 rounded ", int(Le1))
+    # print(" Hea1 rounded ", int(Hea1))
+    # print(" Heb1 rounded ", int(Heb1))
 
-Heb = Heb1 / 255
+    Le = int(round(Le1, 0)) / 255
 
-print("back_to original: ", back_orig(Le, Hea, Heb))
+    Hea = 5#int(round(Hea1, 0)) / 255
+
+    Heb = int(round(Heb1, 0)) / 255
+    orig = int(back_orig(Le, Hea, Heb))
+    if abs(orig - depth_val) > 120:
+        print("orig: ", orig)
+        print("depth_val: ", depth_val)
+        print("diff: ", abs(orig - depth_val))
+        count += 1
+
+# print("back_to original: ", back_orig(Le, Hea, Heb))
 print("time elapsed: ", (time.time() - st_time))
+print("count: ", count)
