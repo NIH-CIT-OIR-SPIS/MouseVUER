@@ -1,14 +1,20 @@
 #!/usr/bin/python3
+# import tkinter 
+# from tkinter import filedialog
+# from tkinter import messagebox
+# from tkinter import ttk
+# import re
+# import time
+# import os
+# import multiprocessing as mp
+# import platform
+# import datetime
 import tkinter 
-import platform
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
 import re
-import time
-import datetime
-import os
-import multiprocessing as mp
+from server_side import *
 
 
 class Menubar(ttk.Frame):
@@ -74,12 +80,13 @@ class Menubar(ttk.Frame):
 # A start recording button will also be needed to start the recording process and a way of stopping all the recordings upon closing the program.
 
 class ServerGUI(ttk.Frame):
-    def __init__(self, parent, ip_table_dict, *args, **kwargs):
+    def __init__(self, parent, ip_lst, *args, **kwargs):
         ''' Constructor'''
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         self.root = parent
-        self.ip_table_dict = ip_table_dict
+        self.ip_lst = ip_lst
         self.init_server_gui()
+        self.funct_to_call = funct_to_call
 
     def init_server_gui(self):
         # Set the title of the main window
@@ -87,7 +94,7 @@ class ServerGUI(ttk.Frame):
         # Set the size of the main window
         self.root.geometry("800x600")
         # Create a menu bar
-        self.root.geometry("600x400")
+        #self.root.geometry("600x400")
         self.grid(column=0, row=0, sticky='nsew')
         self.grid_columnconfigure(0, weight=1) # Allows column to stretch upon resizing
         self.grid_rowconfigure(0, weight=1) # Same with row
@@ -109,6 +116,9 @@ class ServerGUI(ttk.Frame):
         self.json_opt['title'] = 'Choose a JSON file to use for alignment.'
         self.json_opt['filetypes'] = [('JSON files', '.json')]
         
+        # Create menubar
+        self.menubar = Menubar(self.root)
+
         # Create a frame for the widgets
         # self = ttk.Frame(self.root)
         # self.pack(fill=tkinter.BOTH, expand=True)
@@ -124,7 +134,21 @@ class ServerGUI(ttk.Frame):
 
         self.btn_start = ttk.Button(self, text='Start Recording', command=self.start_recording)
 
+        self.ir_label = ttk.Label(self, text="IR recording on or off: ")
+        self.ir_var = tkinter.IntVar()
+        self.ir_var.set(1)
+        self.ir_on = ttk.Checkbutton(self, text="IR on", variable=self.ir_var, onvalue=1, offvalue=0)
         
+        self.color_label = ttk.Label(self, text="Color recording on or off: ")
+        self.color_var = tkinter.IntVar()
+        self.color_var.set(1)
+        self.color_on = ttk.Checkbutton(self, text="Color on", variable=self.color_var, onvalue=1, offvalue=0)
+
+        self.align_label = ttk.Label(self, text="Align color and depth: ")
+        self.align_var = tkinter.IntVar()
+        self.align_var.set(1)
+        self.align_on = ttk.Checkbutton(self, text="Align on", variable=self.align_var, onvalue=1, offvalue=0)
+
         # Create a label for the port number
         self.init_port_num()
         
@@ -142,6 +166,8 @@ class ServerGUI(ttk.Frame):
 
         self.init_maxdepth()
 
+        self.init_mindepth()
+
         ## Add button 
         
         self.label_vid_save_dir.grid(row=self.row_num, column=0, sticky='w')
@@ -150,6 +176,18 @@ class ServerGUI(ttk.Frame):
 
         self.label_json.grid(row=self.row_num, column=0, sticky='w')
         self.btn_open_json.grid(row=self.row_num, column=1, sticky='w')
+        self.row_num += 1
+
+        self.ir_label.grid(row=self.row_num, column=0, sticky='w')
+        self.ir_on.grid(row=self.row_num, column=1, sticky='w')
+        self.row_num += 1
+
+        self.color_label.grid(row=self.row_num, column=0, sticky='w')
+        self.color_on.grid(row=self.row_num, column=1, sticky='w')
+        self.row_num += 1
+
+        self.align_label.grid(row=self.row_num, column=0, sticky='w')
+        self.align_on.grid(row=self.row_num, column=1, sticky='w')
         self.row_num += 1
 
         self.btn_start.grid(row=self.row_num, column=0, sticky='w')
@@ -199,15 +237,62 @@ class ServerGUI(ttk.Frame):
             return
         #self.clock_thread.start()
 
+
         
         print("Started encoding and recording")
         ## TODO call server instance here
+        self.run_server()
+
         print("Ended recording")
 
-        #self.clock_thread.join()
         tkinter.messagebox.showinfo(title="Success", message="Recording complete.")
         #self.root.destroy()
-    
+
+    def run_server(self):
+
+        args_use = {}
+        args_use['port'] = int(self.port_entry.get())
+        args_use['loglevel'] = 'info'
+        dimen = self.dimensions_entry.get().split('x')
+        args_use['dimensions'] = dimen[0] + 'x' + dimen[1]
+
+        args_use['fps'] = int(self.framerate_entry.get())
+        
+        secon = self.second_entry.get()
+        minu = self.minute_entry.get()
+        hour = self.hour_entry.get()
+        args_use['time_run'] = int(hour) * 3600 + int(minu) * 60 + int(secon) 
+        args_use['json'] = self.json_file
+        args_use['crf'] = int(self.crf_spinbox.get())
+        args_use['basename'] = self.base_name_entry.get()
+        args_use['max_depth'] = int(self.max_depth_spinbox.get())
+        args_use['min_depth'] = int(self.min_depth_spinbox.get())
+        args_use['depth_unit'] = 1000
+        args_use['num_clients'] = len(self.ip_lst)
+        args_use['dir'] = self.vid_save_dir
+        args_use['ir'] = 1
+        args_use['color'] = 0
+        args_use['aligned_to_color'] = 0
+
+        server = Server(self.ip_lst, **args_use)
+        cmd_list = build_ffmpeg_cmd_group_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'], bool(server.argdict['color'] != 0), bool(server.argdict['ir'] !=0))
+        p1 = multiprocessing.Process(target=run_processes_parallel, args=(cmd_list,))
+        p1.start()
+        server.listen()
+        # if p1.is_alive():
+        #     p1.terminate()
+        #     p1.join()
+        try:
+            p1.join()
+        except Exception as e:
+            p1.terminate()
+            p1.join()
+            print("Error here: {}".format(e))
+            #pass
+        finally:
+            os.system("stty echo")
+
+
     def init_recording_time(self):
         # Create a label for the recording time
         self.hours = -1
@@ -321,7 +406,7 @@ class ServerGUI(ttk.Frame):
         self.max_depth_label = ttk.Label(sub_grid, text="Max depth: ")
         # Create a text box for the max depth
         self.max_depth_text = tkinter.IntVar()
-        self.max_depth_text.set(1000)
+        self.max_depth_text.set((2**16)-1)
         self.max_depth_spinbox = ttk.Spinbox(sub_grid, from_=1, increment=1, to=(2**16)-1, textvariable=self.max_depth_text)
 
         self.max_depth_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
@@ -329,7 +414,22 @@ class ServerGUI(ttk.Frame):
 
         sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
         self.row_num += 1
-    
+
+    def init_mindepth(self):
+        # Create a label for the min depth
+        sub_grid = ttk.Frame(self)
+        self.min_depth_label = ttk.Label(sub_grid, text="Min depth: ")
+        # Create a text box for the min depth
+        self.min_depth_text = tkinter.IntVar()
+        self.min_depth_text.set(0)
+        self.min_depth_spinbox = ttk.Spinbox(sub_grid, from_=1, increment=1, to=(2**16)-1, textvariable=self.min_depth_text)
+
+        self.min_depth_label.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.min_depth_spinbox.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+
+        sub_grid.grid(row=self.row_num, column=0, padx=5, pady=5, sticky='w')
+        self.row_num += 1
+
     def __check_port(self):
         port = self.port_text.get()
         if port < 1024 or port > 65535:
@@ -371,13 +471,19 @@ class ServerGUI(ttk.Frame):
     def run(self):
         self.root.mainloop()
 
+
+def funct_to_call():
+    print("hjh")
+
 def testing_run():
-    ip_table_dict = {}
+    print("Getting IP addresses...")
+    ip_lst = map_network()
+    print("Done getting IP addresses")
+    print("Starting Graphical User Interface...")
     parent = tkinter.Tk()
 
-    app = ServerGUI(parent, ip_table_dict)
+    app = ServerGUI(parent, ip_lst)
     app.run()
-
 
 if __name__ == "__main__":
     testing_run()

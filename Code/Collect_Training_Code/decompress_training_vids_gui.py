@@ -92,20 +92,20 @@ class GUI(ttk.Frame):
         self.file_opt_rgb = {}
         self.file_opt_rgb['defaultextension'] = '.mp4'
         self.file_opt_rgb['filetypes'] = [('mp4 files', '.mp4')]
-        self.file_opt_rgb['parent'] = root
+        self.file_opt_rgb['parent'] = self.root
         self.file_opt_rgb['title'] = 'Select regular color MP4 file'
 
 
         self.file_opt_infared = {}
         self.file_opt_infared['defaultextension'] = '.mp4'
         self.file_opt_infared['filetypes'] = [('mp4 files', '.mp4')]
-        self.file_opt_infared['parent'] = root
+        self.file_opt_infared['parent'] = self.root
         self.file_opt_infared['title'] = 'Select regular MP4 file'
 
         self.file_opt_depth = {}
         self.file_opt_depth['defaultextension'] = '.mkv'
         self.file_opt_depth['filetypes'] = [('mkv files', '.mkv')]
-        self.file_opt_depth['parent'] = root
+        self.file_opt_depth['parent'] = self.root
         self.file_opt_depth['title'] = 'Select depth MKV file'
 
 
@@ -113,7 +113,7 @@ class GUI(ttk.Frame):
         self.dir_opt = {}
         #self.dir_opt['initialdir'] = '/home/'
         self.dir_opt['mustexist'] = True
-        self.dir_opt['parent'] = root
+        self.dir_opt['parent'] = self.root
         self.dir_opt['title'] = 'Choose a directory to save TIF files to.'
         # Menu Bar
         self.menubar = Menubar(self.root)

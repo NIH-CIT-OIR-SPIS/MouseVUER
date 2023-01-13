@@ -91,6 +91,8 @@ for depth_val in range(0, 2**16-1):
         print("diff: ", abs(orig - depth_val))
         count += 1
 
+        
+
 # print("back_to original: ", back_orig(Le, Hea, Heb))
 print("time elapsed: ", (time.time() - st_time))
 print("count: ", count)

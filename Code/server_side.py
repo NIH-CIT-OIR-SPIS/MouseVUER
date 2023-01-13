@@ -27,8 +27,6 @@ import errno
 # For GUI
 
 
-from server_gui import ServerGUI
-
 """
 This is the server side of the application.
 GET LIST OF ALL IP ADDRESSES
@@ -356,6 +354,8 @@ class Server:
         else:
             with open(self.argdict['json'], 'r') as f:
                 self.json_file_depth = json.load(f)
+        if self.argdict['aligned_to_color'] not in [0, 1]:
+            raise Exception("Error: Aligned to color must be 0 or 1. Aligned to color given: {}".format(self.argdict['aligned_to_color']))
 
     def __initialize_maps(self):
         i = 0
@@ -472,11 +472,12 @@ def server_side_command_line_parser():
     parser.add_argument('--dir', '--dir', type=str, default='Testing_DIR', help='The directory to save the video files to. Default is the current directory')
     parser.add_argument('--ir', type=int, default=1, help='The infrared mode to use. Valid values are 0 for no infared, any other value for infrared. Default is 1')
     parser.add_argument('--color', type=int, default=0, help='The color mode to use. Valid values are 0 for no color, any other value for color. Default is 0 no color')
+    parser.add_argument('--aligned_to_color', type=int, default=0, help='The aligned to color mode to use. Valid values are 0 for no aligned to color, any other value for aligned to color. Default is 0 no aligned to color')
     return parser.parse_args()
 
 
 
-def main():
+def main_test():
     print("Getting IP addresses...")
     ip_lst = map_network()
     print("Done getting IP addresses")
@@ -484,6 +485,7 @@ def main():
     # TODO: Start GUI
     
     args = server_side_command_line_parser()
+
     server = Server(ip_lst, **vars(args))
 
     cmd_list = build_ffmpeg_cmd_group_list(server.ffmpeg_port_map, server.argdict['loglevel'], server.server_ip, server.argdict['dir'], bool(server.argdict['color'] != 0), bool(server.argdict['ir'] !=0))
@@ -503,11 +505,11 @@ def main():
     finally:
         os.system("stty echo")
 
+# main_test()
+# if __name__ == '__main__':
+#     main()
+#     #server.start_conn_send_data(host="127.0.0.1", port=12345)
 
-if __name__ == '__main__':
-    main()
-    #server.start_conn_send_data(host="127.0.0.1", port=12345)
-
-    #lst.remove()
-    #print(lst)
+#     #lst.remove()
+#     #print(lst)
 
