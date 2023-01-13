@@ -15,7 +15,12 @@ def equat_H_a(d):
     L_d = equat_L(d)
     ph = p / 2
 
+    #rint() 
+    print("L_d: ", L_d)
+    print("L_d / ph: ", L_d / ph)
+    print("L_d / ph % 2: ", (L_d / ph) % 2)
     if (L_d / ph) % 2 <= 1:
+
         return (L_d / ph) % 2
     else:
         return 2 - ((L_d / ph) % 2)
@@ -35,6 +40,9 @@ def equat_mL(L):
 
 
 def equat_L0(L_):
+    a = (L_ - (p/8)) % p
+    print("a: ", a)
+    print((L_ - (p/8)) )
     return L_ - ((L_ - (p/8)) % p ) + (p/4)*equat_mL(L_) - (p/8)
 
 def delta_f(L_, Ha_, Hb_):
@@ -90,6 +98,7 @@ for depth_val in range(0, 2**16-1):
         print("depth_val: ", depth_val)
         print("diff: ", abs(orig - depth_val))
         count += 1
+
 
         
 
