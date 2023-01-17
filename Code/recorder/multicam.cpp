@@ -274,22 +274,21 @@ std::string build_ffmpeg_cmd(std::string pix_fmt, std::string pix_fmt_out, std::
  * @param      dirname  The dirname
  *
  */
-void save_intrinsics(rs2::pipeline &pipe, std::string dirname)
+void save_intrinsics(rs2::pipeline &pipe, std::string dirname, bool near_ir)
 {
     std::string path_out = dirname + "/intrinsics.json";
     std::ofstream intrinsics_file;
     intrinsics_file.open(path_out);
     rs2::pipeline_profile profile = pipe.get_active_profile();
     rs2::video_stream_profile depth_profile = profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
-    rs2::video_stream_profile ir_profile = profile.get_stream(RS2_STREAM_INFRARED, 1).as<rs2::video_stream_profile>();
-    rs2::video_stream_profile ir2_profile = profile.get_stream(RS2_STREAM_INFRARED, 2).as<rs2::video_stream_profile>();
-    rs2_extrinsics e = ir_profile.get_extrinsics_to(ir2_profile);
-    float baseline = e.translation[0];
-
+    float baseline = 0.0f;
+    if(near_ir){
+        rs2::video_stream_profile ir_profile = profile.get_stream(RS2_STREAM_INFRARED, 1).as<rs2::video_stream_profile>();
+        rs2::video_stream_profile ir2_profile = profile.get_stream(RS2_STREAM_INFRARED, 2).as<rs2::video_stream_profile>();
+        rs2_extrinsics e = ir_profile.get_extrinsics_to(ir2_profile);
+        baseline = e.translation[0];
+    }
     rs2_intrinsics depth_intrinsics = depth_profile.get_intrinsics();
-    rs2_intrinsics ir_intrinsics = ir_profile.get_intrinsics();
-    rs2_intrinsics ir2_intrinsics = ir2_profile.get_intrinsics();
-
     auto scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
     intrinsics_file << "{" << std::endl;
     intrinsics_file << "    \"width\": " << depth_intrinsics.width << "," << std::endl;
@@ -591,7 +590,7 @@ int startRecording(std::string dirname, long time_run, std::string bag_file_dir,
     }
 
     // Save the intrinsics of the camera for example the callibration matrix and the distortion coefficients, needed for any rectification or projection
-    save_intrinsics(pipe, dirname);
+    save_intrinsics(pipe, dirname, near_ir);
 
     const int sz_write_color_pipe = height_color * width_color * 3;
     const int sz_write_ir_pipe = height_color * width_color * 2;
