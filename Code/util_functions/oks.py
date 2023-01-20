@@ -1,14 +1,10 @@
 import numpy as np
-import pandas as pd
 import json
-import math
-import os
 import argparse
 import glob
 
 
 def calc_oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray):
-
     # The standard deviation
     assert y_true.shape == y_pred.shape
     assert area.shape[0] == y_true.shape[0]
@@ -16,7 +12,6 @@ def calc_oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray):
     visibility = np.ones((y_true.shape[0], 1))
     # Compute euclidean distances
     distances = np.linalg.norm(y_pred - y_true, axis=-1)
-    
     # OKS = exp(-1 * (d^2) / (2 * (s^2) * (k^2))
     # s is merely the sqrt of the area so doing s^2 is the same as doing area
     # k is the standard deviation between the two points
@@ -24,28 +19,23 @@ def calc_oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray):
     return np.dot(exp_vector, visibility) / np.sum(visibility)
 
 
-
 def parse_data_json(json_dict):
     data_hold = {}
-
     data_hold['filename'] = json_dict['image']['filename']
-
     keys = json_dict['annotations'][0]['skeleton']['nodes']
-
     data_hold['keypoints_coords'] = {}
     for i in range(len(keys)):
-        data_hold['keypoints_coords'][keys[i]['name']] = [keys[i]['x'], keys[i]['y']]
-
-
+        data_hold['keypoints_coords'][keys[i]['name']] = [
+            keys[i]['x'], keys[i]['y']]
     keys = json_dict['annotations'][1]['skeleton']['nodes']
     data_hold['keypoints_coords2'] = {}
+
     for i in range(len(keys)):
-        data_hold['keypoints_coords2'][keys[i]['name']] = [keys[i]['x'], keys[i]['y']]
+        data_hold['keypoints_coords2'][keys[i]['name']] = [
+            keys[i]['x'], keys[i]['y']]
     jh = json_dict['annotations'][2]['bounding_box']
-    data_hold['area'] =jh['w'] * jh['h']
-
+    data_hold['area'] = jh['w'] * jh['h']
     return data_hold
-
 
 
 def from_dict_to_np_dict(data_pts: dict):
@@ -87,21 +77,18 @@ def load_from_json_files(folder_path):
         except Exception as e:
             print("ERROR reading in file {}: {}".format(json_file, e))
             continue
-    
+
     # Sort the data_pts by filename
     data_pts.sort(key=lambda x: x['filename'])
     return data_pts
 
 
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Calculate Oks')
-    parser.add_argument('--json_path', help='directory of json files', default='data', type=str)
+    parser.add_argument(
+        '--json_path', help='directory of json files', default='data', type=str)
     args = parser.parse_args()
     return args
-    
-
 
 
 if __name__ == "__main__":
@@ -154,13 +141,13 @@ if __name__ == "__main__":
 # def calc_oks(dict_list, data_name, data_name2):
 
 #     # dict_list is a list of dictionaries each dictionary is organized as follows
-#     # dict_list[i] = {'image_path': <path to image str>, 'keypoints': <list of keypoints>, 'keypoints_coords': <list of keypoints coordinates first labeler> , 
+#     # dict_list[i] = {'image_path': <path to image str>, 'keypoints': <list of keypoints>, 'keypoints_coords': <list of keypoints coordinates first labeler> ,
 #     # 'keypoints_coords2': <list of keypoints coordinates second labeler>, 'area': <area of bounding box float>}
 
 #     # for i in range(len(dict_list)):
 #     #     # find standard deviation for each keypoint
 #     #     dict_list[i]['keypoints_std_dev'] = find_std_dev_all(dict_list[i])
-    
+
 #     # calculate oks
 
 #     # using find_std_dev get the standard deviation for each keypoint
@@ -169,7 +156,7 @@ if __name__ == "__main__":
 #         data_name2[key] = np.array(data_name2[key])
 #     std_devs = list(find_std_dev_all(data_name, data_name2).values())
 #     print(std_devs)
-        
+
 
 #     oks = 0
 #     for i in range(len(dict_list)):
@@ -178,5 +165,5 @@ if __name__ == "__main__":
 #             oks += calc_oks_step(dict_list[i]['area'], dict_list[i]['keypoints_coords'][j], dict_list[i]['keypoints_coords2'][j], std_devs[j]) / 4
 
 #     # oks /= len(dict_list)
-    
+
 #     return oks
