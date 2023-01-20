@@ -7,13 +7,7 @@ import argparse
 import glob
 
 
-def oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray):
-    # You might want to set these global constant
-    # outside the function scope
-    # calculate std_dev for that keypoint
-    
-    # The object scale
-    # You might need a dynamic value for the object scale
+def calc_oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray):
 
     # The standard deviation
     assert y_true.shape == y_pred.shape
@@ -27,71 +21,7 @@ def oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray):
     # s is merely the sqrt of the area so doing s^2 is the same as doing area
     # k is the standard deviation between the two points
     exp_vector = np.exp(-(distances**2) / (2 * (area) * (std_dev**2)))
-
     return np.dot(exp_vector, visibility) / np.sum(visibility)
-
-
-
-# def find_std_dev(vect_1, vect_2):
-#     # vect_of is numpy matrix with x coordinates and y coordinates
-#     # 2 columns, 1 row per point
-
-#     euclidean_dist = np.sqrt( (vect_1[:,0] - vect_2[:,0])**2 + (vect_1[:,1] - vect_2[:,1])**2 )
-#     return np.std(euclidean_dist)
-
-# def find_std_dev_all(dict_keypoints_to_coords, dict_keypoints_to_coords2):
-#     # dict_keypoints_to_coords is a dictionary with keypoint names as keys
-#     # and numpy matrices as values
-#     # each matrix is a list of x,y coordinates
-#     # 2 columns, 1 row per point
-#     std_devs = {}
-#     for key in dict_keypoints_to_coords:
-#         std_devs[key] = find_std_dev(dict_keypoints_to_coords[key], dict_keypoints_to_coords2[key])
-#     # std_devs is a dictionary with keypoint names as keys
-#     # The values are tuples of the form (x_std_dev, y_std_dev)
-#     return std_devs
-
-# def calc_oks_step(area_bounding_box, xycoord_1, xycoord_2, std_dev_xy):
-#     # xycoord_1 and xycoord_2 are tuples of the form (x,y)
-#     # std_dev_xy is a tuple of the form (x_std_dev, y_std_dev)
-#     # returns a float
-
-#     # calculate euclidean distance between xycoord_1 and xycoord_2
-#     euclidean_dist = math.sqrt( (xycoord_1[0] - xycoord_2[0])**2 + (xycoord_1[1] - xycoord_2[1])**2 )
-#     s_i = math.sqrt(area_bounding_box)
-#     k_i = std_dev_xy
-#     return math.exp( -1 * (euclidean_dist**2) / (2 * (s_i * k_i)**2) )
-
-
-# def calc_oks(dict_list, data_name, data_name2):
-
-#     # dict_list is a list of dictionaries each dictionary is organized as follows
-#     # dict_list[i] = {'image_path': <path to image str>, 'keypoints': <list of keypoints>, 'keypoints_coords': <list of keypoints coordinates first labeler> , 
-#     # 'keypoints_coords2': <list of keypoints coordinates second labeler>, 'area': <area of bounding box float>}
-
-#     # for i in range(len(dict_list)):
-#     #     # find standard deviation for each keypoint
-#     #     dict_list[i]['keypoints_std_dev'] = find_std_dev_all(dict_list[i])
-    
-#     # calculate oks
-
-#     # using find_std_dev get the standard deviation for each keypoint
-#     for key in data_name:
-#         data_name[key] = np.array(data_name[key])
-#         data_name2[key] = np.array(data_name2[key])
-#     std_devs = list(find_std_dev_all(data_name, data_name2).values())
-#     print(std_devs)
-        
-
-#     oks = 0
-#     for i in range(len(dict_list)):
-#         oks = 0
-#         for j in range(len(dict_list[i]['keypoints'])):
-#             oks += calc_oks_step(dict_list[i]['area'], dict_list[i]['keypoints_coords'][j], dict_list[i]['keypoints_coords2'][j], std_devs[j]) / 4
-
-#     # oks /= len(dict_list)
-    
-#     return oks
 
 
 
@@ -173,6 +103,7 @@ def parse_args():
     
 
 
+
 if __name__ == "__main__":
     # load data from json files
 
@@ -185,5 +116,67 @@ if __name__ == "__main__":
     area_np = np.array(area_np)
     oks_results = {}
     for key in y_true.keys():
-        oks_results[key] = oks(y_true[key], y_pred[key], area_np)
+        oks_results[key] = calc_oks(y_true[key], y_pred[key], area_np)
     print(oks_results)
+
+
+# def find_std_dev(vect_1, vect_2):
+#     # vect_of is numpy matrix with x coordinates and y coordinates
+#     # 2 columns, 1 row per point
+
+#     euclidean_dist = np.sqrt( (vect_1[:,0] - vect_2[:,0])**2 + (vect_1[:,1] - vect_2[:,1])**2 )
+#     return np.std(euclidean_dist)
+
+# def find_std_dev_all(dict_keypoints_to_coords, dict_keypoints_to_coords2):
+#     # dict_keypoints_to_coords is a dictionary with keypoint names as keys
+#     # and numpy matrices as values
+#     # each matrix is a list of x,y coordinates
+#     # 2 columns, 1 row per point
+#     std_devs = {}
+#     for key in dict_keypoints_to_coords:
+#         std_devs[key] = find_std_dev(dict_keypoints_to_coords[key], dict_keypoints_to_coords2[key])
+#     # std_devs is a dictionary with keypoint names as keys
+#     # The values are tuples of the form (x_std_dev, y_std_dev)
+#     return std_devs
+
+# def calc_oks_step(area_bounding_box, xycoord_1, xycoord_2, std_dev_xy):
+#     # xycoord_1 and xycoord_2 are tuples of the form (x,y)
+#     # std_dev_xy is a tuple of the form (x_std_dev, y_std_dev)
+#     # returns a float
+
+#     # calculate euclidean distance between xycoord_1 and xycoord_2
+#     euclidean_dist = math.sqrt( (xycoord_1[0] - xycoord_2[0])**2 + (xycoord_1[1] - xycoord_2[1])**2 )
+#     s_i = math.sqrt(area_bounding_box)
+#     k_i = std_dev_xy
+#     return math.exp( -1 * (euclidean_dist**2) / (2 * (s_i * k_i)**2) )
+
+
+# def calc_oks(dict_list, data_name, data_name2):
+
+#     # dict_list is a list of dictionaries each dictionary is organized as follows
+#     # dict_list[i] = {'image_path': <path to image str>, 'keypoints': <list of keypoints>, 'keypoints_coords': <list of keypoints coordinates first labeler> , 
+#     # 'keypoints_coords2': <list of keypoints coordinates second labeler>, 'area': <area of bounding box float>}
+
+#     # for i in range(len(dict_list)):
+#     #     # find standard deviation for each keypoint
+#     #     dict_list[i]['keypoints_std_dev'] = find_std_dev_all(dict_list[i])
+    
+#     # calculate oks
+
+#     # using find_std_dev get the standard deviation for each keypoint
+#     for key in data_name:
+#         data_name[key] = np.array(data_name[key])
+#         data_name2[key] = np.array(data_name2[key])
+#     std_devs = list(find_std_dev_all(data_name, data_name2).values())
+#     print(std_devs)
+        
+
+#     oks = 0
+#     for i in range(len(dict_list)):
+#         oks = 0
+#         for j in range(len(dict_list[i]['keypoints'])):
+#             oks += calc_oks_step(dict_list[i]['area'], dict_list[i]['keypoints_coords'][j], dict_list[i]['keypoints_coords2'][j], std_devs[j]) / 4
+
+#     # oks /= len(dict_list)
+    
+#     return oks
