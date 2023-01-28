@@ -458,8 +458,6 @@ python3 from_depth_to_xyz.py -cal ../Testing_DIR/intrinsics.json -d Testing_DIR2
 ```
 
 
-
-
 ```
 python3 script_sort_depth.py -f /media/<username>/DRIVE/images -f2 /media/<username>/DRIVE/out\(Gouda\)/
 ```
