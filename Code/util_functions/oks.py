@@ -7,31 +7,17 @@ import os
 
 STORE_FILES = {}
 
-def calc_oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray, key_typ: str, optional_kappa = None):
+def calc_oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray, k_arr_np: np.ndarray):
     # The standard deviation
     global STORE_FILES
     assert y_true.shape == y_pred.shape
-    assert area.shape[0] == y_true.shape[0]
+    print("area shape: {}".format(area.shape))
 
 
     visibility = np.ones((y_true.shape[0], 1))
     # Compute euclidean distances
-    distances = np.linalg.norm(y_pred - y_true, axis=-1)
-
-
-    k_i = 0
-    if optional_kappa is None:
-        std_dev = np.sqrt(np.mean(distances ** 2 / area))
-        k_i = 2*std_dev
-        STORE_FILES[key_typ] = k_i
-    else:
-        k_i = optional_kappa[key_typ]
-
-    # print("std dev: {}".format(k_i / 2))
-    # OKS = exp(-1 * (d^2) / (2 * (s^2) * (k^2))
-    # s is merely the sqrt of the area so doing s^2 is the same as doing area
-    # k is the standard deviation between the two points
-    exp_vector = np.exp(-(distances**2) / (2 * (area) * (k_i**2)))
+    distances = np.linalg.norm(y_pred - y_true, axis=1)
+    exp_vector = np.exp(-(distances**2) / (2 * (area) * (k_arr_np**2)))
     return np.dot(exp_vector, visibility) / np.sum(visibility)
 
 
@@ -111,7 +97,7 @@ def load_from_json_files(folder_path):
 def parse_args():
     parser = argparse.ArgumentParser(description='Calculate Oks')
     parser.add_argument('-j','--json_path', help='directory of json files', default='data', type=str)
-    parser.add_argument('-k','--kappa_path_json', help='kappa value path to either write to or to read from', default=None, type=str)
+    parser.add_argument('-k','--kappa_path_json', help='kappa value path to either write to or to read from', default="data", type=str)
     args = parser.parse_args()
     return args
 
@@ -122,36 +108,87 @@ if __name__ == "__main__":
     args = parse_args()
     
     dict_list = load_from_json_files(args.json_path)
-    y_true, y_pred = from_dict_to_np_dict(dict_list)
+    # y_true, y_pred = from_dict_to_np_dict(dict_list)
     area_np = []
     for i in range(len(dict_list)):
         area_np.append(dict_list[i]['area'])
     area_np = np.array(area_np)
     oks_results = {}
 
-    
+    kappa_vals = []
     optional_kappas_dict = None
     if os.path.exists(args.kappa_path_json):
         print("hi")
         with open(args.kappa_path_json, 'r') as f:
             optional_kappas_dict = json.load(f)
+        for key in optional_kappas_dict.keys():
+            kappa_vals.append(optional_kappas_dict[key]['kappa'])
+    else:
+        optional_kappas_dict = {}
+        # Calculate variances for each keypoint over all images
+        y_true, y_pred = from_dict_to_np_dict(dict_list)
 
-    for key in y_true.keys():
-        oks_results[key] = calc_oks(y_true[key], y_pred[key], area_np, key, optional_kappas_dict)
+        for key in y_true.keys():
+            distances = np.linalg.norm(y_pred[key] - y_true[key])
+            variances = np.mean(distances ** 2 / area_np)
+            k_i = 2*np.sqrt(variances)
+            kappa_vals.append(k_i)
+            optional_kappas_dict[key] = {}
+            optional_kappas_dict[key]['kappa'] = k_i
+            optional_kappas_dict[key]['variance'] = variances
+
+
+
+
+    # for each image in the json files
+    kappa_vals = np.array(kappa_vals)
+    for i in range(len(dict_list)):
+        # for each keypoint in the image
+        y_true = {}
+        y_pred = {}
+        y_true_arr = []
+        y_pred_arr = []
+        for key, value in dict_list[i]['keypoints_coords'].items():
+            if key not in y_true:
+                y_true[key] = []
+            y_true[key].append(value)
+            y_true_arr.append(value)
+        for key, value in dict_list[i]['keypoints_coords2'].items():
+            if key not in y_pred:
+                y_pred[key] = []
+            y_pred[key].append(value)
+            y_pred_arr.append(value)
+        print("y_true", y_true)
+        print("y_pred", y_pred)
+        # stack all keys
+        print("y_true_arr", y_true_arr)
+        print("y_pred_arr", y_pred_arr)
+        y_true_arr = np.array(y_true_arr)
+        y_pred_arr = np.array(y_pred_arr)
+
+        oks_results[dict_list[i]['filename']] = calc_oks(y_true_arr, y_pred_arr, area_np[i],  kappa_vals)[0]
+
+
+    print("oks_results", oks_results)
+
+
+
+    # for key in y_true.keys():
+    #     oks_results[key] = calc_oks(y_true[key], y_pred[key], area_np, key, optional_kappas_dict)
     
     # if STORE_FILES is empty dict
-    if not os.path.exists(args.kappa_path_json) and STORE_FILES != {}:
+    if not os.path.exists(args.kappa_path_json) and optional_kappas_dict is not None:
         with open(args.kappa_path_json, 'w') as f:
-            json.dump(STORE_FILES, f)
+            json.dump(optional_kappas_dict, f)
 
-    # map_img_to_std_dev = {}
-    # for key in y_true.keys():
-    #     map_img_to_std_dev[key] = calc_std_dev(y_true[key], y_pred[key])
-    # # for img in dict_list:
-    # #     map_img_to_std_dev[img['filename']] = calc_std_dev(coords2=np.array(list(img['keypoints_coords2'].values())), coords1=np.array(list(img['keypoints_coords'].values())))
-    # print("map img to std dev: {}".format(map_img_to_std_dev))
+    # # map_img_to_std_dev = {}
+    # # for key in y_true.keys():
+    # #     map_img_to_std_dev[key] = calc_std_dev(y_true[key], y_pred[key])
+    # # # for img in dict_list:
+    # # #     map_img_to_std_dev[img['filename']] = calc_std_dev(coords2=np.array(list(img['keypoints_coords2'].values())), coords1=np.array(list(img['keypoints_coords'].values())))
+    # # print("map img to std dev: {}".format(map_img_to_std_dev))
 
-    print(oks_results)
+    # print(oks_results)
 
 
 # def find_std_dev(vect_1, vect_2):
