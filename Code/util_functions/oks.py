@@ -13,10 +13,10 @@ def calc_oks(y_true: np.ndarray, y_pred: np.ndarray, area: np.ndarray, k_arr_np:
     assert y_true.shape == y_pred.shape
     print("area shape: {}".format(area.shape))
 
-
+    print("y_true : {}".format(y_true))
     visibility = np.ones((y_true.shape[0], 1))
     # Compute euclidean distances
-    distances = np.linalg.norm(y_pred - y_true, axis=1)
+    distances = np.linalg.norm(y_pred - y_true)
     exp_vector = np.exp(-(distances**2) / (2 * (area) * (k_arr_np**2)))
     return np.dot(exp_vector, visibility) / np.sum(visibility)
 
@@ -169,8 +169,11 @@ if __name__ == "__main__":
 
         oks_results[dict_list[i]['filename']] = calc_oks(y_true_arr, y_pred_arr, area_np[i],  kappa_vals)[0]
 
+    with open('oks_results_human.json', 'w') as f:
+        json.dump(oks_results, f)
 
-    print("oks_results", oks_results)
+    
+    # print("oks_results", oks_results)
 
 
 
