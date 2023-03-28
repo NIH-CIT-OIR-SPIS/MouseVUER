@@ -1,12 +1,28 @@
-# Depth Recording Tool
+# MousePAD Depth Recording Tool
+
 
 ### Authors
-Noah Cubert
 
 Ghadi Salem
 
+Noah Cubert
+
+Niall Cope
+
+Abhishek Somenhalli
+
+Jonathan Krynitsky
+
+
 
 Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
+
+### Directions for Installation
+
+### Install librealsense with Ubuntu 20.04 (as of 3/28/2023)
+
+This is a guide on how to run the program 
+To install with linux please follow directions here https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 
 
 ### Install python3 modules
@@ -21,10 +37,6 @@ sudo apt-get install python3-tk
 ```
 
 
-### Install librealsense with Ubuntu 20.04 (as of 7/1/2022)
-
-This is a guide on how to run the program 
-To install with linux please follow directions here https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 
 ### Install Boost, FFmpeg, GLFW3 and others using the following commands:
 
