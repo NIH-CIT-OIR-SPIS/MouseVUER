@@ -109,4 +109,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+!.Pictures/*
 !.gitignore
