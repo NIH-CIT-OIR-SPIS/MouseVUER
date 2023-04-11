@@ -19,14 +19,18 @@ Jonathan Krynitsky
 
 A tool for streaming, recording and processing depth data from Intel&reg; RealSense&trade; depth cameras. 
 
+### CAD Files
+
+Can be found in the Models directory
+
+# Video Acquisition Software
+
 
 <p>
     <img src="Pictures/Encoder_Diagram_8_bit.png" alt>
     <br>
     <em>Depth Video Encoding Pipeline</em>
 </p>
-
-
 
 
 ### Directions for Installation
