@@ -18,6 +18,8 @@ Jonathan Krynitsky
 ### About
 
 A tool for streaming, recording and processing depth data from Intel&reg; RealSense&trade; depth cameras. 
+
+
 <p>
     <img src="Pictures/Encoder_Diagram_8_bit.png" alt>
     <em>Depth Video Encoding Pipeline</em>
