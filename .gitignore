@@ -13,7 +13,8 @@ Code/Collect_Training_Code/Testing_DIR/*
 
 
 # Ignore certain image files
-*.png
+
+Code/*.png
 *.tif
 
 
@@ -109,5 +110,4 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-!.Pictures/*
 !.gitignore
