@@ -482,7 +482,6 @@ def main_test():
     ip_lst = map_network()
     print("Done getting IP addresses")
     print("Starting Graphical User Interface...")
-    # TODO: Start GUI
     
     args = server_side_command_line_parser()
 
@@ -506,10 +505,10 @@ def main_test():
         os.system("stty echo")
 
 # main_test()
-# if __name__ == '__main__':
-#     main()
-#     #server.start_conn_send_data(host="127.0.0.1", port=12345)
+if __name__ == '__main__':
+    main_test()
+    #server.start_conn_send_data(host="127.0.0.1", port=12345)
 
-#     #lst.remove()
-#     #print(lst)
+    #lst.remove()
+    #print(lst)
 

@@ -475,7 +475,7 @@ class ServerGUI(ttk.Frame):
 def funct_to_call():
     print("hjh")
 
-def testing_run():
+def run_gui():
     print("Getting IP addresses...")
     ip_lst = map_network()
     print("Done getting IP addresses")
@@ -486,4 +486,4 @@ def testing_run():
     app.run()
 
 if __name__ == "__main__":
-    testing_run()
+    run_gui()

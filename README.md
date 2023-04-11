@@ -13,9 +13,18 @@ Abhishek Somenhalli
 
 Jonathan Krynitsky
 
+[TODO LINK TO PAPER]
+
+### About
+
+A tool for streaming, recording and processing depth data from Intel&reg; RealSense&trade; depth cameras. 
+<p>
+    <img src="Pictures/Encoder_Diagram_8_bit.png" alt>
+    <em>Depth Video Encoding Pipeline</em>
+</p>
 
 
-Uses Intel&reg; RealSense&trade; depth camera software, as well as FFmpeg to record data from cameras
+
 
 ### Directions for Installation
 
@@ -219,6 +228,14 @@ ffmpeg -i Testing_DIR/test_lsb_5000_out.mp4 -i Testing_DIR/test_msb_5001_out.mp4
 
 # Directions for Configuring Server Client System
 
+### About
+
+A server-client system for Depth Cameras.
+
+<p>
+    <img src="Pictures/Presentation Picture.png" alt>
+    <em>Server-Client Configuration Diagram</em>
+</p>
 # Hardware Requirements.
 Server computer should have more CPU cores for every client (Recommend for 3 or more systems should be at least 6th gen i5 desktop CPU or equivilant)
 
@@ -382,7 +399,7 @@ sudo reboot
 
 Repeat for each client
 
-### Running Server
+## Running Server from CLI
 
 Go to Settings -> Network -> Wired -> [Click on Settings Symbol] -> IPv4 -> Manual:
     Then enter the following into their respective boxes
@@ -399,8 +416,26 @@ Running a recording for 30 seconds at a crf of 22, with 4 clients connected
 python3 server_side.py --dir Testing_DIR/ --num_clients 4 --json Default.json --time_run 30 --crf 22
 ```
 
+## Running Server from GUI
+
+Run the following command in mousePad/Code directory
+```
+python3 server_gui.py 
+```
+
+You should then see an image like this:
+
+<img src="Pictures/mousePAD_GUI.png">
+
+CRF values control the quality of the video. The higher the CRF value the lower the quality. Please keep it between 18-28.
+
+Valid video dimensions are 640x480, and 1280x720
+
+Please Choose a valid JSON to utilize.
 
 You could also enter in your own json file as well for different settings just be sure that these files are also on the client computers.
+
+
 
 
 # Directions Collecting_Training_Code/
