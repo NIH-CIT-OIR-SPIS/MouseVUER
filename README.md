@@ -144,11 +144,6 @@ Then run:
 cd ~/DepthCameraRecordingTool/Code/ && mkdir Testing_DIR
 ```
 
-
-
-### Directions for Use
-Then plug in your Intel RealSense Camera into the computer's USB port
-
 Then run:
 ```
 make -j4
