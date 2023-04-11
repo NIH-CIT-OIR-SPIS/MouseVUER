@@ -22,6 +22,7 @@ A tool for streaming, recording and processing depth data from Intel&reg; RealSe
 
 <p>
     <img src="Pictures/Encoder_Diagram_8_bit.png" alt>
+    <br>
     <em>Depth Video Encoding Pipeline</em>
 </p>
 
@@ -236,6 +237,7 @@ A server-client system for Depth Cameras.
 
 <p>
     <img src="Pictures/Presentation Picture.png" alt>
+    <br>
     <em>Server-Client Configuration Diagram</em>
 </p>
 # Hardware Requirements.
