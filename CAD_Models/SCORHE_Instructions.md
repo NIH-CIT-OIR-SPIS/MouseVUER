@@ -1,5 +1,7 @@
+# System for Continuous Observation of Rodents in Home-cage Environment (SCORHE) Instructions for Assembly
+
 <img src="./use_images/media/image1.jpeg"
-style="width:4.46875in;height:6in" />
+style="width:7.5in;height:6in" />
 
 # Table of Contents
 
