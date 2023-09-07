@@ -19,9 +19,9 @@ Jonathan Krynitsky
 
 A tool for streaming, recording and processing depth data from Intel&reg; RealSense&trade; depth cameras. 
 
-### CAD Files
+### CAD Files and Assembly
 
-Can be found in the Models directory
+The CAD files and assembly instructions can be found in the [CAD_Models folder](./CAD_Models/).
 
 # Video Acquisition Software
 
