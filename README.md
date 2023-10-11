@@ -1,4 +1,4 @@
-# MousePAD Depth Recording Tool
+# MouseVUER Depth Recording Tool
 
 
 ### Authors
