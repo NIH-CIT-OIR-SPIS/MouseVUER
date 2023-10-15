@@ -1,28 +1,13 @@
-==========================================================================
-                          PUBLIC DOMAIN NOTICE
-        National Institute of Biomedical Imaging and Bioengineering (NIBIB)
+one may say
 
-
-With the exception of certain third-party files summarized in NOTICE.md, this
-software is a "United States Government Work" under the terms of the
-United States Copyright Act.  It was written as part of the authors'
-official duties as United States Government employees and thus cannot
-be copyrighted. This software is freely available to the public for
-use. The NIBIB and the U.S. Government have not
-placed any restriction on its use or reproduction.
-
-Although all reasonable efforts have been taken to ensure the accuracy
-and reliability of the software and data, the NIBIB and the U.S.
-Government do not and cannot warrant the performance or results that
-may be obtained by using this software or data. The NIBIB and the U.S.
-Government disclaim all warranties, express or implied, including
-warranties of performance, merchantability or fitness for any
-particular purpose.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MOUSEVUER END-USER LICENSE AGREEMENT
+1. The National Institute of Biomedical Imaging and Bioengineering, part of the National Institutes of Health (“NIH”), a component of the United States Department of Health and Human Services (“NIBIB”) hereby grants and the Recipient accepts, subject to the terms and conditions of this Agreement, a term limited, royalty-free, nontransferable, nonexclusive internal license to use the Software for research and educational purposes only, as hereinafter defined with no provision for support, in order to conduct research and develop processes, methods, or marketable products for public use and benefit.
+2. NIBIB reserves the right to distribute the Software for any purpose and to use it for any U.S. Government purpose. NIBIB shall not be limited in future claims, publications, or distributions of the Software or modifications or versions thereof, or related information. No copyright to the Software is claimed by the United States Government in the United States under Title 17, U.S. Code.
+3. THE SOFTWARE MAY NOT BE USED FOR TREATING OR DIAGNOSING HUMAN SUBJECTS OR HUMAN PATIENTS.
+4. The Recipient agrees that its use of the Software will comply with all applicable NIH regulations and guidelines.
+5. Use the Software in the United States. The Recipient agrees not to use the Software for research involving human subjects, material isolated or derived from human subjects, or clinical trials without complying with 21 C.F.R. Part 50 and 45 C.F.R. Part 46.
+6. Use the Software outside of the United States. The Recipient agrees not to use the Software for research involving human subjects or patients, material isolated or derived from human subjects or patients, or clinical trials outside of the United States without: (i) notifying NIBIB in writing, of such research or trials, and (ii) complying with the applicable regulations of the appropriate national control authorities. Written notification to NIBIB of the Recipient’s desire to use the Software in research involving human subjects, material isolated or derived from human subjects, or clinical trials outside of the United States shall be given no later than sixty (60) days prior to commencement of such human subjects research or clinical trials.
+7. NIBIB makes no representations and extends no warranties of any kind, either express or implied, or statutory, including, but not limited to, any warranty that the Software will conform to specifications, any implied warranties of merchantability, fitness for a particular purpose or that the use of the Software will not infringe any patent, copyright, or trademark, or any warranty that the documentation will conform to the program or that Software will be error free or other rights or any other express or implied warranties.
+8. In no event shall the United States Government be liable for any damages, including, but not limited to direct, indirect, special or consequential damages, arising out of, resulting from, or in any way connected with the performance or breach of this license, whether or not based upon warranty, contract, tort or otherwise, whether or not injury was sustained by persons or property or otherwise, and whether or not loss was sustained from, or arose out of the any use, results or disposition of, the Software or services provided hereunder.
+9. The Recipient agrees to waive any and all claims against, and to indemnify and hold harmless the U.S. Government, its employees, students, fellows, agents, consultants, contractors and subcontractors for any damage that the Recipient may incur from the Recipient’s prior or future use of the Software, including any damages resulting from products based on results from the use thereof. The Recipient agrees to obtain this identical waiver of claims, indemnification and hold harmless agreement from any entities that are provided with technical data derived from the use of the Software.
+10. In all oral presentations or written publications concerning the Recipient’s use of the Software, the Recipient will acknowledge NIBIB’s contribution of the Software.
