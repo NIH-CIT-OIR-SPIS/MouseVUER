@@ -1,10 +1,10 @@
-# MouseVUER Depth Recording Tool
+# MouseVUER: Video based open-source system for laboratory mouse home-cage monitoring
 
 
 
 ### About
 
-A tool for streaming, recording and processing depth data from Intel&reg; RealSense&trade; depth cameras. 
+An opne source home-cage design based on Intel&reg; RealSense&trade; depth cameras. 
 
 ### CAD Files and Assembly
 
@@ -12,7 +12,7 @@ The CAD files and assembly instructions can be found in the [CAD_Models folder](
 
 ### Manuscript data
 
-The images and annotations used in the manuscript can be found here [Manuscript_Data folder]
+The images and annotations used in the manuscript can be found here [Manuscript_Data folder](./Manuscript_Data/)
 
 # Video Acquisition Software
 
