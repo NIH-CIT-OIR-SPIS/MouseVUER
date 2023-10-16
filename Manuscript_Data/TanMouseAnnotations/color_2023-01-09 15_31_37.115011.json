@@ -1,0 +1,95 @@
+{
+ "image": {
+  "seq": 0,
+  "width": 1280,
+  "height": 720,
+  "filename": "color_2023-01-09 15:31:37.115011.png",
+  "original_filename": "color_2023-01-09 15:31:37.115011.png",
+  "url": "https://darwin.v7labs.com/api/v2/teams/nibib-ideas/uploads/3613a4d3-ab21-443e-86f2-e4acfbf22a92",
+  "thumbnail_url": "https://darwin.v7labs.com/api/v2/teams/nibib-ideas/files/1579d189-3470-4dc8-bd7b-6e75cb34c590/thumbnail",
+  "path": "/",
+  "workview_url": "https://darwin.v7labs.com/workview?dataset=608229&item=01859c42-f502-9fd0-cdff-0be03f58d614"
+ },
+ "annotations": [
+  {
+   "skeleton": {
+    "nodes": [
+     {
+      "name": "Nose",
+      "occluded": false,
+      "x": 554.98,
+      "y": 252.38
+     },
+     {
+      "name": "Left Ear",
+      "occluded": false,
+      "x": 503.16,
+      "y": 288.47
+     },
+     {
+      "name": "Right Ear",
+      "occluded": false,
+      "x": 579.95,
+      "y": 285.73
+     },
+     {
+      "name": "Tail Base",
+      "occluded": false,
+      "x": 591.92,
+      "y": 457.67
+     }
+    ]
+   },
+   "name": "FourPointBrown",
+   "slot_names": [
+    "0"
+   ]
+  },
+  {
+   "skeleton": {
+    "nodes": [
+     {
+      "name": "Nose",
+      "occluded": false,
+      "x": 541.21,
+      "y": 254.56
+     },
+     {
+      "name": "Left Ear",
+      "occluded": false,
+      "x": 497.12,
+      "y": 320.95
+     },
+     {
+      "name": "Right Ear",
+      "occluded": false,
+      "x": 593.59,
+      "y": 298.38
+     },
+     {
+      "name": "Tail Base",
+      "occluded": false,
+      "x": 587.38,
+      "y": 454.52
+     }
+    ]
+   },
+   "name": "FourPointBrown",
+   "slot_names": [
+    "0"
+   ]
+  },
+  {
+   "bounding_box": {
+    "x": 480.23,
+    "y": 252.12,
+    "w": 138.53,
+    "h": 210.56
+   },
+   "name": "agoudimouse",
+   "slot_names": [
+    "0"
+   ]
+  }
+ ]
+}
