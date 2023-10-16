@@ -1,19 +1,6 @@
 # MouseVUER Depth Recording Tool
 
 
-### Authors
-
-Ghadi Salem
-
-Noah Cubert
-
-Niall Cope
-
-Abhishek Somenhalli
-
-Jonathan Krynitsky
-
-[TODO LINK TO PAPER]
 
 ### About
 
@@ -22,6 +9,10 @@ A tool for streaming, recording and processing depth data from Intel&reg; RealSe
 ### CAD Files and Assembly
 
 The CAD files and assembly instructions can be found in the [CAD_Models folder](./CAD_Models/).
+
+### Manuscript data
+
+The images and annotations used in the manuscript can be found here 
 
 # Video Acquisition Software
 
