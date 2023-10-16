@@ -12,7 +12,7 @@ The CAD files and assembly instructions can be found in the [CAD_Models folder](
 
 ### Manuscript data
 
-The images and annotations used in the manuscript can be found here 
+The images and annotations used in the manuscript can be found here [Manuscript_Data folder]
 
 # Video Acquisition Software
 
