@@ -199,101 +199,216 @@ the Monitiroing Cage unit. Items that were custom made have .STP or .DXF
 or .STL files to reference on the Github page. All other items were
 purchased from vendors.
 
-Table 1 Bill of materials for the assembly of one Monitoring Cage unit.
-
-  ------------ ----------- ----------------- --------------- ------------ ----- ----------
-  ITEM NO.     Part Label  Description       Source          Vendor Part  Qty   Cost
-                                                             Number             
-
-  1            Mouse Cage  MOUSE, XJ/NEXGEN, Allentown Inc.  223581-4     1     \$48.60
-               Base        CLEAR POLYSULFONE                                    
-                           HIGH TEMPERATURE                                     
-                           PLASTIC, WHITE                                       
-                           AIR KUP                                              
-
-  2            Mouse Cage  MICRO BARRIER     Allentown Inc.  228790-1     1     \$139.50
-               Lid         TOP, MOUSE,                                          
-                           NEXGEN, SOLID,                                       
-                           CLEAR POLYSULFONE                                    
-                           HIGH TEMPERATURE                                     
-                           PLASTIC, NO LOCKS                                    
-
-  3            Water        Bottle Udel 9    Thoren Caging   BW09UIRNO    1     \$7.11
-               bottle      oz., Ink with     Systems, Inc.                      
-                           \"O\" Ring                                           
-
-  4            Sipper Tube Stainless steel   Thoren Caging   BWCS250HSB   1     \$3.79
-                           with 2 1/2\"      Systems, Inc.                      
-                           welded bent                                          
-                           sipper tube                                          
-
-  5            Hopper      PSU Ultrason      Injection       N/A - refer  1     \$92.19
-                           S3010             Molded          to STP file        
-
-  6            Stainless   Stainless Steel   McMaster-Carr   96015K33     1     \$16.68
-               Steel       Fabric Grommets                                      
-               Grommet     with Washer                                          
-
-  7            Food Grate  304SS, 26 Gauge   Waterjet Cut    N/A - refer  1     
-                           stock piece                       to DXF file        
-
-  8            Bottle      304SS, 24 Gauge   Waterjet Cut    N/A - refer  1     
-               Holder      stock piece                       to DXF file        
-
-  9            4-40, 3/8\" Passivated 18-8   McMaster-Carr   91099A165    2     \$5.55
-               Flat        Stainless Steel                                      
-                           Phillips Flat                                        
-                           Head Screw                                           
-
-  10           Camera      Depth Camera D435 Intel Inc.      D435         1     \$314.00
-
-  11           Camera      3D Printed FDM    3D printed      N/A - refer  1     \$3.00
-               Bracket                                       to STL file        
-
-  12           1/4\"-20,   Passivated 18-8   McMaster-Carr   91771A535    1     \$12.13
-               3/8\" Flat  Stainless Steel                                      
-                           Phillips Flat                                        
-                           Head Screw                                           
-
-  13           1/4\"-20    18-8 Stainless    McMaster-Carr   91847A029    2     \$6.36
-               Nut         Steel Thin Hex                                       
-                           Nut                                                  
-
-  14           1/4\"-20,   Passivated 18-8   McMaster-Carr   91099A478    2     \$12.99
-               7/8\" Flat  Stainless Steel                                      
-                           Phillips Flat                                        
-                           Head Screw                                           
-
-  15           Handle      3D Printed FDM    3D printed      N/A - refer  1     \$10.00
-                                                             to STL file        
-
-  16           M3, 10mm    316 Stainless     McMaster-Carr   91801A156    12    \$9.91
-               Flat        Steel Phillips                                       
-                           Flat Head Screw                                      
-
-  17           Igloo Front Cut from          Laser Cut       N/A - refer  1     \$13.00
-               Panel       12\"x24\"x1/4\"                   to DXF file        
-                           Clear Cast                                           
-                           Acrylic                                              
-
-  18           Igloo Side  Cut from          Laser Cut       N/A - refer  2     \$13.00
-               Panel       12\"x24\"x1/4\"                   to DXF file        
-                           Clear Cast                                           
-                           Acrylic                                              
-
-  19           Igloo Top   Cut from          Laser Cut       N/A - refer  1     \$13.00
-               Panel       12\"x24\"x1/4\"                   to DXF file        
-                           Clear Cast                                           
-                           Acrylic                                              
-
-  20           Cube        Aluminum M3       V1 Tech         N/A          4     \$5.00
-               Standoff    Modding Cubes                                        
-
-  Total Cost                                                                    \$725.81
-  Per                                                                           
-  Monitoring                                                                    
-  Cage Unit                                                                     
-  ------------ ----------- ----------------- --------------- ------------ ----- ----------
+<table>
+<caption><p>Bill of materials for the assembly of one SAHM
+unit.</p></caption>
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 15%" />
+<col style="width: 22%" />
+<col style="width: 14%" />
+<col style="width: 17%" />
+<col style="width: 8%" />
+<col style="width: 14%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td>ITEM NO.</td>
+<td>Part Label</td>
+<td>Description</td>
+<td>Source</td>
+<td>Vendor Part Number</td>
+<td>Qty</td>
+<td>Cost</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>Mouse Cage Base</td>
+<td>MOUSE, XJ/NEXGEN, CLEAR POLYSULFONE HIGH TEMPERATURE PLASTIC, WHITE
+AIR KUP</td>
+<td>Allentown Inc.</td>
+<td>223581-4</td>
+<td>1</td>
+<td>$48.60</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>Mouse Cage Lid</td>
+<td>MICRO BARRIER TOP, MOUSE, NEXGEN, SOLID, CLEAR POLYSULFONE HIGH
+TEMPERATURE PLASTIC, NO LOCKS</td>
+<td>Allentown Inc.</td>
+<td>228790-1</td>
+<td>1</td>
+<td>$139.50</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>Water bottle</td>
+<td> Bottle Udel 9 oz., Ink with "O" Ring</td>
+<td>Thoren Caging Systems, Inc.</td>
+<td>BW09UIRNO</td>
+<td>1</td>
+<td>$7.11</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>Sipper Tube</td>
+<td>Stainless steel with 2 1/2" welded bent sipper tube</td>
+<td>Thoren Caging Systems, Inc.</td>
+<td>BWCS250HSB</td>
+<td>1</td>
+<td>$3.79</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>Hopper</td>
+<td>PSU Ultrason S3010</td>
+<td>Injection Molded</td>
+<td>N/A - refer to STP file</td>
+<td>1</td>
+<td>$92.19</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td>Stainless Steel Grommet</td>
+<td>Stainless Steel Fabric Grommets with Washer</td>
+<td>McMaster-Carr</td>
+<td>96015K33</td>
+<td>1</td>
+<td>$16.68</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td>Food Grate</td>
+<td>304SS, 26 Gauge stock piece</td>
+<td>Waterjet Cut</td>
+<td>N/A - refer to DXF file</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>8</td>
+<td>Bottle Holder</td>
+<td>304SS, 24 Gauge stock piece</td>
+<td>Waterjet Cut</td>
+<td>N/A - refer to DXF file</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>9</td>
+<td>4-40, 3/8" Flat</td>
+<td>Passivated 18-8 Stainless Steel Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>91099A165</td>
+<td>2</td>
+<td>$5.55</td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td>Camera</td>
+<td>Depth Camera D435</td>
+<td>Intel Inc.</td>
+<td>D435</td>
+<td>1</td>
+<td>$314.00</td>
+</tr>
+<tr class="even">
+<td>11</td>
+<td>Camera Bracket</td>
+<td>3D Printed FDM</td>
+<td>3D printed</td>
+<td>N/A - refer to STL file</td>
+<td>1</td>
+<td>$3.00</td>
+</tr>
+<tr class="odd">
+<td>12</td>
+<td>1/4"-20, 3/8" Flat</td>
+<td>Passivated 18-8 Stainless Steel Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>91771A535</td>
+<td>1</td>
+<td>$12.13</td>
+</tr>
+<tr class="even">
+<td>13</td>
+<td>1/4"-20 Nut</td>
+<td>18-8 Stainless Steel Thin Hex Nut</td>
+<td>McMaster-Carr</td>
+<td>91847A029</td>
+<td>2</td>
+<td>$6.36</td>
+</tr>
+<tr class="odd">
+<td>14</td>
+<td>1/4"-20, 7/8" Flat</td>
+<td>Passivated 18-8 Stainless Steel Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>91099A478</td>
+<td>2</td>
+<td>$12.99</td>
+</tr>
+<tr class="even">
+<td>15</td>
+<td>Handle</td>
+<td>3D Printed FDM</td>
+<td>3D printed</td>
+<td>N/A - refer to STL file</td>
+<td>1</td>
+<td>$10.00</td>
+</tr>
+<tr class="odd">
+<td>16</td>
+<td>M3, 10mm Flat</td>
+<td>316 Stainless Steel Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>91801A156</td>
+<td>12</td>
+<td>$9.91</td>
+</tr>
+<tr class="even">
+<td>17</td>
+<td>Igloo Front Panel</td>
+<td>Cut from 12"x24"x1/4" Clear Cast Acrylic</td>
+<td>Laser Cut</td>
+<td>N/A - refer to DXF file</td>
+<td>1</td>
+<td>$13.00</td>
+</tr>
+<tr class="odd">
+<td>18</td>
+<td>Igloo Side Panel</td>
+<td>Cut from 12"x24"x1/4" Clear Cast Acrylic</td>
+<td>Laser Cut</td>
+<td>N/A - refer to DXF file</td>
+<td>2</td>
+<td>$13.00</td>
+</tr>
+<tr class="even">
+<td>19</td>
+<td>Igloo Top Panel</td>
+<td>Cut from 12"x24"x1/4" Clear Cast Acrylic</td>
+<td>Laser Cut</td>
+<td>N/A - refer to DXF file</td>
+<td>1</td>
+<td>$13.00</td>
+</tr>
+<tr class="odd">
+<td>20</td>
+<td>Cube Standoff</td>
+<td>Aluminum M3 Modding Cubes</td>
+<td>V1 Tech</td>
+<td>N/A</td>
+<td>4</td>
+<td>$5.00</td>
+</tr>
+<tr class="even">
+<td colspan="6">Total Cost Per SAHM Unit</td>
+<td>$725.81</td>
+</tr>
+</tbody>
+</table>
 
 ### Hopper Assembly 
 
