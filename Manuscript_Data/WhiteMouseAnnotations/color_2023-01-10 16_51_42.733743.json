@@ -1,0 +1,61 @@
+{
+ "image": {
+  "seq": 0,
+  "width": 1280,
+  "height": 720,
+  "filename": "color_2023-01-10 16:51:42.733743.png",
+  "original_filename": "color_2023-01-10 16:51:42.733743.png",
+  "url": "https://darwin.v7labs.com/api/v2/teams/nibib-ideas/uploads/beb12245-2e96-48e3-be0a-ebdd63d9d24c",
+  "thumbnail_url": "https://darwin.v7labs.com/api/v2/teams/nibib-ideas/files/3e463b79-41b6-4044-ac9b-53fcb59a8905/thumbnail",
+  "path": "/",
+  "workview_url": "https://darwin.v7labs.com/workview?dataset=608693&item=0185a15f-fae6-3b9c-1c56-726cc44c8ee3"
+ },
+ "annotations": [
+  {
+   "skeleton": {
+    "nodes": [
+     {
+      "name": "Nose",
+      "occluded": false,
+      "x": 595.44,
+      "y": 414.76
+     },
+     {
+      "name": "Left Ear",
+      "occluded": false,
+      "x": 569.92,
+      "y": 481.55
+     },
+     {
+      "name": "Right Ear",
+      "occluded": false,
+      "x": 648.19,
+      "y": 451.99
+     },
+     {
+      "name": "Tail Base",
+      "occluded": false,
+      "x": 592.27,
+      "y": 591.54
+     }
+    ]
+   },
+   "name": "FourPointWhiteMouse",
+   "slot_names": [
+    "0"
+   ]
+  },
+  {
+   "bounding_box": {
+    "x": 560.58,
+    "y": 413.74,
+    "w": 135.76,
+    "h": 191.17
+   },
+   "name": "WhiteMouse",
+   "slot_names": [
+    "0"
+   ]
+  }
+ ]
+}
