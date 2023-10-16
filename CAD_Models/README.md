@@ -200,7 +200,7 @@ or .STL files to reference on the Github page. All other items were
 purchased from vendors.
 
 <table>
-<caption><p>Bill of materials for the assembly of one SAHM
+<caption><p>Bill of materials for the assembly of one MouseVUER
 unit.</p></caption>
 <colgroup>
 <col style="width: 7%" />
@@ -404,7 +404,7 @@ TEMPERATURE PLASTIC, NO LOCKS</td>
 <td>$5.00</td>
 </tr>
 <tr class="even">
-<td colspan="6">Total Cost Per SAHM Unit</td>
+<td colspan="6">Total Cost Per MouseVUER Unit</td>
 <td>$725.81</td>
 </tr>
 </tbody>
@@ -557,140 +557,401 @@ board plotter (LPKF S104, LPKF Laser & Electronics, Garbsen, Germany).
 Items that were custom made have .DXF or .STL files to reference on the
 Github page. The other items were purchased from vendors.
 
-Table 2 Bill of materials for the PCM assembly.
-
-  -------------------------------------------------------------------------------------------------------------
-  ITEM    Part Label     Description                   Source          Vendor Part Number    Qty   Cost
-  NO.                                                                                              
-  ------- -------------- ----------------------------- --------------- --------------------- ----- ------------
-  1       Main Body      3D Printed FDM                N/A             N/A -- refer to STL   1     \$150.00
-                                                                       file                        
-
-  9       Rail           3D Printed FDM                N/A             N/A -- refer to STL   1     \$3.00
-                                                                       file                        
-
-  10      Top Panel      Cut from 12\"x24\"x1/8\" Cast Laser Cut       N/A -- refer to DXF   1     \$13.00
-                         Acrylic                                       file                        
-
-  11      Side Panel     Cut from 12\"x24\"x1/8\" Cast Laser Cut       N/A -- refer to DXF   1     \$13.00
-                         Acrylic                                       file                        
-
-  12      Power          LPKF Fabrication              N/A             N/A -- refer to zip   1     \$125.00
-          Distribution                                                 file                        
-          Board                                                                                    
-
-  14      SBC Unit       JN30D for NVIDIA® Jetson      Auvidea         70878-AI-TX2          3     \$825.00
-                         Nano™ and TX2 NX™                                                         
-
-  17      Power Supply   Open Frame AC DC Converters 4 Bel Power       MPB125-4350G          1     \$169.00
-                         Output 3.3V 5V 12V -12V 90 \~ Solutions                                   
-                         264 VAC Input                                                             
-
-  18      Switch         Network Switch-Unmanaged 6    ATOP            EH2306                1     \$113.00
-                         Port                          Technologies                                
-
-  19      Power Mount    PWR Entry Connector           Schurter Inc.   KM01.1105.11          1     \$15.95
-                         Receptacle, Male Blades -                                                 
-                         Module IEC 320-C14 Panel                                                  
-                         Mount, Snap-In                                                            
-
-  20      Ethernet Mount CONN MOD Coupler 8P8C to 8P8C Amphenol ICC    MRJ-5780-01           1     \$21.84
-                                                       (Commercial                                 
-                                                       Products)                                   
-
-  21      USB Mount      CBL USB2.0 MCMR RCPT-MCR B    Adafruit        3258                  1     \$4.95
-                         Plug                          Industries LLC                              
-
-  23      Fan            Fan Axial 40x10mm VAPO 5VDC   Sunon Fans      MF40100V1-1000U-A99   1     \$4.81
-                         Wire                                                                      
-
-  24      Fan Cover      Fan Guard 40mm Metal          Sunon Fans      FG-4                  1     \$1.42
-
-  25      Cube Standoff  Aluminum M3 Modding Cubes     V1 Tech         N/A                   10    \$15.00
-
-  26      M3, 8mm Pan    Passivated 18-8 Stainless     McMaster-Carr   92000A118             3     \$5.51
-                         Steel\                                                                    
-                         Pan Head Phillips Screws                                                  
-
-  27      M3, 8mm Flat   Passivated 18-8 Stainless     McMaster-Carr   92010A118             19    \$5.52
-                         Steel\                                                                    
-                         Phillips Flat Head Screw                                                  
-
-  28      M3, 5mm Pan    Passivated 18-8 Stainless     McMaster-Carr   92000A114             8     \$5.45
-                         Steel\                                                                    
-                         Pan Head Phillips Screws                                                  
-
-  29      M3, 8mm        Female Threaded Hex Standoff  McMaster-Carr   94868A164             8     \$10.08
-          Standoff F/F                                                                             
-
-  30      M3, 35mm       Male-Female Threaded Hex\     McMaster-Carr   93655A224             8     \$39.44
-          Standoff M/F   Standoff                                                                  
-
-  31      M3, 6mm        Male-Female Threaded Hex\     McMaster-Carr   93655A093             4     \$15.64
-          Standoff M/F   Standoff                                                                  
-
-  32      M3 Nut         18-8 Stainless Steel Hex Nut  McMaster-Carr   91828A211             4     \$4.73
-
-  33      M3, 10mm Flat  Passivated 18-8 Stainless     McMaster-Carr   92010A120             12    \$5.91
-                         Steel\                                                                    
-                         Phillips Flat Head Screw                                                  
-
-  34      M3, 12mm Flat  Passivated 18-8 Stainless     McMaster-Carr   92010A122             4     \$6.04
-                         Steel\                                                                    
-                         Phillips Flat Head Screw                                                  
-
-  35      M3, 30mm Flat  Passivated 18-8 Stainless     McMaster-Carr   92010A138             4     \$10.26
-                         Steel\                                                                    
-                         Phillips Flat Head Screw                                                  
-
-  36      M4, 18mm Pan   Passivated 18-8 Stainless     McMaster-Carr   92000A227             4     \$12.95
-                         Steel\                                                                    
-                         Pan Head Phillips Screws                                                  
-
-  45      M4 Nut         18-8 Stainless Steel Hex Nut  McMaster-Carr   91828A231             4     \$6.59
-
-  46      4-40, 1/2\"    Passivated 18-8 Stainless     McMaster-Carr   91771A110             2     \$6.63
-          Flat           Steel\                                                                    
-                         Phillips Flat Head Screw                                                  
-
-  47      M12 Connector  Micro M12 Screw-Together\     McMaster-Carr   4458N11               3     \$58.95
-                         Connector                                                                 
-
-  48      Locknut        1/2 NPT Black Locknut         McMaster-Carr   3185K112              3     \$2.61
-                         for Continuous-Flex Plastic                                               
-                         Conduit Fitting                                                           
-
-  49      USB A to C     USB AM TO USB C, USB 2.0 -    Cvilux USA      DH-20M50054           3     \$3.87
-                         150MM                                                                     
-
-  50      Ethernet Cable Cable Mod 8P8C Plug to Plug   Amphenol Cables MP-64RJ45UNNY-001     1     \$3.81
-          1ft            1ft                           on Demand                                   
-
-  51      Ethernet Cable Ethernet Cables / Networking  Amphenol Cables MP-64RJ45UNNB-002     3     \$13.35
-          2ft            Cables CAT 6 UNSHIELDED,      on Demand                                   
-                         BLUE, 2ft                                                                 
-
-  52      Power Fuse     Fuse Drawer For PWR MOD       Schurter Inc.   4301.1403             1     \$5.61
-                         X-SAFE 2PL                                                                
-
-  53      3 Pin Plug     Term Block Plug 3POS STR      Weidmuller      1943820000            2     \$7.36
-                         5.08mm                                                                    
-
-  54      14 Pin Plug    Conn RCPT HSG 14POS 3.96mm    Molex           9508143               2     \$24.36
-
-  55      2 Pin Plug     CONN RCPT HSG 3POS 3.96MM     Molex           9508033               1     \$0.26
-
-  56      Pins           CONN 18-20AWG CRIMP TIN       Molex           0008520113            31    \$8.00
-
-  57      20 Gauge Wire  N/A                           N/A             N/A                   5ft   \$0.00
-
-  58      Velcro or Zip  Optional                      N/A             N/A                   N/A   \$0.00
-          Ties                                                                                     
-
-  Total                                                                                            \$1,737.90
-  Cost                                                                                             
-  Per PCM                                                                                          
-  -------------------------------------------------------------------------------------------------------------
+<table>
+<caption><p>Bill of materials for the Control Center
+assembly.</p></caption>
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 15%" />
+<col style="width: 22%" />
+<col style="width: 14%" />
+<col style="width: 17%" />
+<col style="width: 8%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>ITEM NO.</th>
+<th>Part Label</th>
+<th>Description</th>
+<th>Source</th>
+<th>Vendor Part Number</th>
+<th>Qty</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Main Body</td>
+<td>3D Printed FDM</td>
+<td>N/A</td>
+<td>N/A – refer to STL file</td>
+<td>1</td>
+<td>$150.00</td>
+</tr>
+<tr class="even">
+<td>9</td>
+<td>Rail</td>
+<td>3D Printed FDM</td>
+<td>N/A</td>
+<td>N/A – refer to STL file</td>
+<td>1</td>
+<td>$3.00</td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td>Top Panel</td>
+<td>Cut from 12"x24"x1/8" Cast Acrylic</td>
+<td>Laser Cut</td>
+<td>N/A – refer to DXF file</td>
+<td>1</td>
+<td>$13.00</td>
+</tr>
+<tr class="even">
+<td>11</td>
+<td>Side Panel</td>
+<td>Cut from 12"x24"x1/8" Cast Acrylic</td>
+<td>Laser Cut</td>
+<td>N/A – refer to DXF file</td>
+<td>1</td>
+<td>$13.00</td>
+</tr>
+<tr class="odd">
+<td>12</td>
+<td>Power Distribution Board</td>
+<td>LPKF Fabrication</td>
+<td>N/A</td>
+<td>N/A – refer to zip file</td>
+<td>1</td>
+<td>$125.00</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td>SBC Unit</td>
+<td>JN30D for NVIDIA® Jetson Nano™ and TX2 NX™</td>
+<td>Auvidea</td>
+<td>70878-AI-TX2</td>
+<td>3</td>
+<td>$825.00</td>
+</tr>
+<tr class="odd">
+<td>17</td>
+<td>Power Supply</td>
+<td>Open Frame AC DC Converters 4 Output 3.3V 5V 12V -12V 90 ~ 264 VAC
+Input</td>
+<td>Bel Power Solutions</td>
+<td>MPB125-4350G</td>
+<td>1</td>
+<td>$169.00</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td>Switch</td>
+<td>Network Switch-Unmanaged 6 Port</td>
+<td>ATOP Technologies</td>
+<td>EH2306</td>
+<td>1</td>
+<td>$113.00</td>
+</tr>
+<tr class="odd">
+<td>19</td>
+<td>Power Mount</td>
+<td>PWR Entry Connector Receptacle, Male Blades - Module IEC 320-C14
+Panel Mount, Snap-In</td>
+<td>Schurter Inc.</td>
+<td>KM01.1105.11</td>
+<td>1</td>
+<td>$15.95</td>
+</tr>
+<tr class="even">
+<td>20</td>
+<td>Ethernet Mount</td>
+<td>CONN MOD Coupler 8P8C to 8P8C</td>
+<td>Amphenol ICC (Commercial Products)</td>
+<td>MRJ-5780-01</td>
+<td>1</td>
+<td>$21.84</td>
+</tr>
+<tr class="odd">
+<td>21</td>
+<td>USB Mount</td>
+<td>CBL USB2.0 MCMR RCPT-MCR B Plug</td>
+<td>Adafruit Industries LLC</td>
+<td>3258</td>
+<td>1</td>
+<td>$4.95</td>
+</tr>
+<tr class="even">
+<td>23</td>
+<td>Fan</td>
+<td>Fan Axial 40x10mm VAPO 5VDC Wire</td>
+<td>Sunon Fans</td>
+<td>MF40100V1-1000U-A99</td>
+<td>1</td>
+<td>$4.81</td>
+</tr>
+<tr class="odd">
+<td>24</td>
+<td>Fan Cover</td>
+<td>Fan Guard 40mm Metal</td>
+<td>Sunon Fans</td>
+<td>FG-4</td>
+<td>1</td>
+<td>$1.42</td>
+</tr>
+<tr class="even">
+<td>25</td>
+<td>Cube Standoff</td>
+<td>Aluminum M3 Modding Cubes</td>
+<td>V1 Tech</td>
+<td>N/A</td>
+<td>10</td>
+<td>$15.00</td>
+</tr>
+<tr class="odd">
+<td>26</td>
+<td>M3, 8mm Pan</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Pan Head Phillips Screws</td>
+<td>McMaster-Carr</td>
+<td>92000A118</td>
+<td>3</td>
+<td>$5.51</td>
+</tr>
+<tr class="even">
+<td>27</td>
+<td>M3, 8mm Flat</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>92010A118</td>
+<td>19</td>
+<td>$5.52</td>
+</tr>
+<tr class="odd">
+<td>28</td>
+<td>M3, 5mm Pan</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Pan Head Phillips Screws</td>
+<td>McMaster-Carr</td>
+<td>92000A114</td>
+<td>8</td>
+<td>$5.45</td>
+</tr>
+<tr class="even">
+<td>29</td>
+<td>M3, 8mm Standoff F/F</td>
+<td>Female Threaded Hex Standoff</td>
+<td>McMaster-Carr</td>
+<td>94868A164</td>
+<td>8</td>
+<td>$10.08</td>
+</tr>
+<tr class="odd">
+<td>30</td>
+<td>M3, 35mm Standoff M/F</td>
+<td>Male-Female Threaded Hex<br />
+Standoff</td>
+<td>McMaster-Carr</td>
+<td>93655A224</td>
+<td>8</td>
+<td>$39.44</td>
+</tr>
+<tr class="even">
+<td>31</td>
+<td>M3, 6mm Standoff M/F</td>
+<td>Male-Female Threaded Hex<br />
+Standoff</td>
+<td>McMaster-Carr</td>
+<td>93655A093</td>
+<td>4</td>
+<td>$15.64</td>
+</tr>
+<tr class="odd">
+<td>32</td>
+<td>M3 Nut</td>
+<td>18-8 Stainless Steel Hex Nut</td>
+<td>McMaster-Carr</td>
+<td>91828A211</td>
+<td>4</td>
+<td>$4.73</td>
+</tr>
+<tr class="even">
+<td>33</td>
+<td>M3, 10mm Flat</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>92010A120</td>
+<td>12</td>
+<td>$5.91</td>
+</tr>
+<tr class="odd">
+<td>34</td>
+<td>M3, 12mm Flat</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>92010A122</td>
+<td>4</td>
+<td>$6.04</td>
+</tr>
+<tr class="even">
+<td>35</td>
+<td>M3, 30mm Flat</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>92010A138</td>
+<td>4</td>
+<td>$10.26</td>
+</tr>
+<tr class="odd">
+<td>36</td>
+<td>M4, 18mm Pan</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Pan Head Phillips Screws</td>
+<td>McMaster-Carr</td>
+<td>92000A227</td>
+<td>4</td>
+<td>$12.95</td>
+</tr>
+<tr class="even">
+<td>45</td>
+<td>M4 Nut</td>
+<td>18-8 Stainless Steel Hex Nut</td>
+<td>McMaster-Carr</td>
+<td>91828A231</td>
+<td>4</td>
+<td>$6.59</td>
+</tr>
+<tr class="odd">
+<td>46</td>
+<td>4-40, 1/2" Flat</td>
+<td>Passivated 18-8 Stainless Steel<br />
+Phillips Flat Head Screw</td>
+<td>McMaster-Carr</td>
+<td>91771A110</td>
+<td>2</td>
+<td>$6.63</td>
+</tr>
+<tr class="even">
+<td>47</td>
+<td>M12 Connector</td>
+<td>Micro M12 Screw-Together<br />
+Connector</td>
+<td>McMaster-Carr</td>
+<td>4458N11</td>
+<td>3</td>
+<td>$58.95</td>
+</tr>
+<tr class="odd">
+<td>48</td>
+<td>Locknut</td>
+<td>1/2 NPT Black Locknut for Continuous-Flex Plastic Conduit
+Fitting</td>
+<td>McMaster-Carr</td>
+<td>3185K112</td>
+<td>3</td>
+<td>$2.61</td>
+</tr>
+<tr class="even">
+<td>49</td>
+<td>USB A to C</td>
+<td>USB AM TO USB C, USB 2.0 - 150MM</td>
+<td>Cvilux USA</td>
+<td>DH-20M50054</td>
+<td>3</td>
+<td>$3.87</td>
+</tr>
+<tr class="odd">
+<td>50</td>
+<td>Ethernet Cable 1ft</td>
+<td>Cable Mod 8P8C Plug to Plug 1ft</td>
+<td>Amphenol Cables on Demand</td>
+<td>MP-64RJ45UNNY-001</td>
+<td>1</td>
+<td>$3.81</td>
+</tr>
+<tr class="even">
+<td>51</td>
+<td>Ethernet Cable 2ft</td>
+<td>Ethernet Cables / Networking Cables CAT 6 UNSHIELDED, BLUE, 2ft</td>
+<td>Amphenol Cables on Demand</td>
+<td>MP-64RJ45UNNB-002</td>
+<td>3</td>
+<td>$13.35</td>
+</tr>
+<tr class="odd">
+<td>52</td>
+<td>Power Fuse</td>
+<td>Fuse Drawer For PWR MOD X-SAFE 2PL</td>
+<td>Schurter Inc.</td>
+<td>4301.1403</td>
+<td>1</td>
+<td>$5.61</td>
+</tr>
+<tr class="even">
+<td>53</td>
+<td>3 Pin Plug</td>
+<td>Term Block Plug 3POS STR 5.08mm</td>
+<td>Weidmuller</td>
+<td>1943820000</td>
+<td>2</td>
+<td>$7.36</td>
+</tr>
+<tr class="odd">
+<td>54</td>
+<td>14 Pin Plug</td>
+<td>Conn RCPT HSG 14POS 3.96mm</td>
+<td>Molex</td>
+<td>9508143</td>
+<td>2</td>
+<td>$24.36</td>
+</tr>
+<tr class="even">
+<td>55</td>
+<td>2 Pin Plug</td>
+<td>CONN RCPT HSG 3POS 3.96MM</td>
+<td>Molex</td>
+<td>9508033</td>
+<td>1</td>
+<td>$0.26</td>
+</tr>
+<tr class="odd">
+<td>56</td>
+<td>Pins</td>
+<td>CONN 18-20AWG CRIMP TIN</td>
+<td>Molex</td>
+<td>0008520113</td>
+<td>31</td>
+<td>$8.00</td>
+</tr>
+<tr class="even">
+<td>57</td>
+<td>20 Gauge Wire</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>5ft</td>
+<td>$0.00</td>
+</tr>
+<tr class="odd">
+<td>58</td>
+<td>Velcro or Zip Ties</td>
+<td>Optional</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>$0.00</td>
+</tr>
+<tr class="even">
+<td colspan="6">Total Cost Per Control Center</td>
+<td>$1,737.90</td>
+</tr>
+</tbody>
+</table>
 
 ### Side and Top Panel Assemblies
 
@@ -835,67 +1096,192 @@ The bill of materials for the assembly of the Modular Rack is shown in
 Table 3. Items that were custom made have .STL files to reference on the
 Github page. The other items were purchased from vendors.
 
-Table 3 Bill of materials for the Modular Rack assembly.
-
-  ----------------------------------------------------------------------------------------------------------------------------------
-  ITEM NO.  Part Label  Description                                             Source          Vendor Part       Qty   Cost
-                                                                                                Number                  
-  --------- ----------- ------------------------------------------------------- --------------- ----------------- ----- ------------
-  1         Cage Runner NIEHS CAN K10000 Kit, Runners, NexGen, Left/Right,      Allentown Inc.  K10000            4     \$216.00
-                        Hardware, Glass Filled Polysulfone High Temperature                                             
-                        Plastic, Purple                                                                                 
-
-  2         Cross Bar   1 x 1 x 16.5 inches T-Slotted profile - Four Open       80/20           8020-1010-black x 10    \$167.90
-                        T-slots                                                                 16.5                    
-
-  3         Side Bar    1 x 1 x 15.5 inches T-Slotted profile - Four Open       80/20           8020-1010-black x 6     \$97.62
-                        T-slots                                                                 15.5                    
-
-  4         Vertical    1 x 1 x 30 inches T-Slotted profile - Four Open T-slots 80/20           8020-1010-black x 4     \$55.24
-            Bar                                                                                 30                      
-
-  5         Corner      10 Series 2 Hole - Gusseted Inside Corner Bracket       80/20           8020-4132-black   16    \$130.88
-            Bracket                                                                                                     
-
-  6         1/4\"-20,   1/4-20 x .500\" Button Head Socket Cap Screw (BHSCS)    80/20           8020-3061         38    \$12.92
-            1/2\" Pan                                                                                                   
-
-  7         1/4\"-20    1/4-20 Roll-In T-Nut with Ball Spring                   80/20           8020-3923         42    \$102.48
-            T-Nut                                                                                                       
-
-  8         Igloo Bar   24\" x 2\" x 1/8\" (L x W x H) metal bar                McMaster-Carr   8975K582          2     \$14.10
-
-  9         Locking     10 Series 90 Degree Structural Right Angle Pivot Nub    80/20           8020-4002-black   4     \$44.00
-            Clamp                                                                                                       
-
-  10        Corner      10 series 3-Way Square Corner Connector                 80/20           8020-4042-Black   8     \$265.84
-            Connector                                                                                                   
-
-  11        1/4\"-20,   1/4-20 x 1.000\" Low Head Socket Cap Screw (LHSCS)      80/20           8020-3017         24    \$18.72
-            1\" Pan                                                                                                     
-
-  12        M4 T-Nut    M4 roll-in T-nut with ball spring                       80/20           8020-3919         16    \$39.04
-
-  13        M4, 10mm    Black-Oxide Alloy Steel Socket Head Screw M4 x          McMaster-Carr   91290A144         16    \$1.80
-            Pan         0.7 mm Thread, 10 mm Long                                                                       
-
-  14        Runner      36\" x 2\" x 1/8\" (L x W x H) metal bar                McMaster-Carr   8975K582          3     \$29.40
-            Support Bar                                                                                                 
-
-  15        1/4\"-20    Zinc Yellow-Chromate Plated Steel Oversized Washer      McMaster-Carr   98025A029         1     \$0.20
-            Washer      Grade 8, for 1/4\" Screw Size, 0.281\" ID, 0.625\" OD                                           
-
-  16        Runner Bar  3D Printed FDM                                          3D printed      N/A - refer to    2     \$8.00
-            Bracket                                                                             STL file                
-
-  17        1/4\"-20,   82 Degree Countersink, 1/4\"-20 Thread, 3/4\" Long,     McMaster-Carr   96640A286         1     \$14.37
-            3/4\" Flat  Undercut                                                                                        
-
-  Total                                                                                                                 \$1,218.51
-  Cost Per                                                                                                              
-  Modular                                                                                                               
-  Rack                                                                                                                  
-  ----------------------------------------------------------------------------------------------------------------------------------
+<table>
+<caption><p>Bill of materials for the Modular Rack
+assembly.</p></caption>
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 15%" />
+<col style="width: 22%" />
+<col style="width: 14%" />
+<col style="width: 17%" />
+<col style="width: 8%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>ITEM NO.</th>
+<th>Part Label</th>
+<th>Description</th>
+<th>Source</th>
+<th>Vendor Part Number</th>
+<th>Qty</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Cage Runner</td>
+<td>NIEHS CAN K10000 Kit, Runners, NexGen, Left/Right, Hardware, Glass
+Filled Polysulfone High Temperature Plastic, Purple</td>
+<td>Allentown Inc.</td>
+<td>K10000</td>
+<td>4</td>
+<td>$216.00</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Cross Bar</td>
+<td>1 x 1 x 16.5 inches T-Slotted profile - Four Open T-slots</td>
+<td>80/20</td>
+<td>8020-1010-black x 16.5</td>
+<td>10</td>
+<td>$167.90</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Side Bar</td>
+<td>1 x 1 x 15.5 inches T-Slotted profile - Four Open T-slots</td>
+<td>80/20</td>
+<td>8020-1010-black x 15.5</td>
+<td>6</td>
+<td>$97.62</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Vertical Bar</td>
+<td>1 x 1 x 30 inches T-Slotted profile - Four Open T-slots</td>
+<td>80/20</td>
+<td>8020-1010-black x 30</td>
+<td>4</td>
+<td>$55.24</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Corner Bracket</td>
+<td>10 Series 2 Hole - Gusseted Inside Corner Bracket</td>
+<td>80/20</td>
+<td>8020-4132-black</td>
+<td>16</td>
+<td>$130.88</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>1/4"-20, 1/2" Pan</td>
+<td>1/4-20 x .500" Button Head Socket Cap Screw (BHSCS)</td>
+<td>80/20</td>
+<td>8020-3061</td>
+<td>38</td>
+<td>$12.92</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>1/4"-20 T-Nut</td>
+<td>1/4-20 Roll-In T-Nut with Ball Spring</td>
+<td>80/20</td>
+<td>8020-3923</td>
+<td>42</td>
+<td>$102.48</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>Igloo Bar</td>
+<td>24" x 2" x 1/8" (L x W x H) metal bar</td>
+<td>McMaster-Carr</td>
+<td>8975K582</td>
+<td>2</td>
+<td>$14.10</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>Locking Clamp</td>
+<td>10 Series 90 Degree Structural Right Angle Pivot Nub</td>
+<td>80/20</td>
+<td>8020-4002-black</td>
+<td>4</td>
+<td>$44.00</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td>Corner Connector</td>
+<td>10 series 3-Way Square Corner Connector</td>
+<td>80/20</td>
+<td>8020-4042-Black</td>
+<td>8</td>
+<td>$265.84</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>1/4"-20, 1" Pan</td>
+<td>1/4-20 x 1.000" Low Head Socket Cap Screw (LHSCS)</td>
+<td>80/20</td>
+<td>8020-3017</td>
+<td>24</td>
+<td>$18.72</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>M4 T-Nut</td>
+<td>M4 roll-in T-nut with ball spring</td>
+<td>80/20</td>
+<td>8020-3919</td>
+<td>16</td>
+<td>$39.04</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td>M4, 10mm Pan</td>
+<td>Black-Oxide Alloy Steel Socket Head Screw M4 x 0.7 mm Thread, 10 mm
+Long</td>
+<td>McMaster-Carr</td>
+<td>91290A144</td>
+<td>16</td>
+<td>$1.80</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td>Runner Support Bar</td>
+<td>36" x 2" x 1/8" (L x W x H) metal bar</td>
+<td>McMaster-Carr</td>
+<td>8975K582</td>
+<td>3</td>
+<td>$29.40</td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td>1/4"-20 Washer</td>
+<td>Zinc Yellow-Chromate Plated Steel Oversized Washer
+Grade 8, for 1/4" Screw Size, 0.281" ID, 0.625" OD</td>
+<td>McMaster-Carr</td>
+<td>98025A029</td>
+<td>1</td>
+<td>$0.20</td>
+</tr>
+<tr class="even">
+<td>16</td>
+<td>Runner Bar Bracket</td>
+<td>3D Printed FDM</td>
+<td>3D printed</td>
+<td>N/A - refer to STL file</td>
+<td>2</td>
+<td>$8.00</td>
+</tr>
+<tr class="odd">
+<td>17</td>
+<td>1/4"-20, 3/4" Flat</td>
+<td>82 Degree Countersink, 1/4"-20 Thread, 3/4" Long, Undercut</td>
+<td>McMaster-Carr</td>
+<td>96640A286</td>
+<td>1</td>
+<td>$14.37</td>
+</tr>
+<tr class="even">
+<td colspan="6">Total Cost Per Modular Rack</td>
+<td>$1,218.51</td>
+</tr>
+</tbody>
+</table>
 
 #### Rack Top Subassembly
 
