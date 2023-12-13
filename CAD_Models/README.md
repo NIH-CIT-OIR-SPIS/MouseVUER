@@ -20,14 +20,14 @@ height="6.0in"}
 
 [Hopper Fabrication [5](#hopper-fabrication)](#hopper-fabrication)
 
-[Camera Mounting Enclosure Fabrication [5](#cme-fabrication)](#cme-fabrication)
+[Camera Mounting Enclosure Fabrication [5](#camera-mounting-enclosure-fabrication)](#camera-mounting-enclosure-fabrication)
 
 [Monitoring Cage Assembly
 [6](#monitoring-cage-assembly)](#monitoring-cage-assembly)
 
 [Hopper Assembly [7](#hopper-assembly)](#hopper-assembly)
 
-[Camera Mounting Enclosure Assembly [8](#cme-assembly)](#cme-assembly)
+[Camera Mounting Enclosure Assembly [8](#camera-mounting-enclosure-assembly)](#camera-mounting-enclosure-assembly)
 
 [Finished Monitoring Cage Unit Assembly
 [10](#finished-monitoring-cage-unit-assembly)](#finished-monitoring-cage-unit-assembly)
@@ -72,7 +72,7 @@ height="6.0in"}
 
 [Hopper Assembly [35](#hopper-assembly-1)](#hopper-assembly-1)
 
-[Camera Mounting Enclosure Assembly [37](#cme-assembly-1)](#cme-assembly-1)
+[Camera Mounting Enclosure Assembly [37](#camera-mounting-enclosure-assembly-1)](#cme-assembly-1)
 
 [Monitoring Cage Unit Assembly
 [42](#monitoring-cage-unit-assembly)](#monitoring-cage-unit-assembly)
@@ -446,7 +446,7 @@ a ¼"-20, 3/8" flat screw. Two 4-40, 3/8" screws are used to fasten the
 camera bracket to the Camera Mounting Enclosure. These steps are shown in Figure 5. The
 final Camera Mounting Enclosure subassembly is shown in Figure 6.
 
-![](./images/media/image6.png){width="5.660661636045495in"
+![](./images/media/image6.jpg){width="5.660661636045495in"
 height="4.0in"}
 
 Figure 5 Steps 5 to 8 for the Camera Mounting Enclosure subassembly.
@@ -469,7 +469,7 @@ locking tab. The last step is to insert the camera mounting enclosure to the mou
 by aligning the four cutouts shown via 4 red arrows. The final
 Monitoring Cage assembly is shown in Figure 8.
 
-![](./images/media/image8.png){width="5.660661636045495in"
+![](./images/media/image8.jpg){width="5.660661636045495in"
 height="4.0in"}
 
 Figure 7 The steps to complete the Monitoring Cage assembly.
@@ -1313,7 +1313,7 @@ Inc., Allentown, NJ). Next fasten two corner brackets onto each face end
 of two new cross bars. Please refer to Figure 22 for steps 5 to 8 of the
 rack top subassembly.
 
-![](./images/media/image23.png){width="5.660661636045495in"
+![](./images/media/image23.jpg){width="5.660661636045495in"
 height="4.0in"}
 
 Figure 22 Steps 5 to 8 of the rack top subassembly.
