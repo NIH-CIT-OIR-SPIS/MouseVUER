@@ -20,14 +20,14 @@ height="6.0in"}
 
 [Hopper Fabrication [5](#hopper-fabrication)](#hopper-fabrication)
 
-[Igloo Fabrication [5](#igloo-fabrication)](#igloo-fabrication)
+[Camera Mounting Enclosure Fabrication [5](#cme-fabrication)](#cme-fabrication)
 
 [Monitoring Cage Assembly
 [6](#monitoring-cage-assembly)](#monitoring-cage-assembly)
 
 [Hopper Assembly [7](#hopper-assembly)](#hopper-assembly)
 
-[Igloo Assembly [8](#igloo-assembly)](#igloo-assembly)
+[Camera Mounting Enclosure Assembly [8](#cme-assembly)](#cme-assembly)
 
 [Finished Monitoring Cage Unit Assembly
 [10](#finished-monitoring-cage-unit-assembly)](#finished-monitoring-cage-unit-assembly)
@@ -72,7 +72,7 @@ height="6.0in"}
 
 [Hopper Assembly [35](#hopper-assembly-1)](#hopper-assembly-1)
 
-[Igloo Assembly [37](#igloo-assembly-1)](#igloo-assembly-1)
+[Camera Mounting Enclosure Assembly [37](#cme-assembly-1)](#cme-assembly-1)
 
 [Monitoring Cage Unit Assembly
 [42](#monitoring-cage-unit-assembly)](#monitoring-cage-unit-assembly)
@@ -123,7 +123,7 @@ The MouseVUER system fits inside a custom modular rack that houses all
 the components for running the system. The monitoring cage units are
 where the rodents are monitored. There are three monitoring cage units
 per MouseVUER system. Each monitoring unit has subassemblies including
-an Igloo and Hopper that must be assembled. The Igloo supports the
+a Camera Mounting Enclosure and Hopper that must be assembled. The camera mounting enclosure supports the
 camera and LEDs above the mouse lid. The hopper is specially designed to
 fit into the mouse cages and supply food and water. One Power and
 Control Module (PCM) will need to be fabricated for every MouseVUER
@@ -148,7 +148,7 @@ unit. In the appendix, larger figures of all assembly steps are shown.
 The Monitoring Cage units are where the rodents are monitored. These
 instructions are for one Monitoring Cage unit and must be repeated two
 more times for each MouseVUER system. The Monitoring Cage unit has
-subassemblies called the Igloo and Hopper that must be assembled before
+subassemblies called the Camera Mounting Enclosure and Hopper that must be assembled before
 assembling the final Monitoring Cage unit.
 
 ![Diagram Description automatically
@@ -179,9 +179,9 @@ Yarde Metal, White Marsh, MD) is fabricated with a waterjet and bending
 tool. The bottle holder (304SS, 24-gauge, Yarde Metal, White Marsh, MD)
 is fabricated with a waterjet.
 
-### Igloo Fabrication
+### Camera Mounting Enclosure Fabrication
 
-The igloo consists of five clear acrylic panels fixed together to
+The camera mounting enclosure consists of five clear acrylic panels fixed together to
 support a camera above the mouse cage. The acrylic panels (Clear Cast
 Acrylic-1/4", Piedmont Plastics, Elkridge, Maryland) must be cut. In
 this fabrication process a CO~2~ laser cutter (PLS6.150D, Universal
@@ -369,7 +369,7 @@ TEMPERATURE PLASTIC, NO LOCKS</td>
 </tr>
 <tr class="even">
 <td>17</td>
-<td>Igloo Front Panel</td>
+<td>Camera Mounting Enclosure Front Panel</td>
 <td>Cut from 12"x24"x1/4" Clear Cast Acrylic</td>
 <td>Laser Cut</td>
 <td>N/A - refer to DXF file</td>
@@ -378,7 +378,7 @@ TEMPERATURE PLASTIC, NO LOCKS</td>
 </tr>
 <tr class="odd">
 <td>18</td>
-<td>Igloo Side Panel</td>
+<td>Camera Mounting Enclosure Side Panel</td>
 <td>Cut from 12"x24"x1/4" Clear Cast Acrylic</td>
 <td>Laser Cut</td>
 <td>N/A - refer to DXF file</td>
@@ -387,7 +387,7 @@ TEMPERATURE PLASTIC, NO LOCKS</td>
 </tr>
 <tr class="even">
 <td>19</td>
-<td>Igloo Top Panel</td>
+<td>Camera Mounting Enclosure Top Panel</td>
 <td>Cut from 12"x24"x1/4" Clear Cast Acrylic</td>
 <td>Laser Cut</td>
 <td>N/A - refer to DXF file</td>
@@ -424,11 +424,11 @@ height="4.240277777777778in"}
 
 Figure 3 The Hopper sub assembly.
 
-### Igloo Assembly 
+### Camera Mounting Enclosure Assembly 
 
-The igloo subassembly must be completed before inserting into the
+The Camera Mounting Enclosure subassembly must be completed before inserting into the
 Monitoring Cage unit. A Phillips no. 2 screwdriver will be required for
-fastening all screws in this section. The first four steps in the igloo
+fastening all screws in this section. The first four steps in the Camera Mounting Enclosure
 assembly are shown in Figure 4. Four cube standoffs will be fastened to
 the top panel with four M3, 10mm flat screws. The rear panel will be
 secured via two M3, 10mm flat screws. Next, the 2 side panels will be
@@ -437,35 +437,35 @@ secured by two M3, 10mm flat screws for each panel.
 ![](./images/media/image5.png){width="5.660661636045495in"
 height="4.0in"}
 
-Figure 4 Steps 1 to 4 of the Igloo subassembly.
+Figure 4 Steps 1 to 4 of the Camera Mounting Enclosure subassembly.
 
 The next step is to fasten the front panel with two M3, 10mm flat
 screws. The handle will be secured in place via two ¼"-20, 7/8" flat
 screws and two ¼"-20 nuts. The camera is bolted to the camera bracket by
 a ¼"-20, 3/8" flat screw. Two 4-40, 3/8" screws are used to fasten the
-camera bracket to the igloo. These steps are shown in Figure 5. The
-final igloo subassembly is shown in Figure 6.
+camera bracket to the Camera Mounting Enclosure. These steps are shown in Figure 5. The
+final Camera Mounting Enclosure subassembly is shown in Figure 6.
 
 ![](./images/media/image6.png){width="5.660661636045495in"
 height="4.0in"}
 
-Figure 5 Steps 5 to 8 for the Igloo subassembly.
+Figure 5 Steps 5 to 8 for the Camera Mounting Enclosure subassembly.
 
 ![Engineering drawing Description automatically
 generated](./images/media/image7.jpeg){width="4.24297353455818in"
 height="3.0in"}
 
-Figure 6 The final Igloo subassembly.
+Figure 6 The final Camera Mounting Enclosure subassembly.
 
 ### Finished Monitoring Cage Unit Assembly 
 
-Once the hopper and igloo assemblies are completed, the Monitoring Cage
+Once the hopper and camera mounting enclosure assemblies are completed, the Monitoring Cage
 unit can be constructed. Four steps are required in this process, and
 they are shown in Figure 7. The first step is to insert the hopper near
 the front of the mouse cage base. Next, the water bottle is inserted
 into the hopper. The third step involves securing the hopper in place
 via a tab on the mouse cage lid. The blue arrow in step 3 shows the
-locking tab. The last step is to insert the igloo to the mouse cage lid
+locking tab. The last step is to insert the camera mounting enclosure to the mouse cage lid
 by aligning the four cutouts shown via 4 red arrows. The final
 Monitoring Cage assembly is shown in Figure 8.
 
@@ -1083,7 +1083,7 @@ maintenance, animal care, etc.
 
 To assemble the modular rack, several parts will need to be custom
 fabricated. Three Runner Support Bars (8975K582, McMaster-Carr,
-Elmhurst, IL) will need to be machined. Two Igloo Bars (8975K582,
+Elmhurst, IL) will need to be machined. Two Camera Mounting Enclosure Bars (8975K582,
 McMaster-Carr, Elmhurst, IL) will also need to be machined. In this
 fabrication process, a waterjet was used to fabricate the bars. Two
 runner bar brackets will need to be 3D printed. In this fabrication
@@ -1186,7 +1186,7 @@ Filled Polysulfone High Temperature Plastic, Purple</td>
 </tr>
 <tr class="even">
 <td>8</td>
-<td>Igloo Bar</td>
+<td>Camera Mounting Enclosure Bar</td>
 <td>24" x 2" x 1/8" (L x W x H) metal bar</td>
 <td>McMaster-Carr</td>
 <td>8975K582</td>
@@ -1305,9 +1305,9 @@ Figure 21 Steps 1 to 4 of the rack top subassembly.
 Two ¼"-20 T-Nuts will slide into the inner rails of the side bars. Do
 not secure these T-nuts, they will be secured in a later step. Next
 slide two T-nuts (a part of the Locking Clamp assembly, P/N
-8020-4002-black, Allentown Inc., Allentown, NJ) and an Igloo bar on the
-inside rails of the side bars. Secure the igloo bar in place
-approximately 78mm offset from the side bar face end. The igloo bar is
+8020-4002-black, Allentown Inc., Allentown, NJ) and an Camera Mounting Enclosure bar on the
+inside rails of the side bars. Secure the Camera Mounting Enclosure bar in place
+approximately 78mm offset from the side bar face end. The Camera Mounting Enclosure bar is
 secured by the rest of the Locking Clamp (P/N 8020-4002-black, Allentown
 Inc., Allentown, NJ). Next fasten two corner brackets onto each face end
 of two new cross bars. Please refer to Figure 22 for steps 5 to 8 of the
@@ -1360,9 +1360,9 @@ subassembly.
 For the modular rack, one mid bar subassembly is required. A 5/32" and
 3/16" Allen key are required for assembly. First slide two T-nuts (a
 part of the Locking Clamp assembly, P/N 8020-4002-black, Allentown Inc.,
-Allentown, NJ) and an Igloo bar on the inside rails of the side bars.
-Secure the igloo bar in place approximately 78mm offset from the side
-bar face end. The igloo bar is secured by the rest of the Locking Clamp
+Allentown, NJ) and an Camera Mounting Enclosure bar on the inside rails of the side bars.
+Secure the Camera Mounting Enclosure bar in place approximately 78mm offset from the side
+bar face end. The Camera Mounting Enclosure bar is secured by the rest of the Locking Clamp
 (P/N 8020-4002-black, Allentown Inc., Allentown, NJ). Next on the bottom
 side of the side bars, secure four corner brackets flesh to the face
 ends of the side bars. The assembly steps 1 to 3 and resulting rack mid
@@ -1485,7 +1485,7 @@ height="4.0in"}
 generated](./images/media/image36.jpeg){width="5.6572976815398075in"
 height="4.0in"}
 
-### Igloo Assembly 
+### Camera Mounting Enclosure Assembly 
 
 ![Chart, radar chart Description automatically
 generated](./images/media/image37.jpeg){width="5.657298775153106in"
