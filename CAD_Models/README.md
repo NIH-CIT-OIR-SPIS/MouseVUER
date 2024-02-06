@@ -1775,3 +1775,7 @@ generated](./images/media/image128.jpeg){width="5.657298775153106in"
 height="4.0in"}![A picture containing handcart Description automatically
 generated](./images/media/image129.jpeg){width="5.657298775153106in"
 height="4.0in"}
+
+----
+
+MouseVUER CAD Models © 2023 by National Institute of Biomedical Imaging and Bioengineering, part of the National Institutes of Health (“NIH”), a component of the United States Department of Health and Human Services (“NIBIB”) is licensed under CC BY-SA 4.0. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/
