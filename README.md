@@ -4,7 +4,7 @@
 
 ### About
 
-An opne source home-cage design based on Intel&reg; RealSense&trade; depth cameras. 
+An open source home-cage design based on Intel&reg; RealSense&trade; depth cameras. 
 
 ### CAD Files and Assembly
 
